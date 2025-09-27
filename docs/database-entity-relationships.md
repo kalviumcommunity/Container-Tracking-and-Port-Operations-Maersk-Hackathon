@@ -6,9 +6,6 @@ Container Tracking & Port Operations System
 ## Date
 September 27, 2025
 
-## ER - Diagram 
-
-![ER & Workflow Diagram](https://i.postimg.cc/mZ592xMT/Screenshot-2025-09-27-152440.png)
 
 ## Core Database Entities
 
@@ -134,9 +131,8 @@ Represents the loading of containers onto ships and tracking their status.
 
 ## ERD Diagram
 
-```
-[ERD diagram would be placed here - visual representation of the entities and their relationships]
-```
+![ER & Workflow Diagram](https://i.postimg.cc/mZ592xMT/Screenshot-2025-09-27-152440.png)
+
 
 ## Next Steps
 
