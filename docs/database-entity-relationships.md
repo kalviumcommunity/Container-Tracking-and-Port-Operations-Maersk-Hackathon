@@ -6,6 +6,10 @@ Container Tracking & Port Operations System
 ## Date
 September 27, 2025
 
+## ER - Diagram 
+
+![ER & Workflow Diagram](https://i.postimg.cc/mZ592xMT/Screenshot-2025-09-27-152440.png)
+
 ## Core Database Entities
 
 This document outlines the key database entities, their attributes, and relationships for the Container Tracking & Port Operations System. The database is designed for PostgreSQL and focuses on tracking containers throughout their lifecycle at ports and on ships.
