@@ -1,0 +1,26 @@
+# .NET
+bin/
+obj/
+*.dll
+*.pdb
+*.user
+*.cache
+*.suo
+
+# Environment variables
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.vs/
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
