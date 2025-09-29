@@ -4,25 +4,38 @@
 Container Tracking & Port Operations System
 
 ## Date
-September 27, 2025
+September 29, 2025 (Updated)
 
+## Overview
+
+This document outlines the key database entities, their attributes, and relationships for the Container Tracking & Port Operations System. The database is implemented using PostgreSQL with Entity Framework Core and follows C# naming conventions. The system supports comprehensive container tracking, berth management, and port operations with full environment variable configuration and extensive test data seeding.
 
 ## Core Database Entities
-
-This document outlines the key database entities, their attributes, and relationships for the Container Tracking & Port Operations System. The database is designed for PostgreSQL and focuses on tracking containers throughout their lifecycle at ports and on ships.
-
-### Core Entities
-
-Entities are designed for PostgreSQL with appropriate data types. Each includes key attributes based on the project requirements, with relationships that support container tracking, berth management, and port operations.
 
 ### 1. Port Entity
 Represents a shipping port with berths and container capacity.
 
+**Table Name:** `Ports`
+
 **Attributes:**
-- `port_id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
-- `name`: TEXT NOT NULL (Port name, e.g., "Singapore Port")
-- `location`: TEXT NOT NULL (Geographic location for mapping and distance calculations)
-- `total_container_capacity`: INT NOT NULL (Maximum number of containers the port can handle)
+- `PortId`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `Name`: TEXT NOT NULL (Port name, e.g., "Port of Copenhagen")
+- `Location`: TEXT NOT NULL (Geographic location for mapping and distance calculations)
+- `TotalContainerCapacity`: INT NOT NULL (Maximum number of containers the port can handle)
+
+**C# Model Properties:**
+```csharp
+public int PortId { get; set; }
+public string Name { get; set; }
+public string Location { get; set; }
+public int TotalContainerCapacity { get; set; }
+public ICollection<Berth> Berths { get; set; }
+```
+
+**Sample Data:**
+- Port of Copenhagen (Denmark) - 10,000 capacity
+- Port of Rotterdam (Netherlands) - 15,000 capacity
+- Port of Hamburg (Germany) - 12,000 capacity
 
 **Relationships:**
 - Has many Berths (One Port to Many Berths)
@@ -31,25 +44,58 @@ Represents a shipping port with berths and container capacity.
 ### 2. Berth Entity
 Represents a specific berth within a port where containers can be staged.
 
+**Table Name:** `Berths`
+
 **Attributes:**
-- `berth_id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
-- `port_id`: INT NOT NULL REFERENCES ports(port_id) (Foreign key to link to parent port)
-- `name`: TEXT NOT NULL (Berth identifier, e.g., "Berth A1")
-- `capacity`: INT NOT NULL (Number of containers the berth can hold)
-- `status`: VARCHAR NOT NULL (Status: "free", "occupied", "maintenance", etc.)
+- `BerthId`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `PortId`: INT NOT NULL REFERENCES Ports(PortId) (Foreign key to link to parent port)
+- `Name`: TEXT NOT NULL (Berth identifier, e.g., "CPH-A1", "RTM-2")
+- `Capacity`: INT NOT NULL (Number of containers the berth can hold)
+- `Status`: VARCHAR NOT NULL (Status: "Available", "Occupied", "Maintenance")
+
+**C# Model Properties:**
+```csharp
+public int BerthId { get; set; }
+public int PortId { get; set; }
+public string Name { get; set; }
+public int Capacity { get; set; }
+public string Status { get; set; }
+public Port Port { get; set; }
+public ICollection<BerthAssignment> BerthAssignments { get; set; }
+```
+
+**Sample Data:**
+- CPH-A1, CPH-A2 (Copenhagen berths)
+- RTM-1, RTM-2 (Rotterdam berths)  
+- HAM-North-1, HAM-South-1 (Hamburg berths)
 
 **Relationships:**
 - Belongs to one Port (Many Berths to One Port)
 - Has many Berth Assignments (One Berth to Many Berth Assignments)
-- Indirectly related to Containers via Berth Assignments
 
 ### 3. Ship Entity
 Represents vessels that transport containers between ports.
 
+**Table Name:** `Ships`
+
 **Attributes:**
-- `ship_id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
-- `name`: TEXT NOT NULL (Ship name, e.g., "Maersk Sealand")
-- `status`: VARCHAR NOT NULL (Ship status: "at sea", "arrived", "loading", "departed", etc.)
+- `ShipId`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `Name`: TEXT NOT NULL (Ship name, e.g., "Maersk Edinburgh")
+- `Status`: VARCHAR NOT NULL (Ship status: "Docked", "At Sea", "Loading", "Maintenance")
+
+**C# Model Properties:**
+```csharp
+public int ShipId { get; set; }
+public string Name { get; set; }
+public string Status { get; set; }
+public ICollection<Container> Containers { get; set; }
+public ICollection<ShipContainer> ShipContainers { get; set; }
+```
+
+**Sample Data:**
+- Maersk Edinburgh, MSC Gulsun, Ever Given
+- COSCO Shipping Universe, HMM Algeciras
+- Real shipping vessel names with various statuses
 
 **Relationships:**
 - Has many Containers assigned (One Ship to Many Containers)
@@ -58,15 +104,37 @@ Represents vessels that transport containers between ports.
 ### 4. Container Entity
 Represents shipping containers being tracked through the system.
 
+**Table Name:** `Containers`
+
 **Attributes:**
-- `container_id`: VARCHAR PRIMARY KEY (Unique container identifier, using industry standard format)
-- `name`: TEXT (Optional container name or description)
-- `type`: VARCHAR NOT NULL (Container type: "dry", "refrigerated", "liquid", "hazardous", etc.)
-- `status`: VARCHAR NOT NULL (Current status: "transit", "at port", "at ship", "inspected", "loaded", "departed", etc.)
-- `current_location`: TEXT (Current geographic or logical location)
-- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP (When the container record was created)
-- `updated_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP (Last update to the container record)
-- `ship_id`: INT REFERENCES ships(ship_id) (Foreign key to the current ship, NULL if not on a ship)
+- `ContainerId`: VARCHAR PRIMARY KEY (Unique container identifier, using industry standard format like "MSKU1000001")
+- `Name`: TEXT (Container name or description, e.g., "Electronics Container", "Automotive Parts")
+- `Type`: VARCHAR NOT NULL (Container type: "Dry", "Refrigerated", "Hazardous", "Liquid", "Open Top", "Flat Rack")
+- `Status`: VARCHAR NOT NULL (Current status: "Empty", "Loaded", "In Transit", "Loading", "Unloading", "Inspected")
+- `CurrentLocation`: TEXT (Current geographic or logical location)
+- `CreatedAt`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP (When the container record was created)
+- `UpdatedAt`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP (Last update to the container record)
+- `ShipId`: INT REFERENCES Ships(ShipId) (Foreign key to the current ship, NULL if not on a ship)
+
+**C# Model Properties:**
+```csharp
+public string ContainerId { get; set; }
+public string Name { get; set; }
+public string Type { get; set; }
+public string Status { get; set; }
+public string CurrentLocation { get; set; }
+public DateTime CreatedAt { get; set; }
+public DateTime UpdatedAt { get; set; }
+public int? ShipId { get; set; }
+public Ship? Ship { get; set; }
+public ICollection<BerthAssignment> BerthAssignments { get; set; }
+public ICollection<ShipContainer> ShipContainers { get; set; }
+```
+
+**Sample Data:**
+- 50 containers with realistic IDs (MSKU1000001, MSCU1000002, etc.)
+- Various types: Electronics, Automotive Parts, Refrigerated Goods
+- Multiple statuses and locations across different ports
 
 **Relationships:**
 - May be assigned to one Ship (Many Containers to One Ship)
@@ -74,69 +142,220 @@ Represents shipping containers being tracked through the system.
 - Has many Ship Container records (One Container to Many Ship Container records)
 
 ### 5. Berth Assignment Entity
-Represents the assignment of a container to a specific berth.
+Represents the assignment of a container to a specific berth with temporal tracking.
+
+**Table Name:** `BerthAssignments`
 
 **Attributes:**
-- `id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
-- `container_id`: VARCHAR NOT NULL REFERENCES containers(container_id) (Foreign key to the container)
-- `berth_id`: INT NOT NULL REFERENCES berths(berth_id) (Foreign key to the berth)
-- `assigned_at`: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP (When the container was assigned to the berth)
-- `released_at`: TIMESTAMP (When the container was released from the berth, NULL if still assigned)
+- `Id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `ContainerId`: VARCHAR NOT NULL REFERENCES Containers(ContainerId) (Foreign key to the container)
+- `BerthId`: INT NOT NULL REFERENCES Berths(BerthId) (Foreign key to the berth)
+- `AssignedAt`: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP (When the container was assigned to the berth)
+- `ReleasedAt`: TIMESTAMP (When the container was released from the berth, NULL if still assigned)
+
+**C# Model Properties:**
+```csharp
+public int Id { get; set; }
+public string ContainerId { get; set; }
+public int BerthId { get; set; }
+public DateTime AssignedAt { get; set; }
+public DateTime? ReleasedAt { get; set; }
+public Container Container { get; set; }
+public Berth Berth { get; set; }
+```
+
+**Sample Data:**
+- 20 berth assignments with mix of current and historical assignments
+- Realistic time ranges for container staging at berths
 
 **Relationships:**
-- Links one Container to one Berth for a period (joining table for many-to-many with temporal aspect)
+- Links one Container to one Berth for a time period (temporal many-to-many relationship)
 
 ### 6. Ship Container Entity
-Represents the loading of containers onto ships and tracking their status.
+Represents the loading of containers onto ships with loading timestamps.
+
+**Table Name:** `ShipContainers`
 
 **Attributes:**
-- `id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
-- `ship_id`: INT NOT NULL REFERENCES ships(ship_id) (Foreign key to the ship)
-- `container_id`: VARCHAR NOT NULL REFERENCES containers(container_id) (Foreign key to the container)
-- `loaded_at`: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP (When the container was loaded onto the ship)
+- `Id`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `ShipId`: INT NOT NULL REFERENCES Ships(ShipId) (Foreign key to the ship)
+- `ContainerId`: VARCHAR NOT NULL REFERENCES Containers(ContainerId) (Foreign key to the container)
+- `LoadedAt`: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP (When the container was loaded onto the ship)
+
+**C# Model Properties:**
+```csharp
+public int Id { get; set; }
+public int ShipId { get; set; }
+public string ContainerId { get; set; }
+public DateTime LoadedAt { get; set; }
+public Ship Ship { get; set; }
+public Container Container { get; set; }
+```
+
+**Sample Data:**
+- 15 ship container operations linking containers to ships
+- Various loading times over past weeks
 
 **Relationships:**
-- Links one Container to one Ship (joining table for many-to-many with temporal aspect)
+- Links one Container to one Ship with temporal data (joining table for many-to-many with timestamps)
 
 ## Relationships Overview
 
 - **Primary Foreign Keys**:
-  - `port_id` in Berths (links to Ports)
-  - `ship_id` in Containers (links to Ships)
-  - `container_id` in Berth Assignments (links to Containers)
-  - `berth_id` in Berth Assignments (links to Berths)
-  - `ship_id` and `container_id` in Ship Containers (links to Ships and Containers)
+  - `PortId` in Berths (links to Ports)
+  - `ShipId` in Containers (links to Ships)
+  - `ContainerId` in BerthAssignments (links to Containers)
+  - `BerthId` in BerthAssignments (links to Berths)
+  - `ShipId` and `ContainerId` in ShipContainers (links to Ships and Containers)
 
 - **One-to-Many Patterns**:
   - Port → Berths (port has multiple berths)
   - Ship → Containers (ship can carry multiple containers)
-  - Container → Berth Assignments (container can have multiple berth assignments over time)
-  - Berth → Berth Assignments (berth can have multiple container assignments over time)
+  - Container → BerthAssignments (container can have multiple berth assignments over time)
+  - Berth → BerthAssignments (berth can have multiple container assignments over time)
 
-- **Indexes**: Should be created on all foreign keys for query optimization
+- **Indexes**: Created on all foreign keys for query optimization
+
+## Sample Data Overview (Current Implementation)
+
+### Ports (6 entries)
+- New York Port (Port ID: 1)
+- Long Beach Port (Port ID: 2)
+- Hamburg Port (Port ID: 3)
+- Singapore Port (Port ID: 4)
+- Rotterdam Port (Port ID: 5)
+- Hong Kong Port (Port ID: 6)
+
+### Berths (26+ entries)
+- 2-6 berths per port with varied capacities
+- Depths: 10m, 15m, 20m, 25m, 30m
+- Capacities: 5,000 to 25,000 TEU
+
+### Ships (12 entries)
+- Container ships with realistic names (MV Atlantic Express, MSC Barcelona, etc.)
+- Capacities: 8,000 to 24,000 TEU
+- Distributed across different ports
+
+### Containers (50 entries)
+- Industry-standard IDs: MSKU1000001, MSCU1000002, etc.
+- Types: Electronics, Automotive Parts, Refrigerated Goods, Textiles, Machinery
+- Statuses: Empty, Loaded, In Transit, Loading, Unloading, Inspected
+- Realistic locations: "Port of New York", "Warehouse B-12", etc.
+
+### BerthAssignments (20 entries)
+- Mix of current assignments (ReleasedAt = NULL) and historical records
+- Realistic time ranges for container staging
+
+### ShipContainer Operations (15 entries)
+- Containers loaded onto ships with timestamps
+- Various loading dates over recent weeks
+
+## Environment Variable Configuration
+
+The system now uses environment variables for secure configuration:
+
+### Required Environment Variables (.env file)
+```
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=ContainerTrackingDB
+DB_USERNAME=postgres
+DB_PASSWORD=your_password_here
+```
+
+### Configuration Files
+- `appsettings.json`: Base configuration without sensitive data
+- `appsettings.Development.json`: Development-specific settings with detailed logging
+- `appsettings.Production.json`: Production settings with optimized logging
+
+## Sample Queries (PostgreSQL)
+
+**Note:** PostgreSQL is case-sensitive. Use quoted identifiers when querying through pgAdmin.
+
+Basic port information:
+```sql
+SELECT "PortId", "Name", "Location" FROM "Ports";
+```
+
+Containers at a specific port:
+```sql
+SELECT c."ContainerId", c."Name", c."Type", c."Status"
+FROM "Containers" c
+JOIN "BerthAssignments" ba ON c."ContainerId" = ba."ContainerId"
+JOIN "Berths" b ON ba."BerthId" = b."BerthId"
+JOIN "Ports" p ON b."PortId" = p."PortId"
+WHERE p."Name" = 'New York Port' AND ba."ReleasedAt" IS NULL;
+```
+
+Ship details with current port:
+```sql
+SELECT s."ShipId", s."Name", s."Capacity", p."Name" as "CurrentPort"
+FROM "Ships" s
+JOIN "Ports" p ON s."CurrentPortId" = p."PortId";
+```
+
+Active berth assignments:
+```sql
+SELECT ba."Id", c."ContainerId", c."Name", b."BerthNumber", p."Name" as "PortName"
+FROM "BerthAssignments" ba
+JOIN "Containers" c ON ba."ContainerId" = c."ContainerId"
+JOIN "Berths" b ON ba."BerthId" = b."BerthId"
+JOIN "Ports" p ON b."PortId" = p."PortId"
+WHERE ba."ReleasedAt" IS NULL
+ORDER BY ba."AssignedAt" DESC;
+```
+
+Containers currently on ships:
+```sql
+SELECT sc."Id", s."Name" as "ShipName", c."ContainerId", c."Name" as "ContainerName", sc."LoadedAt"
+FROM "ShipContainers" sc
+JOIN "Ships" s ON sc."ShipId" = s."ShipId"
+JOIN "Containers" c ON sc."ContainerId" = c."ContainerId"
+ORDER BY sc."LoadedAt" DESC;
+```
 
 ## Key Workflows
 
 1. **Container Arrival**:
-   - Container record created/updated → Status set to "arrived" → Assigned to berth → Real-time event published
+   - Container record created/updated → Status set to "Empty" or "Loaded" → Assigned to berth via BerthAssignment → Real-time event published
 
 2. **Container Inspection**:
-   - Container status updated to "inspected" → Event published → UI updated via SignalR
+   - Container status updated to "Inspected" → Event published → UI updated via SignalR
 
 3. **Container Loading**:
-   - Container assigned to ship → Ship Container record created → Container status updated to "loaded" → Event published
+   - Container assigned to ship → ShipContainer record created → Container status updated to "Loading" → Event published
 
 4. **Ship Departure**:
-   - Ship status updated to "departed" → Associated containers status updated → Events published
+   - Ship status updated to "Departed" → Associated containers status updated via ShipContainer records → Events published
+
+## Implementation Status (Updated September 29, 2025)
+
+✅ **Completed:**
+- Database schema aligned with ER diagram using C# PascalCase conventions
+- Entity Framework Core models with proper relationships
+- Comprehensive data seeding with 50+ containers, 26+ berths, 12 ships
+- Environment variable configuration for secure database connection
+- PostgreSQL database setup with pgAdmin management (port 5433)
+- Sample query examples with proper case-sensitive syntax
+
+✅ **Database Migration Applied:**
+- Migration "UpdateSchemaToMatchDiagram" successfully applied
+- All tables created with proper foreign key constraints
+- Data seeding completed with extensive test data
+
+✅ **Security Implementation:**
+- Environment variables (.env files) for sensitive configuration
+- Separate appsettings files for Development/Production
+- CORS policies configured for different environments
 
 ## ERD Diagram
 
 ![ER & Workflow Diagram](https://i.postimg.cc/mZ592xMT/Screenshot-2025-09-27-152440.png)
 
-
 ## Next Steps
 
-1. Implement database migrations using Entity Framework Core
-2. Create data access services for each entity
-3. Implement API controllers for CRUD operations
+1. ✅ ~~Implement database migrations using Entity Framework Core~~ **COMPLETED**
+2. Create API controllers for CRUD operations
+3. Implement real-time tracking with SignalR
 4. Set up event producers/consumers for real-time updates
+5. Build frontend integration for container tracking dashboard
