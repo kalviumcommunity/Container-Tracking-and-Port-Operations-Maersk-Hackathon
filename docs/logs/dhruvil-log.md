@@ -12,3 +12,13 @@ Today I:
 - Updated the project README.md to reference the documentation
 - Worked on setting up Azure Student account for future deployment
 - Created appropriate project structure with backend, frontend and docs folders
+
+## September 29, 2025
+
+Today I:
+
+- Installed and configured PostgreSQL for the project environment.  
+- Designed and added the database schema, including tables, relationships, and constraints.  
+- Migrated the schema to the database to ensure proper table structure.  
+- Seeded initial data for testing and development purposes.  
+- Verified data integrity and relationships to ensure smooth application integration.
