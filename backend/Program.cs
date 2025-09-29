@@ -24,7 +24,7 @@ var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5433";
 var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "ContainerTrackingDB";
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
-var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "Welcome123";
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "yourpassword";
 
 // Build connection string from environment variables
 connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
