@@ -74,18 +74,20 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// Add DbContext
+// Add DbContext - Connect directly to ContainerTrackingDB (no postgres dependency)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Override with environment variables if they exist
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
-var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5433";
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
 var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "ContainerTrackingDB";
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new InvalidOperationException("DB_PASSWORD environment variable is not set.");
 
-// Build connection string from environment variables
+// Build connection string - only connect to ContainerTrackingDB
 connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
+
+Console.WriteLine($"Connecting to database: {dbName} on {dbHost}:{dbPort}");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
