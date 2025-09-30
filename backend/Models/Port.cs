@@ -37,5 +37,10 @@ namespace Backend.Models
         /// The berths within this port
         /// </summary>
         public ICollection<Berth> Berths { get; set; }
+        
+        /// <summary>
+        /// Users assigned to manage this specific port
+        /// </summary>
+        public ICollection<User> AssignedUsers { get; set; } = new List<User>();
     }
 }

@@ -47,6 +47,31 @@ namespace Backend.Data
         public DbSet<ShipContainer> ShipContainers { get; set; }
 
         /// <summary>
+        /// Users in the database
+        /// </summary>
+        public DbSet<User> Users { get; set; }
+        
+        /// <summary>
+        /// Roles in the database
+        /// </summary>
+        public DbSet<Role> Roles { get; set; }
+        
+        /// <summary>
+        /// User role assignments in the database
+        /// </summary>
+        public DbSet<UserRole> UserRoles { get; set; }
+        
+        /// <summary>
+        /// Permissions in the database
+        /// </summary>
+        public DbSet<Permission> Permissions { get; set; }
+        
+        /// <summary>
+        /// Role permission assignments in the database
+        /// </summary>
+        public DbSet<RolePermission> RolePermissions { get; set; }
+
+        /// <summary>
         /// Configure entity relationships and constraints
         /// </summary>
         /// <param name="modelBuilder">Model builder for configuring the database</param>
@@ -106,6 +131,83 @@ namespace Backend.Data
             modelBuilder.Entity<Ship>().HasIndex(s => s.Name);
             modelBuilder.Entity<Berth>().HasIndex(b => new { b.PortId, b.Name });
             modelBuilder.Entity<BerthAssignment>().HasIndex(ba => new { ba.ContainerId, ba.BerthId });
+
+            // Authentication and Authorization model configurations
+            
+            // Configure User entity
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
+                
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+                
+            // Configure User-Port relationship (optional port assignment)
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Port)
+                .WithMany(p => p.AssignedUsers)
+                .HasForeignKey(u => u.PortId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure Role entity
+            modelBuilder.Entity<Role>()
+                .HasIndex(r => r.Name)
+                .IsUnique();
+
+            // Configure Permission entity
+            modelBuilder.Entity<Permission>()
+                .HasIndex(p => p.Name)
+                .IsUnique();
+
+            // Configure UserRole many-to-many relationship
+            modelBuilder.Entity<UserRole>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
+                
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            // Configure UserRole self-reference for AssignedByUser
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(ur => ur.AssignedByUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure RolePermission many-to-many relationship
+            modelBuilder.Entity<RolePermission>()
+                .HasKey(rp => new { rp.RoleId, rp.PermissionId });
+                
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(rp => rp.Role)
+                .WithMany(r => r.RolePermissions)
+                .HasForeignKey(rp => rp.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(rp => rp.Permission)
+                .WithMany(p => p.RolePermissions)
+                .HasForeignKey(rp => rp.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            // Configure RolePermission self-reference for GrantedByUser
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(rp => rp.GrantedByUser)
+                .WithMany()
+                .HasForeignKey(rp => rp.GrantedByUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

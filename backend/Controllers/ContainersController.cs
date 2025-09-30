@@ -1,0 +1,192 @@
+using Backend.DTOs;
+using Backend.Models;
+using Backend.Services;
+using Backend.Attributes;
+using Backend.Constants;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace Backend.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class ContainersController : ControllerBase
+    {
+        private readonly IContainerService _containerService;
+
+        public ContainersController(IContainerService containerService)
+        {
+            _containerService = containerService;
+        }
+
+        /// <summary>
+        /// Gets all containers
+        /// </summary>
+        /// <returns>All containers</returns>
+        [HttpGet]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContainerDto>>), 200)]
+        public async Task<IActionResult> GetAllContainers()
+        {
+            var containers = await _containerService.GetAllAsync();
+            return Ok(ApiResponse<IEnumerable<ContainerDto>>.Ok(containers));
+        }
+
+        /// <summary>
+        /// Gets a container by ID
+        /// </summary>
+        /// <param name="id">The ID of the container</param>
+        /// <returns>The container</returns>
+        [HttpGet("{id}")]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        public async Task<IActionResult> GetContainer(string id)
+        {
+            var container = await _containerService.GetByIdAsync(id);
+            if (container == null)
+            {
+                return NotFound(ApiResponse<object>.Fail($"Container with ID {id} not found"));
+            }
+            
+            return Ok(ApiResponse<ContainerDto>.Ok(container));
+        }
+        
+        /// <summary>
+        /// Gets detailed information about a container
+        /// </summary>
+        /// <param name="id">The ID of the container</param>
+        /// <returns>The container with detailed information</returns>
+        [HttpGet("{id}/details")]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<ContainerDetailDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        public async Task<IActionResult> GetContainerDetails(string id)
+        {
+            var container = await _containerService.GetContainerDetailAsync(id);
+            if (container == null)
+            {
+                return NotFound(ApiResponse<object>.Fail($"Container with ID {id} not found"));
+            }
+            
+            return Ok(ApiResponse<ContainerDetailDto>.Ok(container));
+        }
+        
+        /// <summary>
+        /// Gets containers by location
+        /// </summary>
+        /// <param name="location">The location to filter by</param>
+        /// <returns>Containers at the specified location</returns>
+        [HttpGet("location/{location}")]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContainerDto>>), 200)]
+        public async Task<IActionResult> GetContainersByLocation(string location)
+        {
+            var containers = await _containerService.GetByLocationAsync(location);
+            return Ok(ApiResponse<IEnumerable<ContainerDto>>.Ok(containers));
+        }
+        
+        /// <summary>
+        /// Gets containers by status
+        /// </summary>
+        /// <param name="status">The status to filter by</param>
+        /// <returns>Containers with the specified status</returns>
+        [HttpGet("status/{status}")]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContainerDto>>), 200)]
+        public async Task<IActionResult> GetContainersByStatus(string status)
+        {
+            var containers = await _containerService.GetByStatusAsync(status);
+            return Ok(ApiResponse<IEnumerable<ContainerDto>>.Ok(containers));
+        }
+        
+        /// <summary>
+        /// Gets containers by ship
+        /// </summary>
+        /// <param name="shipId">The ID of the ship</param>
+        /// <returns>Containers on the specified ship</returns>
+        [HttpGet("ship/{shipId}")]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContainerDto>>), 200)]
+        public async Task<IActionResult> GetContainersByShipId(int shipId)
+        {
+            var containers = await _containerService.GetByShipIdAsync(shipId);
+            return Ok(ApiResponse<IEnumerable<ContainerDto>>.Ok(containers));
+        }
+        
+        /// <summary>
+        /// Creates a new container
+        /// </summary>
+        /// <param name="createDto">Container data</param>
+        /// <returns>The created container</returns>
+        [HttpPost]
+        [RequirePermission("ManageContainers")]
+        [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 201)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        public async Task<IActionResult> CreateContainer([FromBody] ContainerCreateUpdateDto createDto)
+        {
+            try
+            {
+                var container = await _containerService.CreateAsync(createDto);
+                return CreatedAtAction(nameof(GetContainer), new { id = container.ContainerId }, 
+                    ApiResponse<ContainerDto>.Ok(container));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+        
+        /// <summary>
+        /// Updates a container
+        /// </summary>
+        /// <param name="id">The ID of the container to update</param>
+        /// <param name="updateDto">Updated container data</param>
+        /// <returns>The updated container</returns>
+        [HttpPut("{id}")]
+        [RequirePermission("ManageContainers")]
+        [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        public async Task<IActionResult> UpdateContainer(string id, [FromBody] ContainerCreateUpdateDto updateDto)
+        {
+            try
+            {
+                var container = await _containerService.UpdateAsync(id, updateDto);
+                return Ok(ApiResponse<ContainerDto>.Ok(container));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+        
+        /// <summary>
+        /// Deletes a container
+        /// </summary>
+        /// <param name="id">The ID of the container to delete</param>
+        /// <returns>Success message</returns>
+        [HttpDelete("{id}")]
+        [RequirePermission("ManageContainers")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        public async Task<IActionResult> DeleteContainer(string id)
+        {
+            var result = await _containerService.DeleteAsync(id);
+            if (!result)
+            {
+                return NotFound(ApiResponse<object>.Fail($"Container with ID {id} not found"));
+            }
+            
+            return Ok(ApiResponse<object>.OkWithMessage($"Container with ID {id} deleted successfully"));
+        }
+    }
+}
