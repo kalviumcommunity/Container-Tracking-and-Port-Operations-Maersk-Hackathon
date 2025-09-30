@@ -348,6 +348,194 @@ ORDER BY sc."LoadedAt" DESC;
 - Separate appsettings files for Development/Production
 - CORS policies configured for different environments
 
+## Authentication & Authorization Entities
+
+### 7. User Entity
+Represents user accounts with role-based access control.
+
+**Table Name:** `Users`
+
+**Attributes:**
+- `UserId`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `Username`: VARCHAR(50) NOT NULL UNIQUE (Unique username for login)
+- `Email`: VARCHAR(100) NOT NULL UNIQUE (Email address for notifications)
+- `PasswordHash`: TEXT NOT NULL (SHA256 hashed password)
+- `FullName`: VARCHAR(100) NOT NULL (Display name)
+- `PhoneNumber`: VARCHAR(20) NULLABLE (Contact number)
+- `Department`: VARCHAR(100) NULLABLE (User's department)
+- `PortId`: INT NULLABLE (Optional port assignment)
+- `IsActive`: BOOLEAN NOT NULL (Account status)
+- `CreatedAt`: TIMESTAMPTZ NOT NULL (Account creation date)
+- `UpdatedAt`: TIMESTAMPTZ NOT NULL (Last modification date)
+- `LastLoginAt`: TIMESTAMPTZ NULLABLE (Last login timestamp)
+
+**C# Model Properties:**
+```csharp
+public int UserId { get; set; }
+public string Username { get; set; }
+public string Email { get; set; }
+public string PasswordHash { get; set; }
+public string FullName { get; set; }
+public string? PhoneNumber { get; set; }
+public string? Department { get; set; }
+public int? PortId { get; set; }
+public bool IsActive { get; set; }
+public DateTime CreatedAt { get; set; }
+public DateTime UpdatedAt { get; set; }
+public DateTime? LastLoginAt { get; set; }
+
+// Navigation Properties
+public Port? Port { get; set; }
+public ICollection<UserRole> UserRoles { get; set; }
+```
+
+**Relationships:**
+- Optional relationship with Port (Many Users to One Port)
+- Many-to-Many relationship with Roles via UserRoles
+
+### 8. Role Entity
+Represents system roles with different permission levels.
+
+**Table Name:** `Roles`
+
+**Attributes:**
+- `RoleId`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `Name`: VARCHAR(50) NOT NULL UNIQUE (Role name: Admin, PortManager, Operator, Viewer)
+- `Description`: VARCHAR(200) NOT NULL (Role description)
+- `IsSystemRole`: BOOLEAN NOT NULL (Cannot be deleted if true)
+- `CreatedAt`: TIMESTAMPTZ NOT NULL (Role creation date)
+
+**C# Model Properties:**
+```csharp
+public int RoleId { get; set; }
+public string Name { get; set; }
+public string Description { get; set; }
+public bool IsSystemRole { get; set; }
+public DateTime CreatedAt { get; set; }
+
+// Navigation Properties
+public ICollection<UserRole> UserRoles { get; set; }
+public ICollection<RolePermission> RolePermissions { get; set; }
+```
+
+**Default Roles:**
+- **Admin**: Full system access, user management
+- **PortManager**: Manage specific port operations
+- **Operator**: Day-to-day container and ship operations
+- **Viewer**: Read-only access to data
+
+### 9. Permission Entity
+Represents granular permissions for system operations.
+
+**Table Name:** `Permissions`
+
+**Attributes:**
+- `PermissionId`: INT PRIMARY KEY (Auto-incrementing unique identifier)
+- `Name`: VARCHAR(100) NOT NULL UNIQUE (Permission name)
+- `Description`: VARCHAR(200) NOT NULL (Permission description)
+- `Category`: VARCHAR(50) NOT NULL (Permission category: System, Port, Container, Ship, etc.)
+- `IsSystemPermission`: BOOLEAN NOT NULL (Cannot be deleted if true)
+- `CreatedAt`: TIMESTAMPTZ NOT NULL (Permission creation date)
+
+**C# Model Properties:**
+```csharp
+public int PermissionId { get; set; }
+public string Name { get; set; }
+public string Description { get; set; }
+public string Category { get; set; }
+public bool IsSystemPermission { get; set; }
+public DateTime CreatedAt { get; set; }
+
+// Navigation Properties
+public ICollection<RolePermission> RolePermissions { get; set; }
+```
+
+**Permission Categories:**
+- **System**: GlobalPortAccess, ManageAllPorts, ManageUsers, ManageRoles
+- **Port**: ManagePortDetails, ViewPortDetails, ViewPortReports
+- **Container**: ManageContainers, ViewContainers, TrackContainers
+- **Ship**: ManageShips, ViewShips, ScheduleShips
+- **Cargo**: ManageCargo, ViewCargo
+- **Berth**: ManageBerths, ViewBerths, AllocateBerths
+- **Equipment**: ManageEquipment, ViewEquipment
+
+### 10. UserRole Entity (Junction Table)
+Links users to their assigned roles.
+
+**Table Name:** `UserRoles`
+
+**Attributes:**
+- `UserId`: INT NOT NULL (Foreign Key to Users)
+- `RoleId`: INT NOT NULL (Foreign Key to Roles)
+- `AssignedAt`: TIMESTAMPTZ NOT NULL (Role assignment date)
+- `AssignedByUserId`: INT NULLABLE (User who assigned the role)
+- `IsActive`: BOOLEAN NOT NULL (Role assignment status)
+
+**C# Model Properties:**
+```csharp
+public int UserId { get; set; }
+public int RoleId { get; set; }
+public DateTime AssignedAt { get; set; }
+public int? AssignedByUserId { get; set; }
+public bool IsActive { get; set; }
+
+// Navigation Properties
+public User User { get; set; }
+public Role Role { get; set; }
+public User? AssignedBy { get; set; }
+```
+
+**Composite Primary Key:** (`UserId`, `RoleId`)
+
+### 11. RolePermission Entity (Junction Table)
+Links roles to their granted permissions.
+
+**Table Name:** `RolePermissions`
+
+**Attributes:**
+- `RoleId`: INT NOT NULL (Foreign Key to Roles)
+- `PermissionId`: INT NOT NULL (Foreign Key to Permissions)
+- `GrantedAt`: TIMESTAMPTZ NOT NULL (Permission grant date)
+- `GrantedByUserId`: INT NULLABLE (User who granted the permission)
+
+**C# Model Properties:**
+```csharp
+public int RoleId { get; set; }
+public int PermissionId { get; set; }
+public DateTime GrantedAt { get; set; }
+public int? GrantedByUserId { get; set; }
+
+// Navigation Properties
+public Role Role { get; set; }
+public Permission Permission { get; set; }
+public User? GrantedBy { get; set; }
+```
+
+**Composite Primary Key:** (`RoleId`, `PermissionId`)
+
+## Updated Security Model
+
+### Authentication Flow
+1. User logs in with username/password
+2. System validates credentials and generates JWT token
+3. Token contains user ID, roles, and permissions as claims
+4. Subsequent API requests include JWT token in Authorization header
+5. Custom authorization attributes validate permissions/roles
+
+### Authorization Levels
+1. **Public**: No authentication required
+2. **Authenticated**: Valid JWT token required
+3. **Permission-Based**: Specific permissions required (e.g., `ManageContainers`)
+4. **Role-Based**: Specific roles required (e.g., `Admin`, `PortManager`)
+5. **Port-Specific**: Access limited to assigned port
+6. **Resource Ownership**: User can only access their own resources
+
+### Default Admin Account
+- **Username**: `admin`
+- **Password**: `Admin123!` (should be changed on first login)
+- **Role**: Admin with all permissions
+- **Created during**: Database seeding process
+
 ## ERD Diagram
 
 ![ER & Workflow Diagram](https://i.postimg.cc/mZ592xMT/Screenshot-2025-09-27-152440.png)
