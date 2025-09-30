@@ -60,7 +60,8 @@ namespace Backend.Controllers
         /// <param name="containerId">The container ID</param>
         /// <returns>Assignments for the specified container</returns>
         [HttpGet("container/{containerId}")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)]
+        [RequirePermission("ViewBerthAssignments")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)] /// 
         public async Task<IActionResult> GetAssignmentsByContainer(string containerId)
         {
             var assignments = await _berthAssignmentService.GetByContainerIdAsync(containerId);
@@ -73,6 +74,7 @@ namespace Backend.Controllers
         /// <param name="berthId">The berth ID</param>
         /// <returns>Assignments for the specified berth</returns>
         [HttpGet("berth/{berthId}")]
+        [RequirePermission("ViewBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)]
         public async Task<IActionResult> GetAssignmentsByBerth(int berthId)
         {
@@ -85,6 +87,7 @@ namespace Backend.Controllers
         /// </summary>
         /// <returns>All active assignments</returns>
         [HttpGet("active")]
+        [RequirePermission("ViewBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)]
         public async Task<IActionResult> GetActiveAssignments()
         {
@@ -99,6 +102,7 @@ namespace Backend.Controllers
         /// <param name="endDate">The end date (yyyy-MM-dd format)</param>
         /// <returns>Assignments within the specified date range</returns>
         [HttpGet("daterange")]
+        [RequirePermission("ViewBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> GetAssignmentsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
@@ -120,6 +124,7 @@ namespace Backend.Controllers
         /// <param name="createDto">Berth assignment data</param>
         /// <returns>The created berth assignment</returns>
         [HttpPost]
+        [RequirePermission("ManageBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<BerthAssignmentDto>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> CreateBerthAssignment([FromBody] BerthAssignmentCreateUpdateDto createDto)
@@ -143,6 +148,7 @@ namespace Backend.Controllers
         /// <param name="updateDto">Updated berth assignment data</param>
         /// <returns>The updated berth assignment</returns>
         [HttpPut("{id}")]
+        [RequirePermission("ManageBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<BerthAssignmentDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
@@ -169,6 +175,7 @@ namespace Backend.Controllers
         /// <param name="id">The ID of the assignment to release</param>
         /// <returns>The updated assignment</returns>
         [HttpPut("{id}/release")]
+        [RequirePermission("ManageBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<BerthAssignmentDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
@@ -199,6 +206,7 @@ namespace Backend.Controllers
         /// <param name="id">The ID of the berth assignment to delete</param>
         /// <returns>Success message</returns>
         [HttpDelete("{id}")]
+        [RequirePermission("ManageBerthAssignments")]
         [ProducesResponseType(typeof(ApiResponse<object>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         public async Task<IActionResult> DeleteBerthAssignment(int id)

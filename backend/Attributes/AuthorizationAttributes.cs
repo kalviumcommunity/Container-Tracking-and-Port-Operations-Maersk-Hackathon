@@ -347,6 +347,14 @@ namespace Backend.Constants
         public const string ViewBerths = "ViewBerths";
         public const string AllocateBerths = "AllocateBerths";
 
+        // Berth Assignment permissions
+        public const string ManageBerthAssignments = "ManageBerthAssignments";
+        public const string ViewBerthAssignments = "ViewBerthAssignments";
+
+        // Port permissions
+        public const string ManagePorts = "ManagePorts";
+        public const string ViewPorts = "ViewPorts";
+
         // Equipment permissions
         public const string ManageEquipment = "ManageEquipment";
         public const string ViewEquipment = "ViewEquipment";
@@ -359,6 +367,8 @@ namespace Backend.Constants
             ManageShips, ViewShips, ScheduleShips,
             ManageCargo, ViewCargo,
             ManageBerths, ViewBerths, AllocateBerths,
+            ManageBerthAssignments, ViewBerthAssignments,
+            ManagePorts, ViewPorts,
             ManageEquipment, ViewEquipment
         };
     }
