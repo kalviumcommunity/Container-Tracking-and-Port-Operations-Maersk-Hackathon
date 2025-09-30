@@ -24,3 +24,11 @@ Thumbs.db
 # Database
 *.db
 *.sqlite
+
+# folder
+Design-reference
+
+backend/node_modules
+frontend/node_modules
+
+.env

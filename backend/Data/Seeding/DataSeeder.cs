@@ -14,9 +14,11 @@ namespace Backend.Data.Seeding
         /// <param name="context">The database context</param>
         public static async Task SeedAsync(ApplicationDbContext context)
         {
-            // Ensure the database is created
-            await context.Database.EnsureCreatedAsync();
-
+            // Skip database creation - assume ContainerTrackingDB already exists
+            // Only seed data if tables are empty
+            
+            Console.WriteLine("Connecting to existing ContainerTrackingDB...");
+            
             // Check if we need to seed each entity type separately
             await SeedPorts(context);
             await SeedBerths(context);
