@@ -1,38 +1,33 @@
 <template>
   <div class="min-h-screen bg-slate-50">
-    <!-- Modern Header Section -->
-    <header class="bg-white shadow-sm border-b border-slate-200">
-      <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-blue-600 rounded-xl shadow-lg">
-              <Ship :size="28" class="text-white" />
-            </div>
-            <div>
-              <h1 class="text-3xl font-bold text-slate-900">Port Operations Dashboard</h1>
-              <p class="text-slate-600 mt-1">Port Terminal - Real-time Operations</p>
-            </div>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="p-3 bg-blue-600 rounded-xl shadow-lg">
+            <Ship :size="28" class="text-white" />
           </div>
-          <div class="flex items-center gap-6 text-sm text-slate-600">
-            <div class="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg">
-              <Globe :size="16" class="text-blue-600" />
-              <span class="font-medium">Chennai Port</span>
-            </div>
-            <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
-              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span class="text-green-700 font-medium">Live</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <Clock :size="16" />
-              <span>{{ currentTime }}</span>
-            </div>
+          <div>
+            <h1 class="text-3xl font-bold text-slate-900">Port Operations Dashboard</h1>
+            <p class="text-slate-600 mt-1">Port Terminal - Real-time Operations</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-6 text-sm text-slate-600">
+          <div class="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg">
+            <Globe :size="16" class="text-blue-600" />
+            <span class="font-medium">Chennai Port</span>
+          </div>
+          <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span class="text-green-700 font-medium">Live</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <Clock :size="16" />
+            <span>{{ currentTime }}</span>
           </div>
         </div>
       </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-6 py-8">
       <!-- Key Metrics Grid -->
       <section class="mb-12">
         <div class="mb-8">
