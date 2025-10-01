@@ -61,7 +61,7 @@ namespace Backend.Controllers
         /// <returns>Assignments for the specified container</returns>
         [HttpGet("container/{containerId}")]
         [RequirePermission("ViewBerthAssignments")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)] /// 
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthAssignmentDto>>), 200)] 
         public async Task<IActionResult> GetAssignmentsByContainer(string containerId)
         {
             var assignments = await _berthAssignmentService.GetByContainerIdAsync(containerId);

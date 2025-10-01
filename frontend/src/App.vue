@@ -1,13 +1,12 @@
 <script setup>
 import { RouterView } from 'vue-router'
-// import Dashboard from './components/Dashboard.vue'
+import Navbar from './components/Navbar.vue'
 </script>
-
 
 <template>
   <div id="app">
+    <Navbar />
     <RouterView />
-    <!-- <Dashboard /> -->
   </div>
 </template>
 
