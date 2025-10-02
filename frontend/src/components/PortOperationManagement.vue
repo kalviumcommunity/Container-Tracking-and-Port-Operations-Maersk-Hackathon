@@ -237,13 +237,19 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h3 class="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
           <div class="flex flex-wrap gap-3">
-            <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2">
+            <button 
+              @click="showBerthAssignmentForm = true"
+              class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+            >
               <Plus :size="16" />
               Assign Container to Berth
             </button>
-            <button class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2">
+            <button 
+              @click="showBerthForm = true"
+              class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2"
+            >
               <Settings :size="16" />
-              Schedule Maintenance
+              Add New Berth
             </button>
             <button class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2">
               <FileText :size="16" />
@@ -257,11 +263,37 @@
         </div>
       </section>
     </main>
+
+    <!-- Berth Assignment Form Modal -->
+    <div v-if="showBerthAssignmentForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+        <BerthAssignmentForm 
+          :assignment="selectedAssignment"
+          :isEditing="isEditingAssignment"
+          @submit="handleAssignmentSubmit"
+          @cancel="closeBerthAssignmentForm"
+        />
+      </div>
+    </div>
+
+    <!-- Berth Form Modal -->
+    <div v-if="showBerthForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+        <BerthForm 
+          :berth="selectedBerth"
+          :isEditing="isEditingBerth"
+          @submit="handleBerthSubmit"
+          @cancel="closeBerthForm"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import BerthForm from '../forms/BerthForm.vue';
+import BerthAssignmentForm from '../forms/BerthAssignmentForm.vue';
 import { 
   Anchor, 
   Activity, 
@@ -309,6 +341,65 @@ const operations = ref<Operation[]>([
   { id: "OP-003", type: "Inspection", vessel: "MV Sea Breeze", progress: 90, eta: "30 min", priority: "High" },
   { id: "OP-004", type: "Refueling", vessel: "MV Atlantic", progress: 60, eta: "1.5 hours", priority: "Low" },
 ]);
+
+// Form state management
+const showBerthForm = ref(false);
+const selectedBerth = ref(null);
+const isEditingBerth = ref(false);
+
+const showBerthAssignmentForm = ref(false);
+const selectedAssignment = ref(null);
+const isEditingAssignment = ref(false);
+
+// Form handlers
+const handleBerthSubmit = (berthData: any) => {
+  if (isEditingBerth.value) {
+    // Update existing berth
+    const index = berths.value.findIndex(b => b.id === berthData.berthNumber);
+    if (index !== -1) {
+      berths.value[index] = {
+        id: berthData.berthNumber,
+        status: berthData.status,
+        container: null,
+        ship: null,
+        capacity: "0%"
+      };
+    }
+  } else {
+    // Add new berth
+    berths.value.push({
+      id: berthData.berthNumber,
+      status: berthData.status,
+      container: null,
+      ship: null,
+      capacity: "0%"
+    });
+  }
+  closeBerthForm();
+};
+
+const closeBerthForm = () => {
+  showBerthForm.value = false;
+  selectedBerth.value = null;
+  isEditingBerth.value = false;
+};
+
+const handleAssignmentSubmit = (assignmentData: any) => {
+  // Update berth status to occupied
+  const berth = berths.value.find(b => b.id === assignmentData.berthId);
+  if (berth) {
+    berth.status = "Occupied";
+    berth.container = `CTR-${Date.now()}`;
+    berth.capacity = "75%";
+  }
+  closeBerthAssignmentForm();
+};
+
+const closeBerthAssignmentForm = () => {
+  showBerthAssignmentForm.value = false;
+  selectedAssignment.value = null;
+  isEditingAssignment.value = false;
+};
 
 const getBerthStatusColor = (status: string): string => {
   const statusColors = {
