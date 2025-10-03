@@ -83,19 +83,41 @@ var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
 var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "ContainerTrackingDB";
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new InvalidOperationException("DB_PASSWORD environment variable is not set.");
+var dbSslMode = Environment.GetEnvironmentVariable("DB_SSL_MODE") ?? "Prefer";
 
-// Build connection string - only connect to ContainerTrackingDB
-connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
+// Build connection string with secure SSL support for Azure (removed Trust Server Certificate=true)
+connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={dbSslMode}";
 
-Console.WriteLine($"Connecting to database: {dbName} on {dbHost}:{dbPort}");
+Console.WriteLine($"Connecting to database: {dbName} on {dbHost}:{dbPort} with SSL Mode={dbSslMode}");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Add JWT Configuration
-var jwtKey = builder.Configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("JWT_KEY is not configured");
+var jwtKeyFromConfig = builder.Configuration["Jwt:Key"];
+var jwtKeyFromEnv = Environment.GetEnvironmentVariable("JWT_KEY");
+
+// Use environment variable if config key is null or empty
+var jwtKey = string.IsNullOrEmpty(jwtKeyFromConfig) ? jwtKeyFromEnv : jwtKeyFromConfig;
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("JWT_KEY is not configured in either appsettings.json or environment variables");
+}
+
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "ContainerTrackingAPI";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "ContainerTrackingClients";
+
+// Convert Base64 JWT key to bytes
+byte[] jwtKeyBytes;
+try
+{
+    jwtKeyBytes = Convert.FromBase64String(jwtKey);
+}
+catch (FormatException)
+{
+    // If it's not Base64, treat as regular string (for backward compatibility)
+    jwtKeyBytes = Encoding.UTF8.GetBytes(jwtKey);
+}
 
 builder.Configuration["Jwt:Key"] = jwtKey;
 builder.Configuration["Jwt:Issuer"] = jwtIssuer;
@@ -116,7 +138,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(jwtKeyBytes),
         ValidateIssuer = true,
         ValidIssuer = jwtIssuer,
         ValidateAudience = true,

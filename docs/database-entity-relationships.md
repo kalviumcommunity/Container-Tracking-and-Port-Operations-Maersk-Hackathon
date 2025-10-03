@@ -8,7 +8,106 @@ September 29, 2025 (Updated)
 
 ## Overview
 
-This document outlines the key database entities, their attributes, and relationships for the Container Tracking & Port Operations System. The database is implemented using PostgreSQL with Entity Framework Core and follows C# naming conventions. The system supports comprehensive container tracking, berth management, and port operations with full environment variable configuration and extensive test data seeding.
+This document outlines the key database entities, their attributes, and relationships for the Container Tracking & Port Operations System. The database is implemented using **Azure PostgreSQL Flexible Server** with Entity Framework Core 9.0.9 and follows C# naming conventions. The system supports comprehensive container tracking, berth management, and port operations with full JWT authentication and extensive seeding (25 ports, 60+ ships, 300 containers).
+
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    Port ||--o{ Berth : "has many"
+    Port ||--o{ User : "assigned to"
+    Berth ||--o{ BerthAssignment : "has assignments"
+    Container ||--o{ BerthAssignment : "assigned to berths"
+    Ship ||--o{ Container : "carries"
+    Ship ||--o{ ShipContainer : "loading operations"
+    Container ||--o{ ShipContainer : "loaded on ships"
+    User ||--o{ UserRole : "has roles"
+    Role ||--o{ UserRole : "assigned to users"
+    Role ||--o{ RolePermission : "has permissions"
+    Permission ||--o{ RolePermission : "granted to roles"
+    
+    Port {
+        int PortId PK
+        text Name
+        text Location
+        int TotalContainerCapacity
+    }
+    
+    Berth {
+        int BerthId PK
+        int PortId FK
+        text Name
+        int Capacity
+        varchar Status
+    }
+    
+    Container {
+        int ContainerId PK
+        text ContainerNumber
+        varchar Status
+        varchar Type
+        int ShipId FK
+        text CargoType
+        decimal Weight
+    }
+    
+    Ship {
+        int ShipId PK
+        text Name
+        varchar Status
+        int Capacity
+    }
+    
+    BerthAssignment {
+        int BerthAssignmentId PK
+        int BerthId FK
+        int ContainerId FK
+        datetime AssignedAt
+        datetime ReleasedAt
+    }
+    
+    ShipContainer {
+        int ShipContainerId PK
+        int ShipId FK
+        int ContainerId FK
+        datetime LoadedAt
+        varchar LoadStatus
+    }
+    
+    User {
+        int UserId PK
+        text Username
+        text Email
+        text PasswordHash
+        text FullName
+        int PortId FK
+        boolean IsActive
+    }
+    
+    Role {
+        int RoleId PK
+        text RoleName
+        text Description
+    }
+    
+    Permission {
+        int PermissionId PK
+        text PermissionName
+        text Description
+    }
+    
+    UserRole {
+        int UserRoleId PK
+        int UserId FK
+        int RoleId FK
+    }
+    
+    RolePermission {
+        int RolePermissionId PK
+        int RoleId FK
+        int PermissionId FK
+    }
+```
 
 ## Core Database Entities
 
@@ -33,9 +132,12 @@ public ICollection<Berth> Berths { get; set; }
 ```
 
 **Sample Data:**
-- Port of Copenhagen (Denmark) - 10,000 capacity
-- Port of Rotterdam (Netherlands) - 15,000 capacity
-- Port of Hamburg (Germany) - 12,000 capacity
+- **25 Major World Ports:**
+  - Europe: Copenhagen, Rotterdam, Hamburg, Antwerp, Valencia, Genoa, Southampton, Le Havre
+  - Asia: Shanghai, Singapore, Busan, Hong Kong, Tokyo, Kaohsiung
+  - Americas: Los Angeles, Long Beach, New York, Miami, Vancouver, Santos
+  - Middle East/Africa: Dubai, Suez, Durban, Jeddah
+- **Capacity Range:** 5,000 - 35,000 containers per port
 
 **Relationships:**
 - Has many Berths (One Port to Many Berths)
@@ -93,9 +195,13 @@ public ICollection<ShipContainer> ShipContainers { get; set; }
 ```
 
 **Sample Data:**
-- Maersk Edinburgh, MSC Gulsun, Ever Given
-- COSCO Shipping Universe, HMM Algeciras
-- Real shipping vessel names with various statuses
+- **60+ Ships from Major Shipping Lines:**
+  - Maersk Fleet: Maersk Edinburgh, Madrid Maersk, Maersk Honam
+  - MSC Fleet: MSC Gulsun, MSC Oscar, MSC Maya
+  - COSCO Fleet: COSCO Shipping Universe, COSCO Shipping Aries
+  - Evergreen Fleet: Ever Given, Ever Ace, Ever Globe
+  - Other Lines: HMM Algeciras, OOCL Hong Kong, CMA CGM Antoine De Saint Exupery
+- **Statuses:** Docked, At Sea, Loading, Unloading, Maintenance
 
 **Relationships:**
 - Has many Containers assigned (One Ship to Many Containers)

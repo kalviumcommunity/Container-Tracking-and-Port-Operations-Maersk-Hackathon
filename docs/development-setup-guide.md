@@ -8,7 +8,14 @@ September 30, 2025
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up the development environment for the Container Tracking & Port Operations System. The backend API is fully implemented and ready for development and testing.
+This guide provides step-by-step instructions for setting up the development environment for the Container Tracking & Port Operations System. The backend API is fully implemented with JWT authentication, RBAC, and is deployed to **Azure PostgreSQL Flexible Server** for production use.
+
+### Current Deployment Status
+- ✅ **Backend API:** ASP.NET Core 8.0 with Entity Framework Core 9.0.9
+- ✅ **Database:** Azure PostgreSQL Flexible Server (container-tracking-db-server.postgres.database.azure.com)
+- ✅ **Authentication:** JWT-based RBAC with 4 roles and 21 permissions
+- ✅ **Data Seeding:** Enhanced seeding with 25 ports, 60+ ships, 300 containers
+- ✅ **Migrations:** 3 migrations applied (InitialCreate, UpdateSchemaToMatchDiagram, AddAuthenticationTables)
 
 ## Prerequisites
 
@@ -106,6 +113,37 @@ docker run --name postgres-container-tracking \
   -d postgres:13
 ```
 
+#### Option 3: Azure PostgreSQL (Production - Already Configured)
+
+The project is already configured to use Azure PostgreSQL Flexible Server:
+
+**Connection Details:**
+- **Server:** `container-tracking-db-server.postgres.database.azure.com`
+- **Database:** `container-tracking-db`
+- **SSL Mode:** Required (enforced for security)
+- **Port:** 5432
+
+**Environment Variables in `.env`:**
+```env
+DB_HOST=container-tracking-db-server.postgres.database.azure.com
+DB_PORT=5432
+DB_DATABASE=container-tracking-db
+DB_USER=your_azure_username
+DB_PASSWORD=your_azure_password
+DB_SSL_MODE=Require
+
+JWT_KEY=your_base64_encoded_jwt_secret
+JWT_ISSUER=ContainerTrackingAPI
+JWT_AUDIENCE=ContainerTrackingClient
+JWT_EXPIRE_HOURS=24
+```
+
+**To connect to Azure PostgreSQL:**
+1. Ensure your IP is whitelisted in Azure Firewall settings
+2. Use the `.env` configuration (already set up)
+3. Run migrations: `dotnet ef database update`
+4. Seed enhanced data: `.\seed-enhanced-data.ps1`
+
 ### Environment Configuration
 
 Create a `.env` file in the backend directory:
@@ -164,6 +202,69 @@ dotnet ef database update
 
 ## Project Structure
 
+```mermaid
+graph TD
+    subgraph "Backend (.NET 8.0)"
+        PROGRAM[Program.cs<br/>Entry Point]
+        
+        subgraph "Controllers"
+            AUTH_CTRL[AuthController]
+            CONT_CTRL[ContainersController]
+            SHIP_CTRL[ShipsController]
+            PORT_CTRL[PortsController]
+            BERTH_CTRL[BerthsController]
+            SEED_CTRL[SeedController]
+        end
+        
+        subgraph "Services"
+            AUTH_SVC[AuthService]
+            CONT_SVC[ContainerService]
+            SHIP_SVC[ShipService]
+        end
+        
+        subgraph "Data Layer"
+            CONTEXT[ApplicationDbContext]
+            SEEDER[DataSeeder]
+            ENH_SEEDER[EnhancedDataSeeder]
+        end
+        
+        subgraph "Models"
+            ENTITIES[Entity Models]
+            DTOS[DTOs]
+        end
+        
+        subgraph "Middleware"
+            JWT_MW[JWT Middleware]
+            ERROR_MW[Error Handling]
+        end
+    end
+    
+    PROGRAM --> JWT_MW
+    PROGRAM --> ERROR_MW
+    JWT_MW --> AUTH_CTRL
+    JWT_MW --> CONT_CTRL
+    JWT_MW --> SHIP_CTRL
+    
+    AUTH_CTRL --> AUTH_SVC
+    CONT_CTRL --> CONT_SVC
+    SHIP_CTRL --> SHIP_SVC
+    SEED_CTRL --> ENH_SEEDER
+    
+    AUTH_SVC --> CONTEXT
+    CONT_SVC --> CONTEXT
+    SHIP_SVC --> CONTEXT
+    ENH_SEEDER --> CONTEXT
+    SEEDER --> CONTEXT
+    
+    CONTEXT --> ENTITIES
+    ENTITIES --> DTOS
+    
+    style PROGRAM fill:#512bd4
+    style CONTEXT fill:#0078d4
+    style JWT_MW fill:#FF6B6B
+```
+
+### Folder Structure
 ```
 backend/
 ├── Controllers/           # API Controllers (6 complete endpoints)
@@ -172,9 +273,11 @@ backend/
 ├── Models/              # Entity Framework models
 ├── DTOs/                # Data transfer objects
 ├── Data/                # Database context and seeding
+│   └── Seeding/         # DataSeeder.cs, EnhancedDataSeeder.cs
 ├── Extensions/          # Service registration and middleware
 ├── Middleware/          # Custom middleware
 ├── appsettings.json     # Configuration file
+├── .env                 # Environment variables (Azure config)
 └── Program.cs           # Application entry point
 ```
 

@@ -14,11 +14,47 @@ This document outlines the high-level architecture of the Container Tracking & P
 
 The system follows a modern microservices-influenced architecture with clearly separated concerns between backend, frontend, and data streaming components.
 
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        VUE[Vue 3 Frontend<br/>Static Web App]
+    end
+    
+    subgraph "Backend Layer"
+        API[ASP.NET Core Web API<br/>.NET 8.0]
+        SIGNALR[SignalR Hub<br/>Real-time Updates]
+    end
+    
+    subgraph "Data Layer"
+        AZURE_DB[(Azure PostgreSQL<br/>Flexible Server)]
+    end
+    
+    subgraph "Event Streaming"
+        KAFKA[Kafka/Event Hubs<br/>Stream Processing]
+        EXTERNAL[External<br/>Event Sources]
+    end
+    
+    VUE -->|HTTP/REST| API
+    VUE -->|WebSocket| SIGNALR
+    API -->|EF Core| AZURE_DB
+    API -->|Produce Events| KAFKA
+    KAFKA -->|Consume Events| API
+    EXTERNAL -->|Events| KAFKA
+    SIGNALR -->|Push Updates| VUE
+    
+    style VUE fill:#42b983
+    style API fill:#512bd4
+    style AZURE_DB fill:#0078d4
+    style KAFKA fill:#231f20
+    style SIGNALR fill:#512bd4
+```
+
+### High-Level Architecture Diagram (ASCII)
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │                 │     │                 │     │                 │
-│  Vue 3 Frontend │◄────┤  ASP.NET Core   │◄────┤  PostgreSQL     │
-│  (Static Web)   │     │  Web API        │     │  Database       │
+│  Vue 3 Frontend │◄────┤  ASP.NET Core   │◄────┤ Azure PostgreSQL│
+│  (Static Web)   │     │  Web API        │     │  Flexible Server│
 │                 │     │                 │     │                 │
 └────────┬────────┘     └────────┬────────┘     └─────────────────┘
          │                       │
@@ -95,6 +131,30 @@ The system follows a modern microservices-influenced architecture with clearly s
 ## Data Flow
 
 ### Container Creation & Tracking Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Database
+    participant Kafka
+    participant SignalR
+    participant Clients
+    
+    User->>Frontend: Submit Container Data
+    Frontend->>API: POST /api/containers
+    API->>API: Validate Input
+    API->>Database: Create Container Record
+    Database-->>API: Confirm Creation
+    API->>Kafka: Produce "Container Created" Event
+    API->>SignalR: Notify Connected Clients
+    SignalR->>Clients: Push Real-time Update
+    API-->>Frontend: Return Container Details
+    Frontend-->>User: Display Success + Auto-update UI
+```
+
+**Step-by-Step Process:**
 1. User submits container data via frontend form
 2. Frontend sends POST request to API endpoint
 3. API validates input, creates container in database
@@ -104,6 +164,29 @@ The system follows a modern microservices-influenced architecture with clearly s
 7. Frontend automatically updates UI with new container data
 
 ### Container Status Update Flow
+
+```mermaid
+sequenceDiagram
+    participant External as External System
+    participant API
+    participant Database
+    participant Kafka
+    participant Consumer
+    participant SignalR
+    participant Clients
+    
+    External->>API: PUT /api/containers/{id}/status
+    API->>Database: Update Container Status
+    Database-->>API: Confirm Update
+    API->>Kafka: Produce "Status Changed" Event
+    Kafka->>Consumer: Process Event
+    Consumer->>Database: Update Related Entities
+    API->>SignalR: Push Status Change
+    SignalR->>Clients: Real-time Notification
+    API-->>External: Success Response
+```
+
+**Step-by-Step Process:**
 1. External system or user updates container status
 2. API receives status update via endpoint
 3. API updates container status in database
@@ -113,6 +196,36 @@ The system follows a modern microservices-influenced architecture with clearly s
 7. Frontend automatically updates UI with new status
 
 ### Berth Assignment Flow
+
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant Dashboard
+    participant API
+    participant Database
+    participant Kafka
+    participant SignalR
+    participant AllClients as All Connected Clients
+    
+    Operator->>Dashboard: View Available Berths
+    Dashboard->>API: GET /api/berths?status=Available
+    API->>Database: Query Available Berths
+    Database-->>API: Return Berth List
+    API-->>Dashboard: Display Available Berths
+    
+    Operator->>Dashboard: Assign Container to Berth
+    Dashboard->>API: POST /api/berths/assignments
+    API->>API: Validate Assignment
+    API->>Database: Create Assignment Record
+    Database-->>API: Confirm Creation
+    API->>Kafka: Produce "Container Assigned" Event
+    API->>SignalR: Notify All Clients
+    SignalR->>AllClients: Push Assignment Update
+    API-->>Dashboard: Success Response
+    Dashboard->>Dashboard: Auto-update Berth Map
+```
+
+**Step-by-Step Process:**
 1. Operator views available berths on dashboard
 2. Operator assigns container to berth via UI
 3. Frontend sends assignment request to API
@@ -123,13 +236,61 @@ The system follows a modern microservices-influenced architecture with clearly s
 
 ## Deployment Architecture
 
+```mermaid
+graph TB
+    subgraph "Azure Cloud Infrastructure"
+        subgraph "Frontend Hosting"
+            WEBAPP[Azure Static Web Apps<br/>Vue 3 SPA]
+        end
+        
+        subgraph "Backend Services"
+            APPSERVICE[Azure App Service<br/>ASP.NET Core API<br/>.NET 8.0]
+            SIGNALR_SVC[SignalR Service<br/>Real-time Hub]
+        end
+        
+        subgraph "Data & Storage"
+            AZURE_PSQL[(Azure PostgreSQL<br/>Flexible Server<br/>SSL Required)]
+        end
+        
+        subgraph "Messaging & Events"
+            EVENTHUB[Azure Event Hubs<br/>Kafka-compatible]
+        end
+        
+        subgraph "Security & Configuration"
+            KEYVAULT[Azure Key Vault<br/>Secrets Management]
+            AAD[Azure AD<br/>Authentication]
+        end
+        
+        subgraph "Monitoring"
+            APPINSIGHTS[Application Insights<br/>Telemetry & Logging]
+        end
+    end
+    
+    WEBAPP -->|HTTPS/REST| APPSERVICE
+    WEBAPP -->|WebSocket| SIGNALR_SVC
+    APPSERVICE -->|EF Core<br/>SSL Connection| AZURE_PSQL
+    APPSERVICE -->|Produce/Consume<br/>Events| EVENTHUB
+    APPSERVICE -->|Get Secrets| KEYVAULT
+    APPSERVICE -->|OAuth2/JWT| AAD
+    APPSERVICE -->|Telemetry| APPINSIGHTS
+    SIGNALR_SVC -->|Metrics| APPINSIGHTS
+    
+    style WEBAPP fill:#42b983
+    style APPSERVICE fill:#512bd4
+    style AZURE_PSQL fill:#0078d4
+    style EVENTHUB fill:#ffd700
+    style KEYVAULT fill:#00bcf2
+    style APPINSIGHTS fill:#68217a
+```
+
+### Azure Deployment Overview (ASCII)
 ```
 ┌────────────────────────────────────────────────┐
 │                Azure Cloud                     │
 │                                                │
 │  ┌───────────┐      ┌───────────┐      ┌────┐  │
 │  │ Static    │      │ App       │      │    │  │
-│  │ Web App   │─────▶│ Service   │─────▶│ DB│  │
+│  │ Web App   │─────▶│ Service   │─────▶│ DB │  │
 │  │ (Vue)     │      │ (API)     │      │    │  │
 │  └───────────┘      └───────────┘      └────┘  │
 │        │                   │                   │
@@ -140,6 +301,15 @@ The system follows a modern microservices-influenced architecture with clearly s
 │                      └─────────────┘           │
 └────────────────────────────────────────────────┘
 ```
+
+### Current Azure Infrastructure
+
+- **Database Server:** `container-tracking-db-server.postgres.database.azure.com`
+- **Database Name:** `container-tracking-db`
+- **SSL Mode:** Required (enforced)
+- **Connection:** Npgsql with Entity Framework Core 9.0.9
+- **Migrations Applied:** 3 (InitialCreate, UpdateSchemaToMatchDiagram, AddAuthenticationTables)
+- **Data Seeding:** Enhanced seeding with 25 ports, 60+ ships, 300 containers
 
 ## Development Environment
 

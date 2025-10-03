@@ -41,10 +41,20 @@ namespace Backend.Services
         public JwtService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _jwtKey = configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key configuration is missing");
-            _jwtIssuer = configuration["Jwt:Issuer"] ?? throw new ArgumentNullException("Jwt:Issuer configuration is missing");
-            _jwtAudience = configuration["Jwt:Audience"] ?? throw new ArgumentNullException("Jwt:Audience configuration is missing");
-            _jwtExpirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "60");
+            
+            // Get JWT key from configuration or environment variables
+            var jwtKeyFromConfig = configuration["Jwt:Key"];
+            var jwtKeyFromEnv = Environment.GetEnvironmentVariable("JWT_KEY");
+            _jwtKey = string.IsNullOrEmpty(jwtKeyFromConfig) ? jwtKeyFromEnv : jwtKeyFromConfig;
+            
+            if (string.IsNullOrEmpty(_jwtKey))
+            {
+                throw new ArgumentNullException("JWT_KEY is not configured in either appsettings.json or environment variables");
+            }
+            
+            _jwtIssuer = configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "ContainerTrackingAPI";
+            _jwtAudience = configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "ContainerTrackingClients";
+            _jwtExpirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? Environment.GetEnvironmentVariable("JWT_EXPIRATION_MINUTES") ?? "60");
         }
 
         /// <summary>
@@ -52,7 +62,22 @@ namespace Backend.Services
         /// </summary>
         public string GenerateToken(User user, List<string> roles, List<string> permissions)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
+            // Convert Base64 JWT key to bytes - enforce valid Base64
+            byte[] keyBytes;
+            try
+            {
+                keyBytes = Convert.FromBase64String(_jwtKey);
+            }
+            catch (FormatException ex)
+            {
+                // Security: Enforce that JWT key must be valid Base64
+                throw new InvalidOperationException(
+                    "JWT_KEY must be a valid Base64 string for security. " +
+                    "Generate one using: [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('your-secret-key'))", 
+                    ex);
+            }
+            
+            var key = new SymmetricSecurityKey(keyBytes);
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new List<Claim>
@@ -111,12 +136,26 @@ namespace Backend.Services
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_jwtKey);
+                
+                // Use Base64 decoded key for validation (same as generation)
+                byte[] keyBytes;
+                try
+                {
+                    keyBytes = Convert.FromBase64String(_jwtKey);
+                }
+                catch (FormatException ex)
+                {
+                    // Security: Enforce that JWT key must be valid Base64
+                    throw new InvalidOperationException(
+                        "JWT_KEY must be a valid Base64 string for security. " +
+                        "Generate one using: [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('your-secret-key'))", 
+                        ex);
+                }
 
                 var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
                     ValidateIssuer = true,
                     ValidIssuer = _jwtIssuer,
                     ValidateAudience = true,

@@ -6,6 +6,79 @@ The Container Tracking & Port Operations System implements a comprehensive **Rol
 
 ## Authentication Flow
 
+### JWT Authentication Process
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Database
+    participant JWTService
+    
+    User->>Frontend: Enter Credentials
+    Frontend->>API: POST /api/auth/login<br/>{username, password}
+    API->>Database: Query User by Username
+    Database-->>API: Return User + Roles
+    API->>API: Verify Password Hash
+    
+    alt Valid Credentials
+        API->>Database: Get User Roles & Permissions
+        Database-->>API: Return RBAC Data
+        API->>JWTService: Generate JWT Token<br/>(Claims: UserId, Roles, Permissions)
+        JWTService-->>API: Return Signed Token
+        API-->>Frontend: 200 OK + JWT Token + User Info
+        Frontend->>Frontend: Store Token (localStorage)
+        Frontend-->>User: Login Success
+    else Invalid Credentials
+        API-->>Frontend: 401 Unauthorized
+        Frontend-->>User: Login Failed
+    end
+    
+    Note over Frontend,API: Subsequent Requests
+    Frontend->>API: Request + Authorization Header<br/>Bearer {token}
+    API->>API: Validate JWT Signature
+    API->>API: Check Token Expiration
+    API->>API: Verify Permissions
+    API-->>Frontend: Response (if authorized)
+```
+
+### Authorization Flow
+
+```mermaid
+flowchart TD
+    START([API Request with JWT]) --> VALIDATE{Validate JWT<br/>Signature?}
+    
+    VALIDATE -->|Invalid| RETURN401[Return 401<br/>Unauthorized]
+    VALIDATE -->|Valid| EXPIRED{Token<br/>Expired?}
+    
+    EXPIRED -->|Yes| RETURN401
+    EXPIRED -->|No| EXTRACT[Extract Claims:<br/>UserId, Roles, Permissions]
+    
+    EXTRACT --> CHECK_PERM{Required<br/>Permission<br/>Specified?}
+    
+    CHECK_PERM -->|No| ALLOW[Allow Access]
+    CHECK_PERM -->|Yes| HAS_PERM{User Has<br/>Permission?}
+    
+    HAS_PERM -->|Yes| CHECK_PORT{Port-Specific<br/>Resource?}
+    HAS_PERM -->|No| RETURN403[Return 403<br/>Forbidden]
+    
+    CHECK_PORT -->|No| ALLOW
+    CHECK_PORT -->|Yes| HAS_ACCESS{User Has<br/>GlobalPortAccess<br/>OR<br/>Assigned Port?}
+    
+    HAS_ACCESS -->|Yes| ALLOW
+    HAS_ACCESS -->|No| RETURN403
+    
+    ALLOW --> EXECUTE[Execute API Method]
+    EXECUTE --> SUCCESS[Return 200/201<br/>Success]
+    
+    style START fill:#42b983
+    style ALLOW fill:#90EE90
+    style SUCCESS fill:#32CD32
+    style RETURN401 fill:#FF6B6B
+    style RETURN403 fill:#FFA07A
+```
+
 ### 1. User Registration
 New users can be registered with initial roles and port assignments.
 
@@ -113,6 +186,100 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `ViewEquipment` - View equipment information
 
 ### Role-Permission Matrix
+
+```mermaid
+graph TD
+    subgraph "Admin Role - Full System Access"
+        ADMIN[Admin Role]
+        ADMIN --> SYS_PERMS[System Permissions]
+        SYS_PERMS --> GP[GlobalPortAccess]
+        SYS_PERMS --> MAP[ManageAllPorts]
+        SYS_PERMS --> MU[ManageUsers]
+        SYS_PERMS --> MR[ManageRoles]
+        SYS_PERMS --> VSR[ViewSystemReports]
+        
+        ADMIN --> ALL_MGMT[All Management Permissions]
+        ALL_MGMT --> MPD[ManagePortDetails]
+        ALL_MGMT --> MC[ManageContainers]
+        ALL_MGMT --> MS[ManageShips]
+        ALL_MGMT --> MCG[ManageCargo]
+        ALL_MGMT --> MB[ManageBerths]
+        ALL_MGMT --> ME[ManageEquipment]
+        ALL_MGMT --> SS[ScheduleShips]
+        ALL_MGMT --> AB[AllocateBerths]
+        
+        ADMIN --> ALL_VIEW[All View Permissions]
+        ALL_VIEW --> VPD[ViewPortDetails]
+        ALL_VIEW --> VC[ViewContainers]
+        ALL_VIEW --> VS[ViewShips]
+        ALL_VIEW --> VCG[ViewCargo]
+        ALL_VIEW --> VB[ViewBerths]
+        ALL_VIEW --> VE[ViewEquipment]
+        ALL_VIEW --> VPR[ViewPortReports]
+        ALL_VIEW --> TC[TrackContainers]
+    end
+    
+    subgraph "Port Manager - Port Operations"
+        PM[Port Manager Role]
+        PM --> PM_MGMT[Management Permissions]
+        PM_MGMT --> PM_MPD[ManagePortDetails]
+        PM_MGMT --> PM_MC[ManageContainers]
+        PM_MGMT --> PM_MS[ManageShips]
+        PM_MGMT --> PM_MCG[ManageCargo]
+        PM_MGMT --> PM_MB[ManageBerths]
+        PM_MGMT --> PM_ME[ManageEquipment]
+        PM_MGMT --> PM_SS[ScheduleShips]
+        PM_MGMT --> PM_AB[AllocateBerths]
+        
+        PM --> PM_VIEW[View Permissions]
+        PM_VIEW --> PM_VPD[ViewPortDetails]
+        PM_VIEW --> PM_VC[ViewContainers]
+        PM_VIEW --> PM_VS[ViewShips]
+        PM_VIEW --> PM_VCG[ViewCargo]
+        PM_VIEW --> PM_VB[ViewBerths]
+        PM_VIEW --> PM_VE[ViewEquipment]
+        PM_VIEW --> PM_VPR[ViewPortReports]
+        PM_VIEW --> PM_TC[TrackContainers]
+    end
+    
+    subgraph "Operator - Daily Operations"
+        OP[Operator Role]
+        OP --> OP_MGMT[Operational Permissions]
+        OP_MGMT --> OP_MC[ManageContainers]
+        OP_MGMT --> OP_MS[ManageShips]
+        OP_MGMT --> OP_MCG[ManageCargo]
+        OP_MGMT --> OP_MB[ManageBerths]
+        OP_MGMT --> OP_AB[AllocateBerths]
+        
+        OP --> OP_VIEW[View Permissions]
+        OP_VIEW --> OP_VPD[ViewPortDetails]
+        OP_VIEW --> OP_VC[ViewContainers]
+        OP_VIEW --> OP_VS[ViewShips]
+        OP_VIEW --> OP_VCG[ViewCargo]
+        OP_VIEW --> OP_VB[ViewBerths]
+        OP_VIEW --> OP_VE[ViewEquipment]
+        OP_VIEW --> OP_VPR[ViewPortReports]
+        OP_VIEW --> OP_TC[TrackContainers]
+    end
+    
+    subgraph "Viewer - Read Only"
+        VW[Viewer Role]
+        VW --> VW_VIEW[View-Only Permissions]
+        VW_VIEW --> VW_VPD[ViewPortDetails]
+        VW_VIEW --> VW_VC[ViewContainers]
+        VW_VIEW --> VW_VS[ViewShips]
+        VW_VIEW --> VW_VCG[ViewCargo]
+        VW_VIEW --> VW_VB[ViewBerths]
+        VW_VIEW --> VW_VE[ViewEquipment]
+        VW_VIEW --> VW_VPR[ViewPortReports]
+        VW_VIEW --> VW_TC[TrackContainers]
+    end
+    
+    style ADMIN fill:#FF6B6B
+    style PM fill:#4ECDC4
+    style OP fill:#45B7D1
+    style VW fill:#95E1D3
+```
 
 | Permission | Admin | Port Manager | Operator | Viewer |
 |------------|-------|--------------|----------|--------|

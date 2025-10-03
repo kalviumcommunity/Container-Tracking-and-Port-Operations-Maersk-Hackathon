@@ -108,6 +108,17 @@ namespace Backend.Controllers
         }
 
         /// <summary>
+        /// Get current user (alias for profile)
+        /// </summary>
+        /// <returns>Current user information</returns>
+        [HttpGet("user")]
+        [Authorize]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        {
+            return await GetProfile();
+        }
+
+        /// <summary>
         /// Get user by ID (Admin or owner only)
         /// </summary>
         /// <param name="userId">User ID</param>

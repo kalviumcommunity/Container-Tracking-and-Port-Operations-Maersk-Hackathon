@@ -11,10 +11,16 @@ A comprehensive **ASP.NET Core Web API** for managing container tracking and por
 - **Default Admin Account**: `admin` / `Admin123!`
 
 ### 📦 Core Operations
-- **Container Management** - Track containers across ports with status monitoring
-- **Ship Operations** - Manage ship arrivals, departures, and capacity
-- **Port Management** - Multi-port support with berth allocation
-- **Berth Assignment** - Automated berth scheduling and management
+- **Container Management** - Track 300+ containers across 25 global ports with real-time status monitoring
+- **Ship Operations** - Manage 60+ ships from major shipping lines (Maersk, MSC, COSCO, Evergreen)
+- **Port Management** - Multi-port support across 6 continents with automated berth allocation
+- **Berth Assignment** - Smart scheduling with 120+ berth assignments
+
+### 🌍 Enhanced Business Data
+- **25 Major World Ports** - Copenhagen, Shanghai, Los Angeles, Dubai, Rotterdam, and more
+- **60+ Real Ships** - Fleet from Maersk, MSC, COSCO, Evergreen, HMM, OOCL, CMA CGM
+- **300 Diverse Containers** - 8 container types, 10+ cargo categories, 12 status types
+- **120+ Berth Operations** - Realistic assignment timelines and capacity management
 
 ### 🛠 Technical Stack
 - **Backend**: ASP.NET Core 8.0 Web API
@@ -100,6 +106,33 @@ curl -X POST "http://localhost:5221/api/auth/login" \
 
 ## 🏗 Project Structure
 
+```mermaid
+graph LR
+    subgraph "Frontend"
+        VUE[Vue.js 3<br/>SPA]
+    end
+    
+    subgraph "Backend API"
+        API[ASP.NET Core 8.0<br/>REST API]
+        AUTH[JWT Auth<br/>RBAC]
+    end
+    
+    subgraph "Data"
+        AZURE[(Azure PostgreSQL<br/>Flexible Server)]
+    end
+    
+    VUE -->|HTTP/REST| API
+    VUE -->|JWT Token| AUTH
+    API --> AZURE
+    AUTH --> AZURE
+    
+    style VUE fill:#42b983
+    style API fill:#512bd4
+    style AUTH fill:#FF6B6B
+    style AZURE fill:#0078d4
+```
+
+### Folder Structure
 ```
 ├── backend/                 # ASP.NET Core Web API
 ├── frontend/               # Vue.js Frontend (in development)

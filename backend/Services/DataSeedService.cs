@@ -240,6 +240,14 @@ namespace Backend.Services
             if (existingAdmin != null)
             {
                 _logger.LogInformation("Admin user already exists");
+                // Update the password to ensure it matches our current hashing
+                var newHash = HashPassword(defaultPassword);
+                if (existingAdmin.PasswordHash != newHash)
+                {
+                    existingAdmin.PasswordHash = newHash;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Admin password synchronized");
+                }
                 return;
             }
 
