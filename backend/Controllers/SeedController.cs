@@ -1,5 +1,8 @@
+using Backend.Attributes;
 using Backend.Data;
 using Backend.Data.Seeding;
+using Backend.Extensions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +10,7 @@ namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize] // Require authentication for all endpoints
     public class SeedController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -19,10 +23,11 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Trigger enhanced business data seeding
+        /// Trigger enhanced business data seeding (Admin only)
         /// </summary>
         /// <returns>Seeding result</returns>
         [HttpPost("enhanced-business-data")]
+        [RequirePermission("ManageUsers")] // Only admins can seed data
         public async Task<IActionResult> SeedEnhancedBusinessData()
         {
             try
@@ -55,10 +60,11 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Get seeding status and data counts
+        /// Get seeding status and data counts (Admin only)
         /// </summary>
         /// <returns>Current data status</returns>
         [HttpGet("status")]
+        [RequirePermission("ManageUsers")] // Only admins can view seeding status
         public async Task<IActionResult> GetSeedingStatus()
         {
             try

@@ -62,16 +62,19 @@ namespace Backend.Services
         /// </summary>
         public string GenerateToken(User user, List<string> roles, List<string> permissions)
         {
-            // Convert Base64 JWT key to bytes
+            // Convert Base64 JWT key to bytes - enforce valid Base64
             byte[] keyBytes;
             try
             {
                 keyBytes = Convert.FromBase64String(_jwtKey);
             }
-            catch (FormatException)
+            catch (FormatException ex)
             {
-                // If it's not Base64, treat as regular string (for backward compatibility)
-                keyBytes = Encoding.UTF8.GetBytes(_jwtKey);
+                // Security: Enforce that JWT key must be valid Base64
+                throw new InvalidOperationException(
+                    "JWT_KEY must be a valid Base64 string for security. " +
+                    "Generate one using: [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('your-secret-key'))", 
+                    ex);
             }
             
             var key = new SymmetricSecurityKey(keyBytes);
@@ -133,12 +136,26 @@ namespace Backend.Services
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_jwtKey);
+                
+                // Use Base64 decoded key for validation (same as generation)
+                byte[] keyBytes;
+                try
+                {
+                    keyBytes = Convert.FromBase64String(_jwtKey);
+                }
+                catch (FormatException ex)
+                {
+                    // Security: Enforce that JWT key must be valid Base64
+                    throw new InvalidOperationException(
+                        "JWT_KEY must be a valid Base64 string for security. " +
+                        "Generate one using: [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('your-secret-key'))", 
+                        ex);
+                }
 
                 var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
                     ValidateIssuer = true,
                     ValidIssuer = _jwtIssuer,
                     ValidateAudience = true,

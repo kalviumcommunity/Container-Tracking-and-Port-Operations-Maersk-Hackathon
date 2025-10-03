@@ -66,8 +66,8 @@ builder.ConfigureServices((context, services) =>
     var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
     var dbSslMode = Environment.GetEnvironmentVariable("DB_SSL_MODE") ?? "Prefer";
     
-    // Build connection string with SSL support for Azure
-    var connectionString = `$"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={dbSslMode};Trust Server Certificate=true";
+    // Build connection string with secure SSL support for Azure (removed Trust Server Certificate=true)
+    var connectionString = `$"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={dbSslMode}";
     
     services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(connectionString));
@@ -98,13 +98,58 @@ Console.WriteLine("✅ Enhanced Business Data Seeding Completed!");
 "@
 
 # Save the seeding code to a temporary file
-$seedingCode | Out-File -FilePath "TempSeeder.cs" -Encoding UTF8
+# SECURITY FIX: Use API endpoint instead of insecure temporary file compilation
+# $seedingCode | Out-File -FilePath "TempSeeder.cs" -Encoding UTF8
 
-# Compile and run the seeding program
-Write-Host "   🔨 Compiling enhanced business data seeder..." -ForegroundColor Cyan
-$compileResult = dotnet run --project . -- --seed-enhanced-data 2>&1
+# Start API and use secure seeding endpoint
+Write-Host "   🔨 Starting API for secure seeding..." -ForegroundColor Cyan
+$apiProcess = Start-Process -FilePath "dotnet" -ArgumentList "run" -NoNewWindow -PassThru
+Start-Sleep -Seconds 10  # Wait for API to start
 
-if ($LASTEXITCODE -eq 0) {
+try {
+    # Wait for API to be ready
+    $apiReady = $false
+    $attempts = 0
+    $maxAttempts = 30
+    
+    while (-not $apiReady -and $attempts -lt $maxAttempts) {
+        try {
+            $healthCheck = Invoke-RestMethod -Uri "http://localhost:5221/api/health" -Method GET -TimeoutSec 5
+            $apiReady = $true
+            Write-Host "✅ API is ready!" -ForegroundColor Green
+        }
+        catch {
+            $attempts++
+            Write-Host "⏳ Waiting for API to start... (attempt $attempts/$maxAttempts)" -ForegroundColor Yellow
+            Start-Sleep -Seconds 2
+        }
+    }
+    
+    if (-not $apiReady) {
+        throw "API failed to start after $maxAttempts attempts"
+    }
+
+    # Login to get admin token (required for seeding)
+    Write-Host "🔐 Authenticating as admin..." -ForegroundColor Yellow
+    $loginBody = @{
+        username = "admin"
+        password = "Admin123!"
+    } | ConvertTo-Json
+    
+    $loginResponse = Invoke-RestMethod -Uri "http://localhost:5221/api/auth/login" -Method POST -Body $loginBody -ContentType "application/json"
+    $token = $loginResponse.token
+    Write-Host "✅ Admin authentication successful!" -ForegroundColor Green
+
+    # Call seeding endpoint with authentication
+    Write-Host "🌱 Calling enhanced seeding endpoint..." -ForegroundColor Yellow
+    $headers = @{
+        "Authorization" = "Bearer $token"
+        "Content-Type" = "application/json"
+    }
+    
+    $seedingResponse = Invoke-RestMethod -Uri "http://localhost:5221/api/seed/enhanced-business-data" -Method POST -Headers $headers -TimeoutSec 60
+
+if ($seedingResponse.success) {
     Write-Host "✅ Enhanced business data seeding completed successfully!" -ForegroundColor Green
     Write-Host ""
     Write-Host "🎯 Your database now contains:" -ForegroundColor Yellow

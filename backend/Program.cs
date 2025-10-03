@@ -85,10 +85,10 @@ var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new InvalidOperationException("DB_PASSWORD environment variable is not set.");
 var dbSslMode = Environment.GetEnvironmentVariable("DB_SSL_MODE") ?? "Prefer";
 
-// Build connection string with SSL support for Azure
-connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={dbSslMode};Trust Server Certificate=true";
+// Build connection string with secure SSL support for Azure (removed Trust Server Certificate=true)
+connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={dbSslMode}";
 
-Console.WriteLine($"Connecting to database: {dbName} on {dbHost}:{dbPort}");
+Console.WriteLine($"Connecting to database: {dbName} on {dbHost}:{dbPort} with SSL Mode={dbSslMode}");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
