@@ -8,7 +8,74 @@ September 30, 2025
 
 ## Overview
 
-This document provides the complete API specification for the Container Tracking & Port Operations System. The API is fully implemented and ready for production use.
+
+
+This document provides the complete API specification for the Container Tracking & Port Operations System. The API is fully implemented and ready for production use with Azure PostgreSQL backend.
+
+## API Architecture
+
+```mermaid
+graph TB
+    subgraph "API Request Flow"
+        CLIENT[Client Application]
+        
+        subgraph "Middleware Pipeline"
+            CORS[CORS Handler]
+            JWT[JWT Validation]
+            AUTH[Authorization<br/>RBAC Check]
+            ERROR[Error Handler]
+        end
+        
+        subgraph "Controllers"
+            AUTH_CTRL[Auth Controller]
+            CONT_CTRL[Containers Controller]
+            SHIP_CTRL[Ships Controller]
+            PORT_CTRL[Ports Controller]
+            BERTH_CTRL[Berths Controller]
+        end
+        
+        subgraph "Services Layer"
+            BUSINESS[Business Logic]
+            VALIDATION[Data Validation]
+        end
+        
+        subgraph "Data Access"
+            EF_CORE[Entity Framework Core]
+            AZURE_DB[(Azure PostgreSQL)]
+        end
+    end
+    
+    CLIENT -->|HTTP Request| CORS
+    CORS --> JWT
+    JWT --> AUTH
+    AUTH --> ERROR
+    
+    ERROR --> AUTH_CTRL
+    ERROR --> CONT_CTRL
+    ERROR --> SHIP_CTRL
+    ERROR --> PORT_CTRL
+    ERROR --> BERTH_CTRL
+    
+    AUTH_CTRL --> BUSINESS
+    CONT_CTRL --> BUSINESS
+    SHIP_CTRL --> BUSINESS
+    PORT_CTRL --> BUSINESS
+    BERTH_CTRL --> BUSINESS
+    
+    BUSINESS --> VALIDATION
+    VALIDATION --> EF_CORE
+    EF_CORE --> AZURE_DB
+    
+    AZURE_DB -->|Response| EF_CORE
+    EF_CORE -->|DTO| BUSINESS
+    BUSINESS -->|JSON| CLIENT
+    
+    style CLIENT fill:#42b983
+    style JWT fill:#FF6B6B
+    style AUTH fill:#FFA07A
+    style AZURE_DB fill:#0078d4
+    style EF_CORE fill:#512bd4
+```
 
 ## Base URL
 ```

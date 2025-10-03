@@ -124,14 +124,25 @@ namespace Backend.Controllers
         /// <param name="createDto">Container data</param>
         /// <returns>The created container</returns>
         [HttpPost]
-        [RequirePermission("ManageContainers")]
+        [RequirePermission("ManageContainers")] // Re-enabled permission system
         [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-        public async Task<IActionResult> CreateContainer([FromBody] ContainerCreateUpdateDto createDto)
+        public async Task<IActionResult> CreateContainer([FromBody] ContainerCreateDto createDto)
         {
             try
             {
-                var container = await _containerService.CreateAsync(createDto);
+                // Convert to the legacy DTO for the service
+                var legacyDto = new ContainerCreateUpdateDto
+                {
+                    ContainerId = createDto.ContainerId,
+                    Name = createDto.Name,
+                    Type = createDto.Type,
+                    Status = createDto.Status,
+                    CurrentLocation = createDto.CurrentLocation,
+                    ShipId = createDto.ShipId
+                };
+                
+                var container = await _containerService.CreateAsync(legacyDto);
                 return CreatedAtAction(nameof(GetContainer), new { id = container.ContainerId }, 
                     ApiResponse<ContainerDto>.Ok(container));
             }
@@ -148,15 +159,26 @@ namespace Backend.Controllers
         /// <param name="updateDto">Updated container data</param>
         /// <returns>The updated container</returns>
         [HttpPut("{id}")]
-        [RequirePermission("ManageContainers")]
+        [RequirePermission("ManageContainers")] // Re-enabled permission system
         [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-        public async Task<IActionResult> UpdateContainer(string id, [FromBody] ContainerCreateUpdateDto updateDto)
+        public async Task<IActionResult> UpdateContainer(string id, [FromBody] ContainerUpdateDto updateDto)
         {
             try
             {
-                var container = await _containerService.UpdateAsync(id, updateDto);
+                // Convert to the legacy DTO for the service
+                var legacyDto = new ContainerCreateUpdateDto
+                {
+                    ContainerId = id, // Use the ID from the URL
+                    Name = updateDto.Name,
+                    Type = updateDto.Type,
+                    Status = updateDto.Status,
+                    CurrentLocation = updateDto.CurrentLocation,
+                    ShipId = updateDto.ShipId
+                };
+                
+                var container = await _containerService.UpdateAsync(id, legacyDto);
                 return Ok(ApiResponse<ContainerDto>.Ok(container));
             }
             catch (KeyNotFoundException ex)

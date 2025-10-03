@@ -27,7 +27,7 @@ namespace Backend.Controllers
         /// </summary>
         /// <returns>All ports</returns>
         [HttpGet]
-        [RequirePermission("ViewPorts")]
+        [RequirePermission("ViewPortDetails")] // Changed to match available permission
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<PortDto>>), 200)]
         public async Task<IActionResult> GetAllPorts()
         {
@@ -41,7 +41,7 @@ namespace Backend.Controllers
         /// <param name="id">The ID of the port</param>
         /// <returns>The port</returns>
         [HttpGet("{id}")]
-        [RequirePermission("ViewPorts")]
+        [RequirePermission("ViewPortDetails")]
         [ProducesResponseType(typeof(ApiResponse<PortDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         public async Task<IActionResult> GetPort(int id)
@@ -61,7 +61,7 @@ namespace Backend.Controllers
         /// <param name="id">The ID of the port</param>
         /// <returns>The port with detailed information</returns>
         [HttpGet("{id}/details")]
-        [RequirePermission("ViewPorts")]
+        [RequirePermission("ViewPortDetails")]
         [ProducesResponseType(typeof(ApiResponse<PortDetailDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         public async Task<IActionResult> GetPortDetails(int id)
@@ -81,7 +81,7 @@ namespace Backend.Controllers
         /// <param name="location">The location to filter by</param>
         /// <returns>Ports at the specified location</returns>
         [HttpGet("location/{location}")]
-        [RequirePermission("ViewPorts")]
+        [RequirePermission("ViewPortDetails")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<PortDto>>), 200)]
         public async Task<IActionResult> GetPortsByLocation(string location)
         {
@@ -95,7 +95,7 @@ namespace Backend.Controllers
         /// <param name="createDto">Port data</param>
         /// <returns>The created port</returns>
         [HttpPost]
-        [RequirePermission("ManagePorts")]
+        [RequirePermission("ManageAllPorts")] // Changed to match available permission
         [ProducesResponseType(typeof(ApiResponse<PortDto>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> CreatePort([FromBody] PortCreateUpdateDto createDto)
