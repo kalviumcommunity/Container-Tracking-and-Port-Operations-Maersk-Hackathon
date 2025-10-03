@@ -33,6 +33,22 @@
           </router-link>
         </div>
 
+        <!-- Auth Buttons -->
+        <div class="hidden md:flex items-center gap-3">
+          <button 
+            @click="showLoginForm = true"
+            class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            Sign In
+          </button>
+          <button 
+            @click="showRegistrationForm = true"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Sign Up
+          </button>
+        </div>
+
         <!-- Mobile Menu Button -->
         <div class="md:hidden">
           <button
@@ -90,12 +106,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Login Form Modal -->
+    <div v-if="showLoginForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="max-w-md w-full">
+        <LoginForm 
+          @login-success="handleLoginSuccess"
+          @show-registration="showRegistrationInstead"
+        />
+      </div>
+    </div>
+
+    <!-- Registration Form Modal -->
+    <div v-if="showRegistrationForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="max-w-md w-full">
+        <RegistrationForm 
+          @register-success="handleRegisterSuccess"
+          @show-login="showLoginInstead"
+        />
+      </div>
+    </div>
   </nav>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import LoginForm from '../forms/LoginForm.vue'
+import RegistrationForm from '../forms/RegistrationForm.vue'
 import { 
   Ship, 
   Home, 
@@ -137,6 +175,10 @@ const navigationItems = [
   }
 ]
 
+// Form state management
+const showLoginForm = ref(false)
+const showRegistrationForm = ref(false)
+
 // Mobile menu methods
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -144,6 +186,29 @@ const toggleMobileMenu = () => {
 
 const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
+}
+
+// Auth form handlers
+const handleLoginSuccess = (user: any) => {
+  console.log('Login successful:', user)
+  showLoginForm.value = false
+  // Handle login logic (store user, redirect, etc.)
+}
+
+const handleRegisterSuccess = (user: any) => {
+  console.log('Registration successful:', user)
+  showRegistrationForm.value = false
+  // Handle registration logic
+}
+
+const showRegistrationInstead = () => {
+  showLoginForm.value = false
+  showRegistrationForm.value = true
+}
+
+const showLoginInstead = () => {
+  showRegistrationForm.value = false
+  showLoginForm.value = true
 }
 </script>
 

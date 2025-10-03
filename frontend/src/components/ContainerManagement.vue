@@ -19,7 +19,10 @@
               <Package :size="16" class="text-blue-600" />
               <span class="font-medium text-slate-700">{{ containers.length }} Active</span>
             </div>
-            <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
+            <button 
+              @click="showContainerForm = true"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2"
+            >
               <Plus :size="16" />
               Add Container
             </button>
@@ -148,8 +151,11 @@
 
               <!-- Action Buttons -->
               <div class="flex gap-2 pt-2">
-                <button class="flex-1 px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                  View Details
+                <button 
+                  @click="editContainer(container)"
+                  class="flex-1 px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Edit
                 </button>
                 <button class="flex-1 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   Update Status
@@ -160,11 +166,24 @@
         </div>
       </section>
     </main>
+
+    <!-- Container Form Modal -->
+    <div v-if="showContainerForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+        <ContainerForm 
+          :container="selectedContainer"
+          :isEditing="isEditingContainer"
+          @submit="handleContainerSubmit"
+          @cancel="closeContainerForm"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import ContainerForm from '../forms/ContainerForm.vue';
 import { 
   Container, 
   Package, 
@@ -244,6 +263,58 @@ const containers = ref<Container[]>([
     cargo: "Pharmaceuticals"
   }
 ]);
+
+// Form state management
+const showContainerForm = ref(false);
+const selectedContainer = ref(null);
+const isEditingContainer = ref(false);
+
+// Form handlers
+const handleContainerSubmit = (containerData: any) => {
+  if (isEditingContainer.value) {
+    // Update existing container
+    const index = containers.value.findIndex(c => c.id === containerData.id);
+    if (index !== -1) {
+      containers.value[index] = {
+        ...containerData,
+        lastUpdate: 'Just now'
+      };
+    }
+  } else {
+    // Add new container
+    containers.value.unshift({
+      id: containerData.containerNumber,
+      type: containerData.type,
+      status: containerData.status,
+      location: containerData.currentLocation || 'Port Entry',
+      lastUpdate: 'Just now',
+      temperature: containerData.type === 'Refrigerated' ? '-18°C' : 'Ambient',
+      destination: containerData.destination,
+      cargo: 'New Cargo'
+    });
+  }
+  closeContainerForm();
+};
+
+const closeContainerForm = () => {
+  showContainerForm.value = false;
+  selectedContainer.value = null;
+  isEditingContainer.value = false;
+};
+
+const editContainer = (container: any) => {
+  selectedContainer.value = {
+    containerNumber: container.id,
+    type: container.type,
+    status: container.status,
+    currentLocation: container.location,
+    destination: container.destination,
+    weight: 25000, // Default weight
+    origin: 'Port Origin' // Default origin
+  };
+  isEditingContainer.value = true;
+  showContainerForm.value = true;
+};
 
 const getStatusColor = (status: string): string => {
   const statusColors = {

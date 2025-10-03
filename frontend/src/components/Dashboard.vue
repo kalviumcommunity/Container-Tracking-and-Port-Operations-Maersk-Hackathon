@@ -196,6 +196,13 @@
               <h3 class="text-lg font-semibold text-slate-900">Quick Actions</h3>
             </div>
             <div class="p-6 space-y-3">
+              <button 
+                @click="showShipForm = true"
+                class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Ship :size="18" class="text-slate-600" />
+                <span class="text-sm font-medium text-slate-700">Add New Ship</span>
+              </button>
               <button class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-slate-50 transition-colors">
                 <Users :size="18" class="text-slate-600" />
                 <span class="text-sm font-medium text-slate-700">Manage Staff Schedule</span>
@@ -213,11 +220,24 @@
         </div>
       </div>
     </main>
+
+    <!-- Ship Form Modal -->
+    <div v-if="showShipForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+        <ShipForm 
+          :ship="selectedShip"
+          :isEditing="isEditingShip"
+          @submit="handleShipSubmit"
+          @cancel="closeShipForm"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import ShipForm from '../forms/ShipForm.vue';
 import { Ship, Container, Anchor, Activity, AlertTriangle, CheckCircle, Clock, Users, TrendingUp, Globe } from 'lucide-vue-next';
 
 const currentTime = ref(new Date().toLocaleTimeString());
@@ -283,6 +303,28 @@ const stats: Stat[] = [
     progress: "78%"
   },
 ];
+
+// Form state management
+const showShipForm = ref(false);
+const selectedShip = ref(null);
+const isEditingShip = ref(false);
+
+// Form handlers
+const handleShipSubmit = (shipData: any) => {
+  // Update stats
+  const shipsStat = stats.find(s => s.title === "Active Ships");
+  if (shipsStat) {
+    const currentCount = parseInt(shipsStat.value);
+    shipsStat.value = (currentCount + 1).toString();
+  }
+  closeShipForm();
+};
+
+const closeShipForm = () => {
+  showShipForm.value = false;
+  selectedShip.value = null;
+  isEditingShip.value = false;
+};
 
 const recentContainers: ContainerActivity[] = [
   { id: "CNT-001", status: "Arrived", berth: "B-07", time: "14:30", type: "Refrigerated" },
