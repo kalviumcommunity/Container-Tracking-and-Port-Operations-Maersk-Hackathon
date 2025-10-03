@@ -372,6 +372,7 @@ import {
   Link, Package, Anchor, Settings, Flag, Calendar, Activity, Users,
   Save, Loader2, AlertTriangle, CheckCircle, ArrowLeft 
 } from 'lucide-vue-next'
+import { containerApi } from '../services/containerApi'
 
 interface BerthAssignmentForm {
   id?: number
@@ -516,15 +517,30 @@ const validate = (): boolean => {
 
 const loadAvailableContainers = async () => {
   try {
-    // Mock API call
+    // Load containers from the backend API
+    const containers = await containerApi.getContainers()
+    
+    // Map the API response to the expected format
+    availableContainers.value = containers.map(container => ({
+      id: container.id,
+      containerNumber: container.containerNumber || container.number,
+      type: container.containerType || container.type,
+      weight: container.weight || 0
+    }))
+    
+    console.log('Loaded containers from API:', availableContainers.value)
+  } catch (error) {
+    console.error('Failed to load containers from API:', error)
+    
+    // Fallback to mock data if API fails
     availableContainers.value = [
       { id: 1, containerNumber: 'MSCU1234567', type: 'Dry', weight: 25000 },
       { id: 2, containerNumber: 'MSCU2345678', type: 'Refrigerated', weight: 28000 },
       { id: 3, containerNumber: 'MSCU3456789', type: 'Tank', weight: 30000 },
       { id: 4, containerNumber: 'MSCU4567890', type: 'OpenTop', weight: 22000 }
     ]
-  } catch (error) {
-    console.error('Failed to load containers:', error)
+    
+    errorMessage.value = 'Could not load containers from server, using sample data'
   }
 }
 

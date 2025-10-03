@@ -1,494 +1,435 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-6 py-8">
-      <!-- Page Header -->
-      <div class="mb-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-blue-600 rounded-xl shadow-lg">
-              <Container :size="28" class="text-white" />
-            </div>
-            <div>
-              <h1 class="text-3xl font-bold text-slate-900">Container Management</h1>
-              <p class="text-slate-600 mt-1">Track and manage container lifecycle operations</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg">
-              <Package :size="16" class="text-blue-600" />
-              <span class="font-medium text-slate-700">{{ containers.length }} Active</span>
-            </div>
-            <button 
-              @click="showContainerForm = true"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2"
+  <div class="container-management">
+    <!-- Login Section -->
+    <div v-if="!isAuthenticated" class="login-section bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Login to View Containers</h2>
+      <form @submit.prevent="handleLogin" class="space-y-4">
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+          <input
+            id="username"
+            v-model="loginForm.username"
+            type="text"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter username"
+          />
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <input
+            id="password"
+            v-model="loginForm.password"
+            type="password"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter password"
+          />
+        </div>
+        <button
+          type="submit"
+          :disabled="isLoading"
+          class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+        >
+          {{ isLoading ? 'Logging in...' : 'Login' }}
+        </button>
+      </form>
+      <div class="mt-4 p-3 bg-blue-50 rounded-md">
+        <p class="text-sm text-blue-800">
+          <strong>Demo Credentials:</strong><br>
+          Username: admin<br>
+          Password: Admin123!
+        </p>
+      </div>
+      <div v-if="error" class="mt-4 p-3 bg-red-50 rounded-md">
+        <p class="text-sm text-red-800">{{ error }}</p>
+      </div>
+    </div>
+
+    <!-- Container Management Section -->
+    <div v-if="isAuthenticated" class="container-data">
+      <!-- Header with Logout -->
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Container Management</h1>
+        <button
+          @click="handleLogout"
+          class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        >
+          Logout
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Filters</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="statusFilter" class="block text-sm font-medium text-gray-700">Status</label>
+            <select
+              id="statusFilter"
+              v-model="filters.status"
+              @change="applyFilters"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
-              <Plus :size="16" />
-              Add Container
-            </button>
+              <option value="">All Statuses</option>
+              <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="locationFilter" class="block text-sm font-medium text-gray-700">Location</label>
+            <select
+              id="locationFilter"
+              v-model="filters.location"
+              @change="applyFilters"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Locations</option>
+              <option v-for="location in locationOptions" :key="location" :value="location">{{ location }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="typeFilter" class="block text-sm font-medium text-gray-700">Container Type</label>
+            <select
+              id="typeFilter"
+              v-model="filters.type"
+              @change="applyFilters"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Types</option>
+              <option v-for="type in typeOptions" :key="type" :value="type">{{ type }}</option>
+            </select>
           </div>
         </div>
       </div>
-      <!-- Search and Filter Bar -->
-      <section class="mb-8">
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div class="flex flex-col md:flex-row gap-4">
-            <div class="flex-1 relative">
-              <Search :size="20" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Search containers by ID, type, or status..."
-                class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-blue-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span class="text-blue-600 font-semibold">T</span>
+              </div>
             </div>
-            <div class="flex gap-3">
-              <button class="px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
-                <Filter :size="16" class="text-slate-600" />
-                <span class="text-slate-700">Filter</span>
-              </button>
-              <button class="px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
-                <Download :size="16" class="text-slate-600" />
-                <span class="text-slate-700">Export</span>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Total Containers</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ stats.total }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-green-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <span class="text-green-600 font-semibold">A</span>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Available</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ stats.available }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-yellow-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <span class="text-yellow-600 font-semibold">T</span>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">In Transit</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ stats.inTransit }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-purple-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <span class="text-purple-600 font-semibold">P</span>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">At Port</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ stats.atPort }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex justify-center items-center py-8">
+        <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+
+      <!-- Error State -->
+      <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex">
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">Error loading containers</h3>
+            <div class="mt-2 text-sm text-red-700">
+              <p>{{ error }}</p>
+            </div>
+            <div class="mt-4">
+              <button
+                @click="loadContainers"
+                class="bg-red-100 px-2 py-1 rounded text-sm text-red-800 hover:bg-red-200"
+              >
+                Try Again
               </button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Container Grid -->
-      <section>
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold text-slate-900 mb-2">Active Containers</h2>
-          <p class="text-slate-600">Monitor real-time status and location of all containers</p>
+      <!-- Container Table -->
+      <div v-if="!isLoading && !error" class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-800">
+            Containers ({{ filteredContainers.length }} of {{ containers.length }})
+          </h2>
         </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          <div
-            v-for="(container, index) in containers"
-            :key="container.id"
-            class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group animate-slideIn"
-            :style="{ animationDelay: `${index * 100}ms` }"
-          >
-            <!-- Container Header -->
-            <div class="p-6 border-b border-slate-200">
-              <div class="flex items-start justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-lg bg-blue-50 border-2 border-blue-200 flex items-center justify-center text-xl group-hover:border-blue-300 transition-colors">
-                    {{ getTypeIcon(container.type) }}
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-bold text-slate-900">{{ container.id }}</h3>
-                    <div class="flex items-center gap-2 mt-1">
-                      <span class="px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-full">
-                        {{ container.type }}
-                      </span>
-                      <span 
-                        class="px-2 py-1 text-xs font-semibold rounded-full"
-                        :class="getStatusColor(container.status)"
-                      >
-                        {{ container.status }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div class="p-2 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                  <Package :size="20" class="text-slate-600 group-hover:text-blue-600" />
-                </div>
-              </div>
-            </div>
-            
-            <!-- Container Details -->
-            <div class="p-6 space-y-4">
-              <!-- Location & Destination -->
-              <div class="grid grid-cols-1 gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="p-2 bg-blue-50 rounded-lg">
-                    <MapPin :size="16" class="text-blue-600" />
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-slate-700">Current Location</p>
-                    <p class="text-sm text-slate-900 font-semibold">{{ container.location }}</p>
-                  </div>
-                </div>
-                
-                <div class="flex items-center gap-3">
-                  <div class="p-2 bg-green-50 rounded-lg">
-                    <Navigation :size="16" class="text-green-600" />
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-slate-700">Destination</p>
-                    <p class="text-sm text-slate-900 font-semibold">{{ container.destination }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Cargo Information -->
-              <div class="p-4 bg-slate-50 rounded-lg">
-                <div class="flex items-center gap-2 mb-2">
-                  <Package2 :size="16" class="text-slate-600" />
-                  <span class="text-sm font-medium text-slate-700">Cargo Details</span>
-                </div>
-                <p class="text-sm text-slate-900 font-semibold">{{ container.cargo }}</p>
-              </div>
-
-              <!-- Temperature Monitor -->
-              <div class="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <Thermometer :size="16" class="text-blue-600" />
-                    <span class="text-sm font-medium text-blue-800">Temperature</span>
-                  </div>
-                  <span class="text-lg font-bold text-blue-900">{{ container.temperature }}</span>
-                </div>
-              </div>
-
-              <!-- Last Update -->
-              <div class="flex items-center gap-2 text-xs text-slate-500">
-                <Clock :size="14" />
-                <span>Last updated: {{ container.lastUpdate }}</span>
-              </div>
-
-              <!-- Action Buttons -->
-              <div class="flex gap-2 pt-2">
-                <button 
-                  @click="editContainer(container)"
-                  class="flex-1 px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Edit
-                </button>
-                <button class="flex-1 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  Update Status
-                </button>
-              </div>
-            </div>
-          </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Container ID
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Location
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ship
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Updated
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="container in filteredContainers" :key="container.containerId" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {{ container.containerId }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ container.name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ container.type }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span 
+                    class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                    :class="getStatusBadgeClass(container.status)"
+                  >
+                    {{ container.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ container.currentLocation }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ container.shipName || '-' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ formatDate(container.updatedAt) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </section>
-    </main>
-
-    <!-- Container Form Modal -->
-    <div v-if="showContainerForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
-        <ContainerForm 
-          :container="selectedContainer"
-          :isEditing="isEditingContainer"
-          @submit="handleContainerSubmit"
-          @cancel="closeContainerForm"
-        />
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-import ContainerForm from '../forms/ContainerForm.vue';
-import { 
-  Container, 
-  Package, 
-  Package2, 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  MapPin, 
-  Navigation, 
-  Thermometer, 
-  Clock 
-} from 'lucide-vue-next';
+<script>
+import { authApi, containerApi } from '../services/api.js';
 
-interface Container {
-  id: string;
-  type: string;
-  status: string;
-  location: string;
-  lastUpdate: string;
-  temperature: string;
-  destination: string;
-  cargo: string;
-}
-
-const searchQuery = ref('');
-
-const containers = ref<Container[]>([
-  {
-    id: "CTR-2024-001",
-    type: "Refrigerated",
-    status: "At Port",
-    location: "Berth B-07",
-    lastUpdate: "2 hours ago",
-    temperature: "-18°C",
-    destination: "Chennai Port",
-    cargo: "Frozen Foods"
+export default {
+  name: 'ContainerManagement',
+  data() {
+    return {
+      // Authentication
+      isAuthenticated: false,
+      loginForm: {
+        username: '',
+        password: ''
+      },
+      
+      // Data
+      containers: [],
+      filteredContainers: [],
+      
+      // Filters
+      filters: {
+        status: '',
+        location: '',
+        type: ''
+      },
+      
+      // UI State
+      isLoading: false,
+      error: null,
+      
+      // Options for filters
+      statusOptions: [],
+      locationOptions: [],
+      typeOptions: []
+    };
   },
-  {
-    id: "CTR-2024-002", 
-    type: "Dry",
-    status: "In Transit",
-    location: "Route A-12",
-    lastUpdate: "5 hours ago",
-    temperature: "Ambient",
-    destination: "Mumbai Port", 
-    cargo: "Electronics"
-  },
-  {
-    id: "CTR-2024-003",
-    type: "Liquid",
-    status: "Loading",
-    location: "Berth B-12",
-    lastUpdate: "30 min ago",
-    temperature: "15°C",
-    destination: "Kochi Port",
-    cargo: "Chemical Products"
-  },
-  {
-    id: "CTR-2024-004",
-    type: "Dry",
-    status: "Inspected",
-    location: "Berth B-03",
-    lastUpdate: "1 hour ago", 
-    temperature: "Ambient",
-    destination: "Kolkata Port",
-    cargo: "Textiles"
-  },
-  {
-    id: "CTR-2024-005",
-    type: "Refrigerated",
-    status: "Departed",
-    location: "En Route",
-    lastUpdate: "3 hours ago",
-    temperature: "-5°C", 
-    destination: "Vizag Port",
-    cargo: "Pharmaceuticals"
-  }
-]);
-
-// Form state management
-const showContainerForm = ref(false);
-const selectedContainer = ref(null);
-const isEditingContainer = ref(false);
-
-// Form handlers
-const handleContainerSubmit = (containerData: any) => {
-  if (isEditingContainer.value) {
-    // Update existing container
-    const index = containers.value.findIndex(c => c.id === containerData.id);
-    if (index !== -1) {
-      containers.value[index] = {
-        ...containerData,
-        lastUpdate: 'Just now'
+  
+  computed: {
+    stats() {
+      const total = this.containers.length;
+      const available = this.containers.filter(c => c.status === 'Available').length;
+      const inTransit = this.containers.filter(c => c.status === 'In Transit').length;
+      const atPort = this.containers.filter(c => c.status === 'At Port').length;
+      
+      return {
+        total,
+        available,
+        inTransit,
+        atPort
       };
     }
-  } else {
-    // Add new container
-    containers.value.unshift({
-      id: containerData.containerNumber,
-      type: containerData.type,
-      status: containerData.status,
-      location: containerData.currentLocation || 'Port Entry',
-      lastUpdate: 'Just now',
-      temperature: containerData.type === 'Refrigerated' ? '-18°C' : 'Ambient',
-      destination: containerData.destination,
-      cargo: 'New Cargo'
-    });
+  },
+  
+  async mounted() {
+    this.isAuthenticated = authApi.isAuthenticated();
+    if (this.isAuthenticated) {
+      await this.loadContainers();
+    }
+  },
+  
+  methods: {
+    async handleLogin() {
+      this.isLoading = true;
+      this.error = null;
+      
+      try {
+        const result = await authApi.login(this.loginForm.username, this.loginForm.password);
+        
+        if (result.success) {
+          this.isAuthenticated = true;
+          this.loginForm = { username: '', password: '' };
+          await this.loadContainers();
+        } else {
+          this.error = result.message || 'Login failed';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        this.error = error.message || 'Login failed. Please check your credentials.';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
+    handleLogout() {
+      authApi.logout();
+      this.isAuthenticated = false;
+      this.containers = [];
+      this.filteredContainers = [];
+      this.error = null;
+    },
+    
+    async loadContainers() {
+      this.isLoading = true;
+      this.error = null;
+      
+      try {
+        const response = await containerApi.getAllContainers();
+        
+        if (response.success) {
+          this.containers = response.data;
+          this.filteredContainers = [...this.containers];
+          this.updateFilterOptions();
+        } else {
+          this.error = response.message || 'Failed to load containers';
+        }
+      } catch (error) {
+        console.error('Error loading containers:', error);
+        this.error = error.message || 'Failed to load containers. Please try again.';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
+    updateFilterOptions() {
+      // Get unique values for filter options
+      this.statusOptions = [...new Set(this.containers.map(c => c.status))].sort();
+      this.locationOptions = [...new Set(this.containers.map(c => c.currentLocation))].sort();
+      this.typeOptions = [...new Set(this.containers.map(c => c.type))].sort();
+    },
+    
+    applyFilters() {
+      this.filteredContainers = this.containers.filter(container => {
+        return (
+          (!this.filters.status || container.status === this.filters.status) &&
+          (!this.filters.location || container.currentLocation === this.filters.location) &&
+          (!this.filters.type || container.type === this.filters.type)
+        );
+      });
+    },
+    
+    getStatusBadgeClass(status) {
+      const statusClasses = {
+        'Available': 'bg-green-100 text-green-800',
+        'In Transit': 'bg-yellow-100 text-yellow-800',
+        'At Port': 'bg-blue-100 text-blue-800',
+        'Loading': 'bg-purple-100 text-purple-800',
+        'Unloading': 'bg-orange-100 text-orange-800',
+        'Maintenance': 'bg-red-100 text-red-800'
+      };
+      
+      return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    },
+    
+    formatDate(dateString) {
+      if (!dateString) return '-';
+      
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      } catch (error) {
+        return dateString;
+      }
+    }
   }
-  closeContainerForm();
-};
-
-const closeContainerForm = () => {
-  showContainerForm.value = false;
-  selectedContainer.value = null;
-  isEditingContainer.value = false;
-};
-
-const editContainer = (container: any) => {
-  selectedContainer.value = {
-    containerNumber: container.id,
-    type: container.type,
-    status: container.status,
-    currentLocation: container.location,
-    destination: container.destination,
-    weight: 25000, // Default weight
-    origin: 'Port Origin' // Default origin
-  };
-  isEditingContainer.value = true;
-  showContainerForm.value = true;
-};
-
-const getStatusColor = (status: string): string => {
-  const statusColors = {
-    "At Port": "bg-blue-100 text-blue-800 border-blue-200",
-    "In Transit": "bg-orange-100 text-orange-800 border-orange-200",
-    "Loading": "bg-purple-100 text-purple-800 border-purple-200",
-    "Inspected": "bg-green-100 text-green-800 border-green-200",
-    "Departed": "bg-slate-100 text-slate-800 border-slate-200",
-  };
-  return statusColors[status as keyof typeof statusColors] || "bg-slate-100 text-slate-800 border-slate-200";
-};
-
-const getTypeIcon = (type: string): string => {
-  const typeIcons = {
-    "Refrigerated": "❄️",
-    "Liquid": "🌊",
-    "Dry": "📦",
-  };
-  return typeIcons[type as keyof typeof typeIcons] || "📦";
 };
 </script>
 
 <style scoped>
-/* Modern animations */
-@keyframes slideIn {
+.container-management {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
   from {
-    opacity: 0;
-    transform: translateY(20px);
+    transform: rotate(0deg);
   }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: rotate(360deg);
   }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Animation classes */
-.animate-slideIn {
-  animation: slideIn 0.6s ease-out forwards;
-  opacity: 0;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.8s ease-out;
-}
-
-/* Custom hover effects */
-.group:hover .group-hover\:scale-105 {
-  transform: scale(1.05);
-}
-
-/* Responsive utilities */
-@media (max-width: 768px) {
-  .grid-cols-1.lg\:grid-cols-2.xl\:grid-cols-3 {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 1rem;
-  }
-  
-  .flex-col.md\:flex-row {
-    flex-direction: column;
-  }
-  
-  .gap-6 {
-    gap: 1rem;
-  }
-  
-  .px-6 {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .py-8 {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-  }
-  
-  .text-3xl {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-  }
-  
-  .text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .text-3xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-  
-  .text-2xl {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-  }
-  
-  .text-lg {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-  }
-  
-  .p-6 {
-    padding: 1rem;
-  }
-  
-  .p-4 {
-    padding: 0.75rem;
-  }
-  
-  .gap-6 {
-    gap: 1rem;
-  }
-  
-  .gap-4 {
-    gap: 0.75rem;
-  }
-  
-  .mb-8 {
-    margin-bottom: 1.5rem;
-  }
-  
-  .mb-6 {
-    margin-bottom: 1rem;
-  }
-}
-
-/* Enhanced shadows for depth */
-.shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Smooth transitions for all interactive elements */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* Focus states for accessibility */
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Custom scrollbar for better UX */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 </style>
