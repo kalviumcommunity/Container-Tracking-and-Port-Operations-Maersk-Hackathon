@@ -222,14 +222,14 @@ using (var scope = app.Services.CreateScope())
     
     try
     {
-        // Ensure database is created
-        await context.Database.EnsureCreatedAsync();
-        
-        // Seed initial data
+        // Seed initial authentication data
         await seedService.SeedDataAsync();
         
+        // Seed comprehensive sample data (ports, ships, containers, etc.)
+        await Backend.Data.Seeding.DataSeeder.SeedAsync(context);
+        
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("Database initialized and seeded successfully");
+        logger.LogInformation("Database initialized and seeded successfully with comprehensive sample data");
     }
     catch (Exception ex)
     {
