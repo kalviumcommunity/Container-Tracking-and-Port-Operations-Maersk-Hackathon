@@ -1,6 +1,7 @@
 using Backend.Data;
 using Backend.Extensions;
 using Backend.Services;
+using Backend.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -107,16 +108,19 @@ if (string.IsNullOrEmpty(jwtKey))
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "ContainerTrackingAPI";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "ContainerTrackingClients";
 
-// Convert Base64 JWT key to bytes
+// Convert Base64 JWT key to bytes - SECURITY: Enforce valid Base64
 byte[] jwtKeyBytes;
 try
 {
     jwtKeyBytes = Convert.FromBase64String(jwtKey);
 }
-catch (FormatException)
+catch (FormatException ex)
 {
-    // If it's not Base64, treat as regular string (for backward compatibility)
-    jwtKeyBytes = Encoding.UTF8.GetBytes(jwtKey);
+    // SECURITY FIX: Enforce that JWT key must be valid Base64 for production
+    throw new InvalidOperationException(
+        "JWT_KEY must be a valid Base64 string for security. " +
+        "Generate one using: [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('your-secret-key'))", 
+        ex);
 }
 
 builder.Configuration["Jwt:Key"] = jwtKey;
@@ -133,7 +137,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Set to true in production
+    options.RequireHttpsMetadata = true; // SECURITY: Always require HTTPS in production
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -160,24 +164,35 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 
-// Add CORS policy with environment variable support
+// Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
-    ?? new[] { "http://localhost:3000", "http://localhost:4200" };
+    ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5173" };
+
+var isProduction = builder.Environment.IsProduction();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("DevelopmentCors", 
-        policy => policy
-            .WithOrigins(corsOrigins)
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials());
-            
-    options.AddPolicy("AllowAll", 
-        policy => policy
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    if (isProduction)
+    {
+        // SECURITY: Strict CORS for production
+        options.AddPolicy("ProductionCors", 
+            policy => policy
+                .WithOrigins(corsOrigins) // Only specified origins
+                .WithMethods("GET", "POST", "PUT", "DELETE") // Only required methods
+                .WithHeaders("Content-Type", "Authorization") // Only required headers
+                .AllowCredentials()
+                .SetPreflightMaxAge(TimeSpan.FromMinutes(10))); // Cache preflight
+    }
+    else
+    {
+        // Development CORS (more permissive)
+        options.AddPolicy("DevelopmentCors", 
+            policy => policy
+                .WithOrigins(corsOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
+    }
 });
 
 var app = builder.Build();
@@ -185,6 +200,12 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 // Add global exception handler middleware
 app.UseGlobalExceptionHandler();
+
+// Add security headers for production
+if (app.Environment.IsProduction())
+{
+    app.UseSecurityHeaders();
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -200,8 +221,8 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Use more restrictive CORS for production
-    app.UseCors("AllowAll");
+    // SECURITY: Use strict CORS for production
+    app.UseCors("ProductionCors");
 }
 
 app.UseHttpsRedirection();
