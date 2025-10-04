@@ -4,18 +4,21 @@
 Write-Host "🚀 Secure Azure PostgreSQL Enhanced Seeding..." -ForegroundColor Green
 Write-Host ""
 
-# Step 1: Check environment
+# Step 1: Check environment (look for .env in backend folder)
 Write-Host "1. Environment Check..." -ForegroundColor Yellow
-if (Test-Path ".env") {
-    Write-Host "✅ .env file exists" -ForegroundColor Green
+$envPath = "..\backend\.env"
+if (Test-Path $envPath) {
+    Write-Host "✅ .env file found in backend folder" -ForegroundColor Green
 } else {
-    Write-Host "❌ .env file not found. Please ensure .env is configured." -ForegroundColor Red
+    Write-Host "❌ .env file not found at $envPath" -ForegroundColor Red
+    Write-Host "   Please ensure .env is configured in the backend folder." -ForegroundColor Red
     exit 1
 }
 
-# Step 2: Start API
+# Step 2: Navigate to backend directory and start API
 Write-Host ""
-Write-Host "2. Starting API server..." -ForegroundColor Yellow
+Write-Host "2. Starting API server from backend directory..." -ForegroundColor Yellow
+Push-Location "..\backend"
 $apiProcess = Start-Process -FilePath "dotnet" -ArgumentList "run" -NoNewWindow -PassThru
 Start-Sleep -Seconds 10
 
@@ -136,11 +139,14 @@ catch {
     exit 1
 }
 finally {
-    # Clean up: Stop the API process
+    # Clean up: Stop the API process and return to original directory
     if ($apiProcess -and !$apiProcess.HasExited) {
         Write-Host ""
         Write-Host "🛑 Stopping API server..." -ForegroundColor Yellow
         $apiProcess.Kill()
         $apiProcess.WaitForExit(5000)
     }
+    
+    # Return to original directory (scripts folder)
+    Pop-Location
 }
