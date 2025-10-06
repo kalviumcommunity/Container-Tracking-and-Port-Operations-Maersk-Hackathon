@@ -11,6 +11,14 @@
           <div>
             <h1 class="text-3xl font-bold text-slate-900">Port Operations Dashboard</h1>
             <p class="text-slate-600 mt-1">Port Terminal - Real-time Operations</p>
+            <div v-if="isAdminUser" class="mt-2">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                System Admin - Full Database Access
+              </span>
+            </div>
           </div>
         </div>
         <div class="flex items-center gap-6 text-sm text-slate-600">
@@ -235,127 +243,215 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+<script>
 import ShipForm from '../forms/ShipForm.vue';
 import { Ship, Container, Anchor, Activity, AlertTriangle, CheckCircle, Clock, Users, TrendingUp, Globe } from 'lucide-vue-next';
+import { containerApi, portApi, shipApi, berthApi, berthAssignmentApi } from '../services/api';
 
-const currentTime = ref(new Date().toLocaleTimeString());
-
-interface Stat {
-  title: string;
-  value: string;
-  icon: any;
-  change: string;
-  bgColor: string;
-  iconColor: string;
-  progressColor: string;
-  progress: string;
-}
-
-interface ContainerActivity {
-  id: string;
-  status: string;
-  berth: string;
-  time: string;
-  type: string;
-}
-
-const stats: Stat[] = [
-  { 
-    title: "Total Containers", 
-    value: "2,847", 
-    icon: Container, 
-    change: "+12%",
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-    progressColor: "bg-blue-500",
-    progress: "73%"
+export default {
+  name: 'Dashboard',
+  components: {
+    ShipForm,
+    Ship,
+    Container,
+    Anchor,
+    Activity,
+    AlertTriangle,
+    CheckCircle,
+    Clock,
+    Users,
+    TrendingUp,
+    Globe
   },
-  { 
-    title: "Active Ships", 
-    value: "23", 
-    icon: Ship, 
-    change: "+3%",
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-    progressColor: "bg-green-500",
-    progress: "85%"
+  data() {
+    return {
+      currentTime: new Date().toLocaleTimeString(),
+      loading: true,
+      stats: [
+        { 
+          title: "Total Containers", 
+          value: "0", 
+          icon: Container, 
+          change: "+12%",
+          bgColor: "bg-blue-50",
+          iconColor: "text-blue-600",
+          progressColor: "bg-blue-500",
+          progress: "0%"
+        },
+        { 
+          title: "Active Ships", 
+          value: "0", 
+          icon: Ship, 
+          change: "+3%",
+          bgColor: "bg-green-50",
+          iconColor: "text-green-600",
+          progressColor: "bg-green-500",
+          progress: "0%"
+        },
+        { 
+          title: "Available Berths", 
+          value: "0/0", 
+          icon: Anchor, 
+          change: "-2%",
+          bgColor: "bg-orange-50",
+          iconColor: "text-orange-600",
+          progressColor: "bg-orange-500",
+          progress: "0%"
+        },
+        { 
+          title: "Operations Today", 
+          value: "0", 
+          icon: Activity, 
+          change: "+8%",
+          bgColor: "bg-purple-50",
+          iconColor: "text-purple-600",
+          progressColor: "bg-purple-500",
+          progress: "0%"
+        },
+      ],
+      containers: [],
+      ships: [],
+      berths: [],
+      berthAssignments: [],
+      ports: [],
+      recentContainers: [],
+      // Form state management
+      showShipForm: false,
+      selectedShip: null,
+      isEditingShip: false,
+      timeInterval: null
+    };
   },
-  { 
-    title: "Available Berths", 
-    value: "8/15", 
-    icon: Anchor, 
-    change: "-2%",
-    bgColor: "bg-orange-50",
-    iconColor: "text-orange-600",
-    progressColor: "bg-orange-500",
-    progress: "53%"
-  },
-  { 
-    title: "Operations Today", 
-    value: "156", 
-    icon: Activity, 
-    change: "+8%",
-    bgColor: "bg-purple-50",
-    iconColor: "text-purple-600",
-    progressColor: "bg-purple-500",
-    progress: "78%"
-  },
-];
+  async mounted() {
+    // Start time interval
+    this.timeInterval = setInterval(() => {
+      this.currentTime = new Date().toLocaleTimeString();
+    }, 1000);
 
-// Form state management
-const showShipForm = ref(false);
-const selectedShip = ref(null);
-const isEditingShip = ref(false);
+    // Load data from backend
+    await this.loadDashboardData();
+  },
+  beforeUnmount() {
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+    }
+  },
+  
+  computed: {
+    isAdminUser() {
+      const adminUser = localStorage.getItem('admin_user');
+      return !!adminUser;
+    }
+  },
+  
+  methods: {
+    async loadDashboardData() {
+      try {
+        this.loading = true;
 
-// Form handlers
-const handleShipSubmit = (shipData: any) => {
-  // Update stats
-  const shipsStat = stats.find(s => s.title === "Active Ships");
-  if (shipsStat) {
-    const currentCount = parseInt(shipsStat.value);
-    shipsStat.value = (currentCount + 1).toString();
+        // Load all data in parallel
+        const [containersResponse, shipsResponse, berthsResponse, berthAssignmentsResponse, portsResponse] = await Promise.all([
+          containerApi.getAll(),
+          shipApi.getAll(),
+          berthApi.getAll(),
+          berthAssignmentApi.getAll(),
+          portApi.getAll()
+        ]);
+
+        this.containers = containersResponse.data || [];
+        this.ships = shipsResponse.data || [];
+        this.berths = berthsResponse.data || [];
+        this.berthAssignments = berthAssignmentsResponse.data || [];
+        this.ports = portsResponse.data || [];
+
+        // Update stats with real data
+        this.updateStats();
+        
+        // Update recent containers with real data
+        this.updateRecentContainers();
+
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    updateStats() {
+      // Total Containers
+      const totalContainers = this.containers.length;
+      this.stats[0].value = totalContainers.toString();
+      this.stats[0].progress = Math.min((totalContainers / 50) * 100, 100).toFixed(0) + '%';
+
+      // Active Ships
+      const activeShips = this.ships.length;
+      this.stats[1].value = activeShips.toString();
+      this.stats[1].progress = Math.min((activeShips / 20) * 100, 100).toFixed(0) + '%';
+
+      // Available Berths
+      const totalBerths = this.berths.length;
+      const occupiedBerths = this.berthAssignments.length;
+      const availableBerths = totalBerths - occupiedBerths;
+      this.stats[2].value = `${availableBerths}/${totalBerths}`;
+      this.stats[2].progress = totalBerths > 0 ? ((occupiedBerths / totalBerths) * 100).toFixed(0) + '%' : '0%';
+
+      // Operations Today (total assignments)
+      const operationsToday = this.berthAssignments.length;
+      this.stats[3].value = operationsToday.toString();
+      this.stats[3].progress = Math.min((operationsToday / 30) * 100, 100).toFixed(0) + '%';
+    },
+
+    updateRecentContainers() {
+      // Get recent containers from the first few containers
+      this.recentContainers = this.containers.slice(0, 4).map((container, index) => {
+        const statuses = ['Arrived', 'Loading', 'Inspection', 'Departed'];
+        const times = ['14:30', '13:45', '12:20', '11:55'];
+        
+        // Find assigned berth for this container
+        const assignment = this.berthAssignments.find(a => a.shipId === container.shipId);
+        const berth = assignment ? this.berths.find(b => b.id === assignment.berthId) : null;
+        
+        return {
+          id: container.containerNumber || `CNT-${container.id}`,
+          status: statuses[index] || 'Arrived',
+          berth: berth ? berth.identifier : 'N/A',
+          time: times[index] || new Date().toLocaleTimeString().slice(0, 5),
+          type: container.type || 'Dry'
+        };
+      });
+    },
+
+    getStatusColor(status) {
+      const statusColors = {
+        "Arrived": "bg-blue-100 text-blue-800 border-blue-200",
+        "Loading": "bg-orange-100 text-orange-800 border-orange-200",
+        "Inspection": "bg-purple-100 text-purple-800 border-purple-200",
+        "Departed": "bg-green-100 text-green-800 border-green-200",
+      };
+      return statusColors[status] || "bg-slate-100 text-slate-800 border-slate-200";
+    },
+
+    async handleShipSubmit(shipData) {
+      try {
+        // Create new ship using API
+        await shipApi.create(shipData);
+        
+        // Reload dashboard data to reflect changes
+        await this.loadDashboardData();
+        
+        this.closeShipForm();
+      } catch (error) {
+        console.error('Error creating ship:', error);
+      }
+    },
+
+    closeShipForm() {
+      this.showShipForm = false;
+      this.selectedShip = null;
+      this.isEditingShip = false;
+    }
   }
-  closeShipForm();
 };
-
-const closeShipForm = () => {
-  showShipForm.value = false;
-  selectedShip.value = null;
-  isEditingShip.value = false;
-};
-
-const recentContainers: ContainerActivity[] = [
-  { id: "CNT-001", status: "Arrived", berth: "B-07", time: "14:30", type: "Refrigerated" },
-  { id: "CNT-002", status: "Loading", berth: "B-12", time: "13:45", type: "Dry" },
-  { id: "CNT-003", status: "Inspection", berth: "B-03", time: "12:20", type: "Liquid" },
-  { id: "CNT-004", status: "Departed", berth: "-", time: "11:55", type: "Dry" },
-];
-
-const getStatusColor = (status: string): string => {
-  const statusColors = {
-    "Arrived": "bg-blue-100 text-blue-800 border-blue-200",
-    "Loading": "bg-orange-100 text-orange-800 border-orange-200",
-    "Inspection": "bg-purple-100 text-purple-800 border-purple-200",
-    "Departed": "bg-green-100 text-green-800 border-green-200",
-  };
-  return statusColors[status as keyof typeof statusColors] || "bg-slate-100 text-slate-800 border-slate-200";
-};
-
-let timeInterval: number;
-
-onMounted(() => {
-  timeInterval = window.setInterval(() => {
-    currentTime.value = new Date().toLocaleTimeString();
-  }, 1000);
-});
-
-onUnmounted(() => {
-  if (timeInterval) {
-    clearInterval(timeInterval);
-  }
-});
 </script>
 
 <style scoped>

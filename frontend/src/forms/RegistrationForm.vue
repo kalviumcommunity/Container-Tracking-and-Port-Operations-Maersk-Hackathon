@@ -22,7 +22,22 @@
 
     <!-- Form Content -->
     <div class="overflow-y-auto max-h-[calc(95vh-64px)] sm:max-h-[calc(95vh-80px)]">
-      <form @submit.prevent="handleSubmit" class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <!-- Messages at the top -->
+      <div v-if="errorMessage" class="m-4 sm:m-6 mb-0 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center gap-2">
+          <AlertTriangle :size="20" class="text-red-600" />
+          <p class="text-red-800">{{ errorMessage }}</p>
+        </div>
+      </div>
+
+      <div v-if="successMessage" class="m-4 sm:m-6 mb-0 bg-green-50 border border-green-200 rounded-lg p-4">
+        <div class="flex items-center gap-2">
+          <CheckCircle :size="20" class="text-green-600" />
+          <p class="text-green-800">{{ successMessage }}</p>
+        </div>
+      </div>
+
+      <form @submit.prevent="handleSubmit" class="p-4 sm:p-6 space-y-4 sm:space-y-6" :class="{ 'pt-4': errorMessage || successMessage }">
         <!-- Username Field -->
         <div>
           <label for="username" class="block text-sm font-medium text-slate-700 mb-2">
@@ -178,28 +193,14 @@
           </p>
         </div>
       </form>
-
-      <!-- Messages -->
-      <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div class="flex items-center gap-2">
-          <AlertTriangle :size="20" class="text-red-600" />
-          <p class="text-red-800">{{ errorMessage }}</p>
-        </div>
-      </div>
-
-      <div v-if="successMessage" class="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div class="flex items-center gap-2">
-          <CheckCircle :size="20" class="text-green-600" />
-          <p class="text-green-800">{{ successMessage }}</p>
-        </div>
-      </div>
-      </div>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { User, Mail, Lock, UserPlus, Building, Phone, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
+import { authApi } from '../services/api'
 
 const emit = defineEmits(['register-success', 'show-login', 'cancel'])
 
@@ -284,24 +285,81 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Create a unique user ID
+    const userId = Date.now()
     
-    // Mock successful registration
-    const mockUser = {
-      id: Date.now(),
+    // Get selected role names
+    const selectedRoles = availableRoles.value
+      .filter(role => form.roleIds.includes(role.id))
+      .map(role => role.name)
+    
+    // Check if System Admin role was selected (roleId 4 is System Admin)
+    const isSystemAdmin = form.roleIds.includes(4)
+    
+    // Create user object
+    const newUser = {
+      id: userId,
       username: form.username,
       email: form.email,
-      roleIds: form.roleIds
+      password: form.password, // Store password for localStorage authentication
+      roles: selectedRoles,
+      roleIds: form.roleIds,
+      isAdmin: isSystemAdmin,
+      createdAt: new Date().toISOString()
     }
     
-    successMessage.value = 'Account created successfully! You can now sign in.'
+    // Save user data to localStorage
+    const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]')
     
-    setTimeout(() => {
-      emit('register-success', mockUser)
-    }, 1500)
+    // Check if username already exists
+    if (existingUsers.some(user => user.username === form.username)) {
+      errorMessage.value = 'Username already exists. Please choose a different username.'
+      return
+    }
+    
+    // Check if email already exists
+    if (existingUsers.some(user => user.email === form.email)) {
+      errorMessage.value = 'Email already exists. Please use a different email address.'
+      return
+    }
+    
+    // Add new user to the list
+    existingUsers.push(newUser)
+    localStorage.setItem('registered_users', JSON.stringify(existingUsers))
+    
+    if (isSystemAdmin) {
+      // For System Admin, automatically log them in
+      successMessage.value = 'System Admin account created successfully! Logging you in...'
+      
+      // Save current user info to localStorage
+      localStorage.setItem('current_user', JSON.stringify({
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        roles: newUser.roles,
+        isAdmin: true,
+        loginTime: new Date().toISOString()
+      }))
+      
+      setTimeout(() => {
+        // Auto-login the admin user
+        emit('register-success', {
+          ...newUser,
+          autoLogin: true,
+          isAdmin: true
+        })
+      }, 1500)
+    } else {
+      // For regular users, show success and redirect to login
+      successMessage.value = 'Account created successfully! You can now sign in.'
+      
+      setTimeout(() => {
+        emit('register-success', newUser)
+      }, 1500)
+    }
     
   } catch (error) {
+    console.error('Registration error:', error)
     errorMessage.value = 'Registration failed. Please try again.'
   } finally {
     isLoading.value = false

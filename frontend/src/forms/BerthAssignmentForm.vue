@@ -372,7 +372,7 @@ import {
   Link, Package, Anchor, Settings, Flag, Calendar, Activity, Users,
   Save, Loader2, AlertTriangle, CheckCircle, ArrowLeft 
 } from 'lucide-vue-next'
-import { containerApi } from '../services/containerApi'
+import { containerApi } from '../services/api'
 
 interface BerthAssignmentForm {
   id?: number
@@ -523,8 +523,8 @@ const loadAvailableContainers = async () => {
     // Map the API response to the expected format
     availableContainers.value = containers.map(container => ({
       id: container.id,
-      containerNumber: container.containerNumber || container.number,
-      type: container.containerType || container.type,
+      containerNumber: container.containerNumber,
+      type: container.type,
       weight: container.weight || 0
     }))
     

@@ -136,6 +136,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { Ship, User, Lock, LogIn, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
+import { authApi } from '../services/api'
 
 const emit = defineEmits(['login-success', 'show-register', 'cancel'])
 
@@ -181,24 +182,53 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Get registered users from localStorage
+    const registeredUsers = JSON.parse(localStorage.getItem('registered_users') || '[]')
     
-    // Mock successful login
-    const mockUser = {
-      id: 1,
-      username: form.username,
-      roles: ['User']
+    // Find user with matching username
+    const user = registeredUsers.find(u => u.username === form.username)
+    
+    if (!user) {
+      errorMessage.value = 'Username not found. Please check your username or sign up first.'
+      return
     }
     
+    // Check password
+    if (user.password !== form.password) {
+      errorMessage.value = 'Invalid password. Please try again.'
+      return
+    }
+    
+    // Successful authentication
     successMessage.value = 'Login successful! Redirecting...'
     
+    // Save current user session to localStorage
+    const currentUser = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      roles: user.roles,
+      isAdmin: user.isAdmin || false,
+      loginTime: new Date().toISOString()
+    }
+    
+    localStorage.setItem('current_user', JSON.stringify(currentUser))
+    
+    // Update last login time in registered users
+    const updatedUsers = registeredUsers.map(u => 
+      u.id === user.id 
+        ? { ...u, lastLoginAt: new Date().toISOString() }
+        : u
+    )
+    localStorage.setItem('registered_users', JSON.stringify(updatedUsers))
+    
     setTimeout(() => {
-      emit('login-success', mockUser)
+      emit('login-success', currentUser)
     }, 1000)
     
   } catch (error) {
-    errorMessage.value = 'Invalid credentials. Please try again.'
+    console.error('Login error:', error)
+    errorMessage.value = 'Login failed. Please try again.'
   } finally {
     isLoading.value = false
   }
