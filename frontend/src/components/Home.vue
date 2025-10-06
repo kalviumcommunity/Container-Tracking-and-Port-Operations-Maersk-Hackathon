@@ -441,4 +441,4 @@ const navigateTo = (route: string) => {
   animation: slideIn 0.6s ease-out forwards;
   opacity: 0;
 }
-</style> 
+</style>

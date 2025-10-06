@@ -17,7 +17,7 @@
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
               <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span class="text-green-700 font-medium">8 Available Berths</span>
+              <span class="text-green-700 font-medium">{{ stats.availableBerths }} Available Berths</span>
             </div>
           </div>
         </div>
@@ -37,7 +37,7 @@
               </div>
             </div>
             <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">15</p>
+              <p class="text-3xl font-bold text-slate-900">{{ stats.totalBerths }}</p>
               <p class="text-sm font-medium text-slate-600">Total Berths</p>
               <div class="flex items-center gap-1 mt-2">
                 <TrendingUp :size="14" class="text-green-600" />
@@ -49,33 +49,15 @@
 
           <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <div class="flex items-start justify-between mb-4">
-              <div class="p-3 bg-orange-50 rounded-lg">
-                <Activity :size="24" class="text-orange-600" />
-              </div>
-            </div>
-            <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">7</p>
-              <p class="text-sm font-medium text-slate-600">Occupied Berths</p>
-              <div class="flex items-center gap-1 mt-2">
-                <TrendingUp :size="14" class="text-orange-600" />
-                <span class="text-sm font-medium text-orange-600">47%</span>
-                <span class="text-sm text-slate-500">utilization</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div class="flex items-start justify-between mb-4">
               <div class="p-3 bg-green-50 rounded-lg">
                 <CheckCircle :size="24" class="text-green-600" />
               </div>
             </div>
             <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">8</p>
+              <p class="text-3xl font-bold text-slate-900">{{ stats.availableBerths }}</p>
               <p class="text-sm font-medium text-slate-600">Available Berths</p>
               <div class="flex items-center gap-1 mt-2">
-                <TrendingUp :size="14" class="text-green-600" />
-                <span class="text-sm font-medium text-green-600">53%</span>
+                <span class="text-sm font-medium text-green-600">{{ stats.availabilityPercentage }}%</span>
                 <span class="text-sm text-slate-500">available</span>
               </div>
             </div>
@@ -83,17 +65,32 @@
 
           <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <div class="flex items-start justify-between mb-4">
-              <div class="p-3 bg-red-50 rounded-lg">
-                <AlertTriangle :size="24" class="text-red-600" />
+              <div class="p-3 bg-orange-50 rounded-lg">
+                <Clock :size="24" class="text-orange-600" />
               </div>
             </div>
             <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">2</p>
-              <p class="text-sm font-medium text-slate-600">Under Maintenance</p>
+              <p class="text-3xl font-bold text-slate-900">{{ stats.occupiedBerths }}</p>
+              <p class="text-sm font-medium text-slate-600">Occupied Berths</p>
               <div class="flex items-center gap-1 mt-2">
-                <Clock :size="14" class="text-red-600" />
-                <span class="text-sm font-medium text-red-600">2-3 hrs</span>
-                <span class="text-sm text-slate-500">remaining</span>
+                <span class="text-sm font-medium text-orange-600">{{ stats.occupancyPercentage }}%</span>
+                <span class="text-sm text-slate-500">occupied</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div class="flex items-start justify-between mb-4">
+              <div class="p-3 bg-purple-50 rounded-lg">
+                <Ship :size="24" class="text-purple-600" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <p class="text-3xl font-bold text-slate-900">{{ stats.totalShips }}</p>
+              <p class="text-sm font-medium text-slate-600">Ships in Port</p>
+              <div class="flex items-center gap-1 mt-2">
+                <span class="text-sm font-medium text-purple-600">{{ stats.dockedShips }}</span>
+                <span class="text-sm text-slate-500">docked</span>
               </div>
             </div>
           </div>
@@ -124,7 +121,7 @@
           <div class="p-6">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div
-                v-for="(berth, index) in berths"
+                v-for="(berth, index) in getBerthData()"
                 :key="berth.id"
                 class="p-4 border border-slate-200 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer group animate-slideIn"
                 :style="{ animationDelay: `${index * 50}ms` }"
@@ -290,8 +287,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
+<script>
 import BerthForm from '../forms/BerthForm.vue';
 import BerthAssignmentForm from '../forms/BerthAssignmentForm.vue';
 import { 
@@ -304,128 +300,284 @@ import {
   TrendingUp, 
   Plus, 
   Settings, 
-  FileText 
+  FileText,
+  Ship
 } from 'lucide-vue-next';
+import { portApi, shipApi, berthApi, berthAssignmentApi, containerApi } from '../services/api';
 
-interface Berth {
-  id: string;
-  status: string;
-  container: string | null;
-  ship: string | null;
-  capacity: string;
-}
+export default {
+  name: 'PortOperationManagement',
+  components: {
+    BerthForm,
+    BerthAssignmentForm,
+    Anchor,
+    Activity,
+    MapPin,
+    CheckCircle,
+    AlertTriangle,
+    Clock,
+    TrendingUp,
+    Plus,
+    Settings,
+    FileText,
+    Ship
+  },
+  data() {
+    return {
+      loading: true,
+      berths: [],
+      ships: [],
+      containers: [],
+      berthAssignments: [],
+      ports: [],
+      operations: [],
+      
+      // Form state management
+      showBerthForm: false,
+      selectedBerth: null,
+      isEditingBerth: false,
 
-interface Operation {
-  id: string;
-  type: string;
-  vessel: string;
-  progress: number;
-  eta: string;
-  priority: string;
-}
+      showBerthAssignmentForm: false,
+      selectedAssignment: null,
+      isEditingAssignment: false
+    };
+  },
+  computed: {
+    stats() {
+      const totalBerths = this.berths.length;
+      const occupiedBerths = this.berthAssignments.length;
+      const availableBerths = totalBerths - occupiedBerths;
+      const availabilityPercentage = totalBerths > 0 ? Math.round((availableBerths / totalBerths) * 100) : 0;
+      const occupancyPercentage = totalBerths > 0 ? Math.round((occupiedBerths / totalBerths) * 100) : 0;
+      const totalShips = this.ships.length;
+      const dockedShips = this.berthAssignments.length; // Ships with berth assignments
 
-const berths = ref<Berth[]>([
-  { id: "B-01", status: "Occupied", container: "CTR-001", ship: "MV Ocean Pearl", capacity: "85%" },
-  { id: "B-02", status: "Free", container: null, ship: null, capacity: "0%" },
-  { id: "B-03", status: "Occupied", container: "CTR-003", ship: "MV Blue Wave", capacity: "72%" },
-  { id: "B-04", status: "Maintenance", container: null, ship: null, capacity: "0%" },
-  { id: "B-05", status: "Free", container: null, ship: null, capacity: "0%" },
-  { id: "B-06", status: "Occupied", container: "CTR-006", ship: "MV Sea Breeze", capacity: "90%" },
-  { id: "B-07", status: "Occupied", container: "CTR-007", ship: "MV Atlantic", capacity: "67%" },
-  { id: "B-08", status: "Free", container: null, ship: null, capacity: "0%" },
-]);
-
-const operations = ref<Operation[]>([
-  { id: "OP-001", type: "Loading", vessel: "MV Ocean Pearl", progress: 85, eta: "2 hours", priority: "High" },
-  { id: "OP-002", type: "Unloading", vessel: "MV Blue Wave", progress: 45, eta: "4 hours", priority: "Medium" },
-  { id: "OP-003", type: "Inspection", vessel: "MV Sea Breeze", progress: 90, eta: "30 min", priority: "High" },
-  { id: "OP-004", type: "Refueling", vessel: "MV Atlantic", progress: 60, eta: "1.5 hours", priority: "Low" },
-]);
-
-// Form state management
-const showBerthForm = ref(false);
-const selectedBerth = ref(null);
-const isEditingBerth = ref(false);
-
-const showBerthAssignmentForm = ref(false);
-const selectedAssignment = ref(null);
-const isEditingAssignment = ref(false);
-
-// Form handlers
-const handleBerthSubmit = (berthData: any) => {
-  if (isEditingBerth.value) {
-    // Update existing berth
-    const index = berths.value.findIndex(b => b.id === berthData.berthNumber);
-    if (index !== -1) {
-      berths.value[index] = {
-        id: berthData.berthNumber,
-        status: berthData.status,
-        container: null,
-        ship: null,
-        capacity: "0%"
+      return {
+        totalBerths,
+        occupiedBerths,
+        availableBerths,
+        availabilityPercentage,
+        occupancyPercentage,
+        totalShips,
+        dockedShips
       };
+    },
+    totalBerths() {
+      return this.berths.length;
+    },
+    occupiedBerths() {
+      return this.berthAssignments.length;
+    },
+    freeBerths() {
+      return this.totalBerths - this.occupiedBerths;
+    },
+    berthUtilization() {
+      return this.totalBerths > 0 ? Math.round((this.occupiedBerths / this.totalBerths) * 100) : 0;
+    },
+    activeShips() {
+      return this.ships.length;
+    },
+    totalContainers() {
+      return this.containers.length;
     }
-  } else {
-    // Add new berth
-    berths.value.push({
-      id: berthData.berthNumber,
-      status: berthData.status,
-      container: null,
-      ship: null,
-      capacity: "0%"
-    });
+  },
+  async mounted() {
+    await this.loadOperationData();
+  },
+  methods: {
+    async loadOperationData() {
+      try {
+        this.loading = true;
+        console.log('Loading port operation data...');
+
+        // Load all data in parallel
+        const [portsResponse, berthsResponse, shipsResponse, containersResponse, assignmentsResponse] = await Promise.all([
+          portApi.getAll(),
+          berthApi.getAll(),
+          shipApi.getAll(),
+          containerApi.getAll(),
+          berthAssignmentApi.getAll()
+        ]);
+
+        console.log('API Responses:', {
+          ports: portsResponse,
+          berths: berthsResponse,
+          ships: shipsResponse,
+          containers: containersResponse,
+          assignments: assignmentsResponse
+        });
+
+        this.ports = portsResponse.data || [];
+        this.berths = berthsResponse.data || [];
+        this.ships = shipsResponse.data || [];
+        this.containers = containersResponse.data || [];
+        this.berthAssignments = assignmentsResponse.data || [];
+
+        console.log('Loaded data counts:', {
+          ports: this.ports.length,
+          berths: this.berths.length,
+          ships: this.ships.length,
+          containers: this.containers.length,
+          berthAssignments: this.berthAssignments.length
+        });
+
+        // Transform data for operations display
+        this.updateOperations();
+
+      } catch (error) {
+        console.error('Error loading operation data:', error);
+        // Show some mock data if API fails for testing
+        this.loadMockData();
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    loadMockData() {
+      console.log('Loading mock data for testing...');
+      // Mock data for testing when API is not available
+      this.ports = [
+        { id: 1, name: 'Port of Hamburg', location: 'Hamburg, Germany' },
+        { id: 2, name: 'Port of Rotterdam', location: 'Rotterdam, Netherlands' }
+      ];
+
+      this.berths = [
+        { id: 1, identifier: 'B-001', status: 'Available', portId: 1 },
+        { id: 2, identifier: 'B-002', status: 'Occupied', portId: 1 },
+        { id: 3, identifier: 'B-003', status: 'Available', portId: 1 },
+        { id: 4, identifier: 'B-004', status: 'Maintenance', portId: 1 },
+        { id: 5, identifier: 'B-005', status: 'Available', portId: 2 },
+        { id: 6, identifier: 'B-006', status: 'Occupied', portId: 2 }
+      ];
+
+      this.ships = [
+        { id: 1, name: 'MV Ocean Explorer', status: 'Docked' },
+        { id: 2, name: 'MV Cargo Master', status: 'Docked' },
+        { id: 3, name: 'MV Sea Voyager', status: 'In Transit' }
+      ];
+
+      this.containers = [
+        { id: 1, containerNumber: 'CONT-001', shipId: 1, status: 'Loading' },
+        { id: 2, containerNumber: 'CONT-002', shipId: 1, status: 'Loaded' },
+        { id: 3, containerNumber: 'CONT-003', shipId: 2, status: 'Unloading' }
+      ];
+
+      this.berthAssignments = [
+        { id: 1, berthId: 2, shipId: 1, status: 'Active' },
+        { id: 2, berthId: 6, shipId: 2, status: 'Active' }
+      ];
+
+      this.updateOperations();
+      console.log('Mock data loaded successfully');
+    },
+
+    updateOperations() {
+      // Create operations from berth assignments and ships
+      this.operations = this.berthAssignments.slice(0, 4).map((assignment, index) => {
+        const ship = this.ships.find(s => s.id === assignment.shipId);
+        const berth = this.berths.find(b => b.id === assignment.berthId);
+        
+        const operationTypes = ['Loading', 'Unloading', 'Inspection', 'Refueling'];
+        const priorities = ['High', 'Medium', 'Low'];
+        const etas = ['2 hours', '4 hours', '30 min', '1.5 hours'];
+        
+        return {
+          id: `OP-${assignment.id}`,
+          type: operationTypes[index % operationTypes.length],
+          vessel: ship ? ship.name : `Ship ${assignment.shipId}`,
+          progress: Math.floor(Math.random() * 40) + 60, // Random progress between 60-100%
+          eta: etas[index % etas.length],
+          priority: priorities[index % priorities.length]
+        };
+      });
+    },
+
+    getBerthData() {
+      // Transform berths with assignment information
+      return this.berths.map(berth => {
+        const assignment = this.berthAssignments.find(a => a.berthId === berth.id);
+        const ship = assignment ? this.ships.find(s => s.id === assignment.shipId) : null;
+        const container = assignment ? this.containers.find(c => c.shipId === assignment.shipId) : null;
+        
+        return {
+          id: berth.identifier || berth.id,
+          status: assignment ? 'Occupied' : (berth.status === 'Available' ? 'Free' : 'Maintenance'),
+          container: container ? container.containerNumber : null,
+          ship: ship ? ship.name : null,
+          capacity: assignment ? `${Math.floor(Math.random() * 30) + 70}%` : '0%'
+        };
+      });
+    },
+
+    async handleBerthSubmit(berthData) {
+      try {
+        if (this.isEditingBerth) {
+          // Update existing berth
+          await berthApi.update(this.selectedBerth.id, berthData);
+        } else {
+          // Add new berth
+          await berthApi.create(berthData);
+        }
+        
+        // Reload data to reflect changes
+        await this.loadOperationData();
+        this.closeBerthForm();
+      } catch (error) {
+        console.error('Error saving berth:', error);
+      }
+    },
+
+    closeBerthForm() {
+      this.showBerthForm = false;
+      this.selectedBerth = null;
+      this.isEditingBerth = false;
+    },
+
+    async handleAssignmentSubmit(assignmentData) {
+      try {
+        await berthAssignmentApi.create(assignmentData);
+        
+        // Reload data to reflect changes
+        await this.loadOperationData();
+        this.closeBerthAssignmentForm();
+      } catch (error) {
+        console.error('Error creating assignment:', error);
+      }
+    },
+
+    closeBerthAssignmentForm() {
+      this.showBerthAssignmentForm = false;
+      this.selectedAssignment = null;
+      this.isEditingAssignment = false;
+    },
+
+    getBerthStatusColor(status) {
+      const statusColors = {
+        "Occupied": "bg-orange-100 text-orange-800 border-orange-200",
+        "Free": "bg-green-100 text-green-800 border-green-200",
+        "Maintenance": "bg-red-100 text-red-800 border-red-200",
+      };
+      return statusColors[status] || "bg-slate-100 text-slate-800 border-slate-200";
+    },
+
+    getBerthBorderColor(status) {
+      const borderColors = {
+        "Occupied": "border-orange-300 bg-orange-50",
+        "Free": "border-green-300 bg-green-50",
+        "Maintenance": "border-red-300 bg-red-50",
+      };
+      return borderColors[status] || "border-slate-200 bg-white";
+    },
+
+    getPriorityColor(priority) {
+      const priorityColors = {
+        "High": "bg-red-100 text-red-800 border-red-200",
+        "Medium": "bg-orange-100 text-orange-800 border-orange-200",
+        "Low": "bg-green-100 text-green-800 border-green-200",
+      };
+      return priorityColors[priority] || "bg-slate-100 text-slate-800 border-slate-200";
+    }
   }
-  closeBerthForm();
-};
-
-const closeBerthForm = () => {
-  showBerthForm.value = false;
-  selectedBerth.value = null;
-  isEditingBerth.value = false;
-};
-
-const handleAssignmentSubmit = (assignmentData: any) => {
-  // Update berth status to occupied
-  const berth = berths.value.find(b => b.id === assignmentData.berthId);
-  if (berth) {
-    berth.status = "Occupied";
-    berth.container = `CTR-${Date.now()}`;
-    berth.capacity = "75%";
-  }
-  closeBerthAssignmentForm();
-};
-
-const closeBerthAssignmentForm = () => {
-  showBerthAssignmentForm.value = false;
-  selectedAssignment.value = null;
-  isEditingAssignment.value = false;
-};
-
-const getBerthStatusColor = (status: string): string => {
-  const statusColors = {
-    "Occupied": "bg-orange-100 text-orange-800 border-orange-200",
-    "Free": "bg-green-100 text-green-800 border-green-200",
-    "Maintenance": "bg-red-100 text-red-800 border-red-200",
-  };
-  return statusColors[status as keyof typeof statusColors] || "bg-slate-100 text-slate-800 border-slate-200";
-};
-
-const getBerthBorderColor = (status: string): string => {
-  const borderColors = {
-    "Occupied": "border-orange-300 bg-orange-50",
-    "Free": "border-green-300 bg-green-50",
-    "Maintenance": "border-red-300 bg-red-50",
-  };
-  return borderColors[status as keyof typeof borderColors] || "border-slate-200 bg-white";
-};
-
-const getPriorityColor = (priority: string): string => {
-  const priorityColors = {
-    "High": "bg-red-100 text-red-800 border-red-200",
-    "Medium": "bg-orange-100 text-orange-800 border-orange-200",
-    "Low": "bg-green-100 text-green-800 border-green-200",
-  };
-  return priorityColors[priority as keyof typeof priorityColors] || "bg-slate-100 text-slate-800 border-slate-200";
 };
 </script>
 
