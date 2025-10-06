@@ -53,13 +53,62 @@ namespace Backend.Controllers
         }
 
         /// <summary>
+        /// Public user registration
+        /// </summary>
+        /// <param name="registerDto">User registration data</param>
+        /// <returns>JWT token and user information</returns>
+        [HttpPost("register")]
+        [AllowAnonymous]
+        public async Task<ActionResult<LoginResponseDto>> Register([FromBody] RegisterDto registerDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // For public registration, assign default role if none specified
+                if (registerDto.Roles == null || !registerDto.Roles.Any())
+                {
+                    registerDto.Roles = new List<string> { "Operator" }; // Default role with viewing permissions
+                }
+
+                var user = await _authService.RegisterAsync(registerDto);
+                
+                // Auto-login after successful registration
+                var loginDto = new LoginDto 
+                { 
+                    Username = registerDto.Username, 
+                    Password = registerDto.Password 
+                };
+                var loginResult = await _authService.LoginAsync(loginDto);
+                
+                if (loginResult == null)
+                {
+                    return StatusCode(500, new { message = "Registration successful but auto-login failed" });
+                }
+
+                return CreatedAtAction(nameof(GetProfile), new { userId = user.UserId }, loginResult);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred during registration", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// User registration (Admin only)
         /// </summary>
         /// <param name="registerDto">User registration data</param>
         /// <returns>Created user information</returns>
-        [HttpPost("register")]
+        [HttpPost("admin/register")]
         [RequirePermission(Permissions.ManageUsers)]
-        public async Task<ActionResult<UserDto>> Register([FromBody] RegisterDto registerDto)
+        public async Task<ActionResult<UserDto>> AdminRegister([FromBody] RegisterDto registerDto)
         {
             try
             {

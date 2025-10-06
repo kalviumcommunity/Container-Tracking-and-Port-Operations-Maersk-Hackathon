@@ -339,6 +339,18 @@ export default {
   
   computed: {
     isAdminUser() {
+      // Check JWT authentication and user roles
+      const currentUser = localStorage.getItem('current_user');
+      if (currentUser) {
+        try {
+          const user = JSON.parse(currentUser);
+          return user.roles && (user.roles.includes('Admin') || user.roles.includes('PortManager'));
+        } catch (error) {
+          return false;
+        }
+      }
+      
+      // Fallback to legacy admin check
       const adminUser = localStorage.getItem('admin_user');
       return !!adminUser;
     }

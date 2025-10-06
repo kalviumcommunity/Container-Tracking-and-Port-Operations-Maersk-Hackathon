@@ -191,6 +191,7 @@ namespace Backend.Services
                     Permissions.ViewShips, Permissions.ScheduleShips,
                     Permissions.ViewCargo, Permissions.ManageCargo,
                     Permissions.ViewBerths, Permissions.AllocateBerths,
+                    Permissions.ViewBerthAssignments,
                     Permissions.ViewEquipment
                 },
                 [Roles.Viewer] = new[]

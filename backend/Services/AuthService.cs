@@ -100,6 +100,13 @@ namespace Backend.Services
 
             // Get user roles and permissions
             var (roles, permissions) = await GetUserRolesAndPermissionsAsync(user.UserId);
+            
+            // If user has no roles assigned, assign default "Operator" role (migration fix)
+            if (!roles.Any())
+            {
+                await AssignRolesToUserAsync(user.UserId, new List<string> { "Operator" });
+                (roles, permissions) = await GetUserRolesAndPermissionsAsync(user.UserId);
+            }
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user, roles, permissions);

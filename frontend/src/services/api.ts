@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:5221/api';
+const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5221/api';
 
 // TypeScript interfaces for API responses
 export interface ApiResponse<T> {
@@ -20,31 +20,46 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
-  roleIds: number[];
+  fullName: string;
+  phoneNumber?: string;
+  department?: string;
+  portId?: number;
+  roles: string[];
 }
 
 export interface AuthResponse {
   token: string;
+  expires: string;
   user: User;
 }
 
 export interface User {
-  id: number;
+  userId: number;
   username: string;
   email: string;
+  fullName: string;
+  phoneNumber?: string;
+  department?: string;
+  portId?: number;
   roles: string[];
+  permissions: string[];
+  isActive: boolean;
+  lastLoginAt?: string;
+  createdAt: string;
 }
 
 export interface Container {
-  id: number;
-  containerNumber: string;
+  containerId: string;
+  name: string;
   type: string;
   status: string;
+  currentLocation: string;
+  createdAt: string;
+  updatedAt: string;
+  shipId?: number;
+  shipName?: string;
   weight?: number;
   destination?: string;
-  shipId?: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface Port {

@@ -182,53 +182,45 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Get registered users from localStorage
-    const registeredUsers = JSON.parse(localStorage.getItem('registered_users') || '[]')
-    
-    // Find user with matching username
-    const user = registeredUsers.find(u => u.username === form.username)
-    
-    if (!user) {
-      errorMessage.value = 'Username not found. Please check your username or sign up first.'
-      return
+    // Use JWT authentication API
+    const loginRequest = {
+      username: form.username,
+      password: form.password
     }
     
-    // Check password
-    if (user.password !== form.password) {
-      errorMessage.value = 'Invalid password. Please try again.'
-      return
-    }
+    const response = await authApi.login(loginRequest)
     
     // Successful authentication
     successMessage.value = 'Login successful! Redirecting...'
     
-    // Save current user session to localStorage
+    // Save user session
     const currentUser = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      roles: user.roles,
-      isAdmin: user.isAdmin || false,
-      loginTime: new Date().toISOString()
+      id: response.user.userId,
+      username: response.user.username,
+      email: response.user.email,
+      fullName: response.user.fullName,
+      roles: response.user.roles,
+      permissions: response.user.permissions,
+      loginTime: new Date().toISOString(),
+      token: response.token
     }
     
     localStorage.setItem('current_user', JSON.stringify(currentUser))
-    
-    // Update last login time in registered users
-    const updatedUsers = registeredUsers.map(u => 
-      u.id === user.id 
-        ? { ...u, lastLoginAt: new Date().toISOString() }
-        : u
-    )
-    localStorage.setItem('registered_users', JSON.stringify(updatedUsers))
+    localStorage.setItem('auth_token', response.token)
     
     setTimeout(() => {
       emit('login-success', currentUser)
     }, 1000)
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error)
-    errorMessage.value = 'Login failed. Please try again.'
+    if (error.response?.status === 401) {
+      errorMessage.value = 'Invalid username or password.'
+    } else if (error.response?.data?.message) {
+      errorMessage.value = error.response.data.message
+    } else {
+      errorMessage.value = 'Login failed. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }

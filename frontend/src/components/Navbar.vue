@@ -25,7 +25,7 @@
               :to="item.path"
               class="flex items-center gap-2 px-3 py-2 mx-1 rounded-lg font-medium transition-all duration-200 hover:bg-slate-50"
               :class="[
-                $route.path === item.path
+                currentRoute.path === item.path
                   ? 'text-blue-600 bg-blue-50 border border-blue-200'
                   : 'text-slate-600 hover:text-slate-900'
               ]"
@@ -119,7 +119,7 @@
               @click="closeMobileMenu"
               class="flex items-center gap-3 px-4 py-3 mx-2 rounded-lg font-medium transition-all duration-200 hover:scale-105"
               :class="[
-                $route.path === item.path
+                currentRoute.path === item.path
                   ? 'text-blue-600 bg-blue-50 border border-blue-200 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               ]"
@@ -226,7 +226,7 @@ export default {
   },
   setup() {
     const route = useRoute()
-    return { $route: route }
+    return { currentRoute: route }
   },
   data() {
     return {
@@ -349,21 +349,12 @@ export default {
     async handleRegisterSuccess(user) {
       this.showRegisterModal = false
       
-      // Check if this is an admin auto-login
-      if (user.autoLogin && user.isAdmin) {
-        // Auto-login the admin user
-        this.currentUser = user
-        this.isAuthenticated = true
-        
-        // Show success message
-        console.log('System Admin account created and logged in automatically!')
-        
-        // Redirect to dashboard to load data
-        this.$router.push('/dashboard')
-      } else {
-        // Regular registration - show login modal
-        this.showLoginModal = true
-      }
+      // Set user as logged in
+      this.currentUser = user
+      this.isAuthenticated = true
+      
+      // Redirect to dashboard after registration
+      this.$router.push('/dashboard')
     },
 
     async handleLogout() {

@@ -70,6 +70,21 @@ namespace Backend.Data
         /// Role permission assignments in the database
         /// </summary>
         public DbSet<RolePermission> RolePermissions { get; set; }
+        
+        /// <summary>
+        /// Events in the database for real-time streaming
+        /// </summary>
+        public DbSet<Event> Events { get; set; }
+        
+        /// <summary>
+        /// Container movements and tracking records
+        /// </summary>
+        public DbSet<ContainerMovement> ContainerMovements { get; set; }
+        
+        /// <summary>
+        /// Analytics and metrics data for dashboard reporting
+        /// </summary>
+        public DbSet<Analytics> Analytics { get; set; }
 
         /// <summary>
         /// Configure entity relationships and constraints
@@ -99,8 +114,16 @@ namespace Backend.Data
                 .HasOne(ba => ba.Container)
                 .WithMany(c => c.BerthAssignments)
                 .HasForeignKey(ba => ba.ContainerId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict); // Don't delete berth assignments when a container is deleted
+                .IsRequired(false)  // BerthAssignment may be for ship only
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            // Configure Ship-BerthAssignment relationship
+            modelBuilder.Entity<BerthAssignment>()
+                .HasOne(ba => ba.Ship)
+                .WithMany(s => s.BerthAssignments)
+                .HasForeignKey(ba => ba.ShipId)
+                .IsRequired(false)  // BerthAssignment may be for container only
+                .OnDelete(DeleteBehavior.Restrict);
                 
             // Configure Berth-BerthAssignment relationship
             modelBuilder.Entity<BerthAssignment>()
@@ -108,7 +131,23 @@ namespace Backend.Data
                 .WithMany(b => b.BerthAssignments)
                 .HasForeignKey(ba => ba.BerthId)
                 .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict); // Don't delete berth assignments when a berth is deleted
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            // Configure User-BerthAssignment relationship for CreatedBy
+            modelBuilder.Entity<BerthAssignment>()
+                .HasOne(ba => ba.CreatedBy)
+                .WithMany()
+                .HasForeignKey(ba => ba.CreatedByUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            // Configure Ship-Port relationship for CurrentPort
+            modelBuilder.Entity<Ship>()
+                .HasOne(s => s.CurrentPort)
+                .WithMany(p => p.DockedShips)
+                .HasForeignKey(s => s.CurrentPortId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
                 
             // Configure Container-ShipContainer relationship
             modelBuilder.Entity<ShipContainer>()
@@ -128,9 +167,128 @@ namespace Backend.Data
 
             // Add indexes for better query performance
             modelBuilder.Entity<Container>().HasIndex(c => c.ContainerId);
+            // Only create unique index on ContainerNumber if it's not null and not empty
+            modelBuilder.Entity<Container>().HasIndex(c => c.ContainerNumber)
+                .HasDatabaseName("IX_Containers_ContainerNumber_Unique")
+                .HasFilter("\"ContainerNumber\" IS NOT NULL AND \"ContainerNumber\" != ''");
             modelBuilder.Entity<Ship>().HasIndex(s => s.Name);
-            modelBuilder.Entity<Berth>().HasIndex(b => new { b.PortId, b.Name });
-            modelBuilder.Entity<BerthAssignment>().HasIndex(ba => new { ba.ContainerId, ba.BerthId });
+            // Only create unique index on ImoNumber if it's not null
+            modelBuilder.Entity<Ship>().HasIndex(s => s.ImoNumber)
+                .HasDatabaseName("IX_Ships_ImoNumber_Unique")
+                .HasFilter("\"ImoNumber\" IS NOT NULL AND \"ImoNumber\" != ''");
+            modelBuilder.Entity<Berth>().HasIndex(b => new { b.PortId, b.Identifier })
+                .IsUnique()
+                .HasDatabaseName("IX_Berths_PortId_Identifier_Unique")
+                .HasFilter("\"Identifier\" IS NOT NULL AND \"Identifier\" != ''");
+            modelBuilder.Entity<BerthAssignment>().HasIndex(ba => new { ba.BerthId, ba.AssignedAt });
+            
+            // Configure Event relationships
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.Container)
+                .WithMany(c => c.Events)
+                .HasForeignKey(e => e.ContainerId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.Ship)
+                .WithMany()
+                .HasForeignKey(e => e.ShipId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.Berth)
+                .WithMany(b => b.Events)
+                .HasForeignKey(e => e.BerthId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.Port)
+                .WithMany()
+                .HasForeignKey(e => e.PortId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(e => e.AssignedToUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.AcknowledgedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.AcknowledgedByUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+            
+            // Configure ContainerMovement relationships
+            modelBuilder.Entity<ContainerMovement>()
+                .HasOne(cm => cm.Container)
+                .WithMany(c => c.Movements)
+                .HasForeignKey(cm => cm.ContainerId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<ContainerMovement>()
+                .HasOne(cm => cm.Ship)
+                .WithMany()
+                .HasForeignKey(cm => cm.ShipId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<ContainerMovement>()
+                .HasOne(cm => cm.Berth)
+                .WithMany(b => b.ContainerMovements)
+                .HasForeignKey(cm => cm.BerthId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<ContainerMovement>()
+                .HasOne(cm => cm.Port)
+                .WithMany()
+                .HasForeignKey(cm => cm.PortId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<ContainerMovement>()
+                .HasOne(cm => cm.RecordedByUser)
+                .WithMany()
+                .HasForeignKey(cm => cm.RecordedByUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+            
+            // Configure Analytics relationships
+            modelBuilder.Entity<Analytics>()
+                .HasOne(a => a.Port)
+                .WithMany()
+                .HasForeignKey(a => a.PortId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Analytics>()
+                .HasOne(a => a.Berth)
+                .WithMany(b => b.Analytics)
+                .HasForeignKey(a => a.BerthId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            modelBuilder.Entity<Analytics>()
+                .HasOne(a => a.Ship)
+                .WithMany()
+                .HasForeignKey(a => a.ShipId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+            
+            // Add indexes for new models
+            modelBuilder.Entity<Event>().HasIndex(e => new { e.EventTimestamp, e.Priority });
+            modelBuilder.Entity<Event>().HasIndex(e => e.Status);
+            modelBuilder.Entity<ContainerMovement>().HasIndex(cm => new { cm.ContainerId, cm.MovementTimestamp });
+            modelBuilder.Entity<Analytics>().HasIndex(a => new { a.MetricType, a.MetricTimestamp });
+            modelBuilder.Entity<Analytics>().HasIndex(a => new { a.PortId, a.Period, a.MetricTimestamp });
 
             // Authentication and Authorization model configurations
             
