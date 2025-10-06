@@ -82,6 +82,70 @@
           <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
         </div>
 
+        <!-- Full Name Field -->
+        <div>
+          <label for="fullName" class="block text-sm font-medium text-slate-700 mb-2">
+            Full Name *
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <User :size="20" class="text-slate-400" />
+            </div>
+            <input
+              id="fullName"
+              v-model="form.fullName"
+              type="text"
+              required
+              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your full name"
+              :class="{ 'border-red-300 focus:ring-red-500 focus:border-red-500': errors.fullName }"
+            />
+          </div>
+          <p v-if="errors.fullName" class="mt-1 text-sm text-red-600">{{ errors.fullName }}</p>
+        </div>
+
+        <!-- Phone Number Field -->
+        <div>
+          <label for="phoneNumber" class="block text-sm font-medium text-slate-700 mb-2">
+            Phone Number
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Phone :size="20" class="text-slate-400" />
+            </div>
+            <input
+              id="phoneNumber"
+              v-model="form.phoneNumber"
+              type="tel"
+              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your phone number (optional)"
+              :class="{ 'border-red-300 focus:ring-red-500 focus:border-red-500': errors.phoneNumber }"
+            />
+          </div>
+          <p v-if="errors.phoneNumber" class="mt-1 text-sm text-red-600">{{ errors.phoneNumber }}</p>
+        </div>
+
+        <!-- Department Field -->
+        <div>
+          <label for="department" class="block text-sm font-medium text-slate-700 mb-2">
+            Department
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Building :size="20" class="text-slate-400" />
+            </div>
+            <input
+              id="department"
+              v-model="form.department"
+              type="text"
+              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your department (optional)"
+              :class="{ 'border-red-300 focus:ring-red-500 focus:border-red-500': errors.department }"
+            />
+          </div>
+          <p v-if="errors.department" class="mt-1 text-sm text-red-600">{{ errors.department }}</p>
+        </div>
+
         <!-- Role Selection -->
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">
@@ -199,7 +263,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { User, Mail, Lock, UserPlus, Building, Phone, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
+import { User, Mail, Lock, UserPlus, Building, Phone, Loader2, AlertTriangle, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import { authApi } from '../services/api'
 
 const emit = defineEmits(['register-success', 'show-login', 'cancel'])
@@ -209,6 +273,9 @@ interface RegistrationForm {
   email: string
   password: string
   confirmPassword: string
+  fullName: string
+  phoneNumber: string
+  department: string
   roleIds: number[]
 }
 
@@ -217,6 +284,9 @@ const form = reactive<RegistrationForm>({
   email: '',
   password: '',
   confirmPassword: '',
+  fullName: '',
+  phoneNumber: '',
+  department: '',
   roleIds: []
 })
 
@@ -228,10 +298,9 @@ const errorMessage = ref('')
 const successMessage = ref('')
 
 const availableRoles = ref([
-  { id: 1, name: 'Port Operator', description: 'Basic port operations access' },
-  { id: 2, name: 'Port Supervisor', description: 'Supervise port operations and staff' },
-  { id: 3, name: 'Port Manager', description: 'Full port management capabilities' },
-  { id: 4, name: 'System Admin', description: 'Complete system administration' }
+  { id: 1, name: 'Operator', description: 'Daily operations - view and track containers, ships, cargo' },
+  { id: 2, name: 'PortManager', description: 'Port management - full port operations and staff supervision' },
+  { id: 3, name: 'Viewer', description: 'Read-only access to all data and reports' }
 ])
 
 const validate = (): boolean => {
@@ -252,6 +321,14 @@ const validate = (): boolean => {
     errors.email = 'Invalid email format'
     return false
   }
+
+  if (!form.fullName.trim()) {
+    errors.fullName = 'Full name is required'
+    return false
+  } else if (form.fullName.length < 2 || form.fullName.length > 100) {
+    errors.fullName = 'Full name must be between 2 and 100 characters'
+    return false
+  }
   
   if (!form.password.trim()) {
     errors.password = 'Password is required'
@@ -269,10 +346,7 @@ const validate = (): boolean => {
     return false
   }
   
-  if (form.roleIds.length === 0) {
-    errors.roleIds = 'Please select at least one role'
-    return false
-  }
+  // Role validation is optional - if no roles selected, backend will assign default 'Operator' role
   
   return true
 }
@@ -285,82 +359,61 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Create a unique user ID
-    const userId = Date.now()
-    
     // Get selected role names
     const selectedRoles = availableRoles.value
       .filter(role => form.roleIds.includes(role.id))
       .map(role => role.name)
     
-    // Check if System Admin role was selected (roleId 4 is System Admin)
-    const isSystemAdmin = form.roleIds.includes(4)
+    // If no roles selected, default to Port Operator
+    if (selectedRoles.length === 0) {
+      selectedRoles.push('Port Operator')
+    }
     
-    // Create user object
-    const newUser = {
-      id: userId,
+    // Create registration request
+    const registerRequest = {
       username: form.username,
       email: form.email,
-      password: form.password, // Store password for localStorage authentication
-      roles: selectedRoles,
-      roleIds: form.roleIds,
-      isAdmin: isSystemAdmin,
-      createdAt: new Date().toISOString()
+      password: form.password,
+      fullName: form.fullName,
+      phoneNumber: form.phoneNumber || undefined,
+      department: form.department || undefined,
+      roles: selectedRoles
     }
     
-    // Save user data to localStorage
-    const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]')
+    // Use JWT registration API
+    const response = await authApi.register(registerRequest)
     
-    // Check if username already exists
-    if (existingUsers.some(user => user.username === form.username)) {
-      errorMessage.value = 'Username already exists. Please choose a different username.'
-      return
+    // Successful registration and auto-login
+    successMessage.value = 'Account created successfully! Logging you in...'
+    
+    // Save user session
+    const currentUser = {
+      id: response.user.userId,
+      username: response.user.username,
+      email: response.user.email,
+      fullName: response.user.fullName,
+      roles: response.user.roles,
+      permissions: response.user.permissions,
+      loginTime: new Date().toISOString(),
+      token: response.token
     }
     
-    // Check if email already exists
-    if (existingUsers.some(user => user.email === form.email)) {
-      errorMessage.value = 'Email already exists. Please use a different email address.'
-      return
-    }
+    localStorage.setItem('current_user', JSON.stringify(currentUser))
+    localStorage.setItem('auth_token', response.token)
     
-    // Add new user to the list
-    existingUsers.push(newUser)
-    localStorage.setItem('registered_users', JSON.stringify(existingUsers))
+    setTimeout(() => {
+      emit('register-success', currentUser)
+    }, 1500)
     
-    if (isSystemAdmin) {
-      // For System Admin, automatically log them in
-      successMessage.value = 'System Admin account created successfully! Logging you in...'
-      
-      // Save current user info to localStorage
-      localStorage.setItem('current_user', JSON.stringify({
-        id: newUser.id,
-        username: newUser.username,
-        email: newUser.email,
-        roles: newUser.roles,
-        isAdmin: true,
-        loginTime: new Date().toISOString()
-      }))
-      
-      setTimeout(() => {
-        // Auto-login the admin user
-        emit('register-success', {
-          ...newUser,
-          autoLogin: true,
-          isAdmin: true
-        })
-      }, 1500)
-    } else {
-      // For regular users, show success and redirect to login
-      successMessage.value = 'Account created successfully! You can now sign in.'
-      
-      setTimeout(() => {
-        emit('register-success', newUser)
-      }, 1500)
-    }
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error)
-    errorMessage.value = 'Registration failed. Please try again.'
+    if (error.response?.data?.message) {
+      errorMessage.value = error.response.data.message
+    } else if (error.response?.status === 400) {
+      errorMessage.value = 'Invalid registration data. Please check your information.'
+    } else {
+      errorMessage.value = 'Registration failed. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }

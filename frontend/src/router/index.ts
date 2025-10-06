@@ -47,16 +47,16 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  // Check for current user in localStorage (primary authentication method)
-  const currentUser = localStorage.getItem('current_user')
-  
-  // Check for JWT authentication (fallback)
+  // Check for JWT authentication (primary method)
   const isAuthenticatedJWT = authApi.isAuthenticated()
+  
+  // Check for current user in localStorage (backup)
+  const currentUser = localStorage.getItem('current_user')
   
   // Check for legacy admin user (migration support)
   const adminUser = localStorage.getItem('admin_user')
   
-  const isAuthenticated = !!currentUser || isAuthenticatedJWT || !!adminUser
+  const isAuthenticated = isAuthenticatedJWT || !!currentUser || !!adminUser
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     // Redirect to home if trying to access protected route without auth

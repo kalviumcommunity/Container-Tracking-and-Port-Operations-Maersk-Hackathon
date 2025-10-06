@@ -247,9 +247,7 @@ using (var scope = app.Services.CreateScope())
         await seedService.SeedDataAsync();
         
         // Seed comprehensive sample data (ports, ships, containers, etc.)
-        await Backend.Data.Seeding.DataSeeder.SeedAsync(context);
-        
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            await Backend.Data.Seeding.DataSeeder.SeedAsync(context, forceReseed: false);        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("Database initialized and seeded successfully with comprehensive sample data");
     }
     catch (Exception ex)

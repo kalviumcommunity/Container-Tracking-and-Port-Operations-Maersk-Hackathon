@@ -35,6 +35,51 @@ namespace Backend.DTOs
         public string CurrentLocation { get; set; }
         
         /// <summary>
+        /// Final destination port or location
+        /// </summary>
+        public string Destination { get; set; }
+        
+        /// <summary>
+        /// Weight of the container in kilograms
+        /// </summary>
+        public decimal Weight { get; set; }
+        
+        /// <summary>
+        /// Maximum weight capacity in kilograms
+        /// </summary>
+        public decimal? MaxWeight { get; set; }
+        
+        /// <summary>
+        /// Cargo description and contents
+        /// </summary>
+        public string CargoDescription { get; set; }
+        
+        /// <summary>
+        /// Container size (20ft, 40ft, 45ft)
+        /// </summary>
+        public string Size { get; set; }
+        
+        /// <summary>
+        /// Temperature setting for refrigerated containers (Celsius)
+        /// </summary>
+        public decimal? Temperature { get; set; }
+        
+        /// <summary>
+        /// Container condition (Good, Damaged, Needs Repair)
+        /// </summary>
+        public string Condition { get; set; }
+        
+        /// <summary>
+        /// Last known GPS coordinates (latitude,longitude)
+        /// </summary>
+        public string Coordinates { get; set; }
+        
+        /// <summary>
+        /// Estimated time of arrival at destination
+        /// </summary>
+        public DateTime? EstimatedArrival { get; set; }
+        
+        /// <summary>
         /// Timestamp when the container was created
         /// </summary>
         public DateTime CreatedAt { get; set; }

@@ -144,32 +144,32 @@ const showRegistrationForm = ref(false)
 
 // Form handlers
 const handleContainerSubmit = (data: any) => {
-  console.log('Container submitted:', data)
+  // Container submitted successfully
   showContainerForm.value = false
 }
 
 const handleBerthSubmit = (data: any) => {
-  console.log('Berth submitted:', data)
+  // Berth submitted successfully
   showBerthForm.value = false
 }
 
 const handleBerthAssignmentSubmit = (data: any) => {
-  console.log('Berth assignment submitted:', data)
+  // Berth assignment submitted successfully
   showBerthAssignmentForm.value = false
 }
 
 const handleShipSubmit = (data: any) => {
-  console.log('Ship submitted:', data)
+  // Ship submitted successfully
   showShipForm.value = false
 }
 
 const handleLoginSuccess = (data: any) => {
-  console.log('Login successful:', data)
+  // Login successful
   showLoginForm.value = false
 }
 
 const handleRegisterSuccess = (data: any) => {
-  console.log('Registration successful:', data)
+  // Registration successful
   showRegistrationForm.value = false
 }
 
