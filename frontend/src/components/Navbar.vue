@@ -20,7 +20,7 @@
           <!-- Navigation Links -->
           <div class="flex items-center" v-if="isAuthenticated">
             <router-link
-              v-for="item in navigationItems"
+              v-for="item in filteredNavigationItems"
               :key="item.name"
               :to="item.path"
               class="flex items-center gap-2 px-3 py-2 mx-1 rounded-lg font-medium transition-all duration-200 hover:bg-slate-50"
@@ -113,7 +113,7 @@
           <!-- Navigation Links (only if authenticated) -->
           <div v-if="isAuthenticated" class="flex flex-col gap-1 mb-4">
             <router-link
-              v-for="item in navigationItems"
+              v-for="item in filteredNavigationItems"
               :key="item.name"
               :to="item.path"
               @click="closeMobileMenu"
@@ -202,7 +202,9 @@ import {
   User,
   LogIn,
   LogOut,
-  UserPlus
+  UserPlus,
+  Users,
+  UserCheck
 } from 'lucide-vue-next'
 import LoginForm from '../forms/LoginForm.vue'
 import RegistrationForm from '../forms/RegistrationForm.vue'
@@ -221,6 +223,8 @@ export default {
     LogIn,
     LogOut,
     UserPlus,
+    Users,
+    UserCheck,
     LoginForm,
     RegistrationForm
   },
@@ -261,8 +265,28 @@ export default {
           name: 'Event Stream',
           path: '/event-streaming',
           icon: Activity
+        },
+        {
+          name: 'User Management',
+          path: '/admin-dashboard',
+          icon: Users
         }
       ]
+    }
+  },
+  computed: {
+    filteredNavigationItems() {
+      return this.navigationItems.filter(item => {
+        // Show admin-only items only if user is admin or has admin roles
+        if (item.adminOnly) {
+          return this.currentUser && (
+            this.currentUser.isAdmin || 
+            this.currentUser.roles?.includes('System Administrator') ||
+            this.currentUser.roles?.includes('Port Manager')
+          )
+        }
+        return true
+      })
     }
   },
   async mounted() {

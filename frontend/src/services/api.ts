@@ -1,7 +1,9 @@
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5221/api';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5221/api'
+  : '/api';
 
 // TypeScript interfaces for API responses
 export interface ApiResponse<T> {
