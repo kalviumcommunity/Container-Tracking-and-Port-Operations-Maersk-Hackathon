@@ -146,34 +146,17 @@
           <p v-if="errors.department" class="mt-1 text-sm text-red-600">{{ errors.department }}</p>
         </div>
 
-        <!-- Role Selection -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">
-            Role *
-          </label>
-          <div class="space-y-2">
-            <label
-              v-for="role in availableRoles"
-              :key="role.id"
-              class="flex items-center p-3 border rounded-lg cursor-pointer transition-all"
-              :class="{
-                'border-blue-500 bg-blue-50': form.roleIds.includes(role.id),
-                'border-slate-300 hover:border-slate-400': !form.roleIds.includes(role.id)
-              }"
-            >
-              <input
-                type="checkbox"
-                :value="role.id"
-                v-model="form.roleIds"
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-              />
-              <div class="ml-3">
-                <div class="font-medium text-slate-900">{{ role.name }}</div>
-                <div class="text-sm text-slate-600">{{ role.description }}</div>
-              </div>
-            </label>
+        <!-- Security Notice -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex items-center gap-2">
+            <div class="p-1 bg-blue-600 rounded">
+              <UserPlus :size="16" class="text-white" />
+            </div>
+            <div>
+              <h4 class="font-medium text-blue-900">Account Setup</h4>
+              <p class="text-sm text-blue-700">New accounts start with Viewer access. You can request additional permissions after registration.</p>
+            </div>
           </div>
-          <p v-if="errors.roleIds" class="mt-1 text-sm text-red-600">{{ errors.roleIds }}</p>
         </div>
 
         <!-- Password Field -->
@@ -276,7 +259,6 @@ interface RegistrationForm {
   fullName: string
   phoneNumber: string
   department: string
-  roleIds: number[]
 }
 
 const form = reactive<RegistrationForm>({
@@ -286,8 +268,7 @@ const form = reactive<RegistrationForm>({
   confirmPassword: '',
   fullName: '',
   phoneNumber: '',
-  department: '',
-  roleIds: []
+  department: ''
 })
 
 const errors = reactive<Partial<Record<keyof RegistrationForm, string>>>({})
@@ -297,11 +278,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const availableRoles = ref([
-  { id: 1, name: 'Operator', description: 'Daily operations - view and track containers, ships, cargo' },
-  { id: 2, name: 'PortManager', description: 'Port management - full port operations and staff supervision' },
-  { id: 3, name: 'Viewer', description: 'Read-only access to all data and reports' }
-])
+
 
 const validate = (): boolean => {
   Object.keys(errors).forEach(key => delete errors[key as keyof RegistrationForm])
@@ -346,8 +323,6 @@ const validate = (): boolean => {
     return false
   }
   
-  // Role validation is optional - if no roles selected, backend will assign default 'Operator' role
-  
   return true
 }
 
@@ -359,25 +334,14 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Get selected role names
-    const selectedRoles = availableRoles.value
-      .filter(role => form.roleIds.includes(role.id))
-      .map(role => role.name)
-    
-    // If no roles selected, default to Port Operator
-    if (selectedRoles.length === 0) {
-      selectedRoles.push('Port Operator')
-    }
-    
-    // Create registration request
+    // Create registration request - backend will automatically assign Viewer role
     const registerRequest = {
       username: form.username,
       email: form.email,
       password: form.password,
       fullName: form.fullName,
       phoneNumber: form.phoneNumber || undefined,
-      department: form.department || undefined,
-      roles: selectedRoles
+      department: form.department || undefined
     }
     
     // Use JWT registration API

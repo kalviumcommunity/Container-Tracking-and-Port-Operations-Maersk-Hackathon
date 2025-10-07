@@ -171,7 +171,7 @@ namespace Backend.Services
                 ShipId = operation.ShipId,
                 ShipName = operation.Ship?.Name,
                 ContainerId = operation.ContainerId,
-                ContainerName = operation.Container?.Name,
+                ContainerName = operation.Container?.CargoType,
                 LoadedAt = operation.LoadedAt
             };
         }

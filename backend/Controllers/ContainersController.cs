@@ -135,7 +135,7 @@ namespace Backend.Controllers
                 var legacyDto = new ContainerCreateUpdateDto
                 {
                     ContainerId = createDto.ContainerId,
-                    Name = createDto.Name,
+                    CargoType = createDto.CargoType,
                     Type = createDto.Type,
                     Status = createDto.Status,
                     CurrentLocation = createDto.CurrentLocation,
@@ -171,7 +171,7 @@ namespace Backend.Controllers
                 var legacyDto = new ContainerCreateUpdateDto
                 {
                     ContainerId = id, // Use the ID from the URL
-                    Name = updateDto.Name,
+                    CargoType = updateDto.CargoType,
                     Type = updateDto.Type,
                     Status = updateDto.Status,
                     CurrentLocation = updateDto.CurrentLocation,

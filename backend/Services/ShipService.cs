@@ -65,7 +65,7 @@ namespace Backend.Services
                 Containers = ship.Containers?.Select(c => new ContainerDto
                 {
                     ContainerId = c.ContainerId,
-                    Name = c.Name,
+                    CargoType = c.CargoType,
                     Type = c.Type,
                     Status = c.Status,
                     CurrentLocation = c.CurrentLocation,
@@ -80,7 +80,7 @@ namespace Backend.Services
                     ShipId = sc.ShipId,
                     ShipName = ship.Name,
                     ContainerId = sc.ContainerId,
-                    ContainerName = sc.Container?.Name,
+                    ContainerName = sc.Container?.CargoType,
                     LoadedAt = sc.LoadedAt
                 }).ToList()
             };

@@ -185,7 +185,7 @@ namespace Backend.Services
             {
                 Id = assignment.Id,
                 ContainerId = assignment.ContainerId,
-                ContainerName = assignment.Container?.Name,
+                ContainerName = assignment.Container?.CargoType,
                 BerthId = assignment.BerthId,
                 BerthName = assignment.Berth?.Name,
                 AssignedAt = assignment.AssignedAt,

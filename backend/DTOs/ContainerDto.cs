@@ -15,9 +15,9 @@ namespace Backend.DTOs
         public string ContainerId { get; set; }
         
         /// <summary>
-        /// Name or description of the container
+        /// Type/category of cargo being transported (Electronics, Dairy, Automotive, etc.)
         /// </summary>
-        public string Name { get; set; }
+        public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
@@ -109,28 +109,28 @@ namespace Backend.DTOs
         /// Unique identifier for the container using industry standard format
         /// </summary>
         [Required]
-        public string ContainerId { get; set; }
+        public string ContainerId { get; set; } = string.Empty;
         
         /// <summary>
-        /// Name or description of the container
+        /// Type/category of cargo being transported (Electronics, Dairy, Automotive, etc.)
         /// </summary>
-        public string Name { get; set; }
+        public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
         [Required]
-        public string Type { get; set; }
+        public string Type { get; set; } = string.Empty;
         
         /// <summary>
         /// Current status of the container (e.g., Empty, Loaded, In Transit)
         /// </summary>
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
         
         /// <summary>
         /// Current physical location of the container
         /// </summary>
-        public string CurrentLocation { get; set; }
+        public string CurrentLocation { get; set; } = string.Empty;
         
         /// <summary>
         /// Foreign key to the ship this container is currently on (nullable)
@@ -144,9 +144,9 @@ namespace Backend.DTOs
     public class ContainerUpdateDto
     {
         /// <summary>
-        /// Name or description of the container
+        /// Type/category of cargo being transported (Electronics, Dairy, Automotive, etc.)
         /// </summary>
-        public string Name { get; set; }
+        public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
@@ -180,9 +180,9 @@ namespace Backend.DTOs
         public string ContainerId { get; set; }
         
         /// <summary>
-        /// Name or description of the container
+        /// Type/category of cargo being transported (Electronics, Dairy, Automotive, etc.)
         /// </summary>
-        public string Name { get; set; }
+        public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)

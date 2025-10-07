@@ -87,5 +87,16 @@ namespace Backend.Models
         /// </summary>
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         
+        /// <summary>
+        /// Role applications submitted by this user
+        /// </summary>
+        public ICollection<RoleApplication> RoleApplications { get; set; } = new List<RoleApplication>();
+
+        /// <summary>
+        /// Role applications reviewed by this user (if admin)
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.InverseProperty("ReviewedByUser")]
+        public ICollection<RoleApplication> ReviewedApplications { get; set; } = new List<RoleApplication>();
+        
     }
 }

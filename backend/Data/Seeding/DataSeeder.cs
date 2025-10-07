@@ -387,6 +387,21 @@ namespace Backend.Data.Seeding
                 "Chemicals", "Pharmaceuticals", "Consumer Goods", "Raw Materials", "Furniture" 
             };
 
+            // Define logical cargo categories with consistent data
+            var cargoCategories = new[]
+            {
+                new { Type = "Electronics", Description = "Laptops, smartphones, tablets from Samsung factory", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Dairy Products", Description = "Fresh milk, cheese, yogurt, and dairy products", ContainerType = "Refrigerated", TempRange = (int?)4 },
+                new { Type = "Frozen Foods", Description = "Frozen vegetables, meat, ice cream products", ContainerType = "Refrigerated", TempRange = (int?)-18 },
+                new { Type = "Automotive Parts", Description = "Car engines, transmissions, brake systems, tires", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Pharmaceuticals", Description = "Medical supplies, vaccines, prescription drugs", ContainerType = "Refrigerated", TempRange = (int?)2 },
+                new { Type = "Textiles", Description = "Cotton fabrics, clothing, fashion accessories", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Chemicals", Description = "Industrial chemicals, cleaning compounds", ContainerType = "Hazardous", TempRange = (int?)null },
+                new { Type = "Furniture", Description = "Wooden furniture, chairs, tables, home decor", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Machinery", Description = "Industrial equipment, construction machinery", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Food Products", Description = "Canned goods, grains, processed foods", ContainerType = "Dry", TempRange = (int?)null }
+            };
+
             for (int i = 1; i <= 50; i++)
             {
                 var random = new Random(i);
@@ -395,20 +410,22 @@ namespace Backend.Data.Seeding
                 var size = containerSizes[random.Next(containerSizes.Length)];
                 var maxWeight = size == "20ft" ? 25000 : size == "40ft" ? 30000 : 32000;
                 
+                // Select a logical cargo category
+                var cargoCategory = cargoCategories[random.Next(cargoCategories.Length)];
+                
                 containers.Add(new Container
                 {
                     ContainerId = GenerateContainerId(i),
-                    ContainerNumber = GenerateContainerNumber(i),
-                    Name = $"Container {i:D3}",
-                    Type = random.Next(0, 10) > 7 ? "Refrigerated" : "Dry",
+                    CargoType = cargoCategory.Type,
+                    Type = cargoCategory.ContainerType,
                     Status = ship == null ? "In Port" : ship.Status == "Docked" ? "Loading" : "In Transit",
                     Size = size,
                     Weight = random.Next(5000, (int)(maxWeight * 0.8m)),
                     MaxWeight = maxWeight,
                     Condition = conditions[random.Next(conditions.Length)],
-                    Temperature = random.Next(0, 10) > 7 ? random.Next(-18, 2) : null,
+                    Temperature = cargoCategory.TempRange,
                     Destination = destinations[random.Next(destinations.Length)],
-                    CargoDescription = cargoDescriptions[random.Next(cargoDescriptions.Length)],
+                    CargoDescription = cargoCategory.Description,
                     CurrentLocation = ship?.CurrentPort?.Name ?? "Container Yard",
                     Coordinates = ship?.Coordinates ?? "55.6761,12.5683",
                     EstimatedArrival = DateTime.UtcNow.AddDays(random.Next(1, 14)),
@@ -532,8 +549,8 @@ namespace Backend.Data.Seeding
                     Category = category,
                     Priority = priority,
                     Status = status,
-                    Title = GenerateEventTitle(eventType, ship?.Name, container?.ContainerNumber),
-                    Description = GenerateEventDescription(eventType, ship?.Name, container?.ContainerNumber, berth?.Name),
+                    Title = GenerateEventTitle(eventType, ship?.Name, container?.ContainerId),
+                    Description = GenerateEventDescription(eventType, ship?.Name, container?.ContainerId, berth?.Name),
                     Source = "Port Operations System",
                     ContainerId = container?.ContainerId,
                     ShipId = ship?.ShipId,
@@ -698,16 +715,6 @@ namespace Backend.Data.Seeding
             var random = new Random(index);
             var prefix = prefixes[random.Next(prefixes.Length)];
             return $"{prefix}{(1000000 + index):D7}";
-        }
-
-        private static string GenerateContainerNumber(int index)
-        {
-            var owners = new[] { "MSKU", "MSCU", "COSU", "EVGU" };
-            var random = new Random(index);
-            var owner = owners[random.Next(owners.Length)];
-            var serial = (100000 + index).ToString();
-            var checkDigit = CalculateCheckDigit(owner + serial);
-            return $"{owner}{serial}{checkDigit}";
         }
 
         private static int CalculateCheckDigit(string containerNumber)

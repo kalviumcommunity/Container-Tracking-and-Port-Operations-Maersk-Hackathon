@@ -159,9 +159,10 @@ builder.Services.AddAuthorization();
 builder.Services.RegisterRepositories()
                 .RegisterServices();
 
-// Register authentication services
+// Register authentication and role management services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRoleApplicationService, RoleApplicationService>();
 builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 
 // Add CORS policy with secure configuration for production

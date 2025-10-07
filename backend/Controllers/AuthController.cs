@@ -53,7 +53,7 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Public user registration
+        /// Public user registration - All users start with Viewer role for security
         /// </summary>
         /// <param name="registerDto">User registration data</param>
         /// <returns>JWT token and user information</returns>
@@ -68,11 +68,9 @@ namespace Backend.Controllers
                     return BadRequest(ModelState);
                 }
 
-                // For public registration, assign default role if none specified
-                if (registerDto.Roles == null || !registerDto.Roles.Any())
-                {
-                    registerDto.Roles = new List<string> { "Operator" }; // Default role with viewing permissions
-                }
+                // SECURITY: Force all new users to start with Viewer role only
+                // Users must apply for additional roles through the role application system
+                registerDto.Roles = new List<string> { "Viewer" };
 
                 var user = await _authService.RegisterAsync(registerDto);
                 

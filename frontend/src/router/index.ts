@@ -42,6 +42,12 @@ const router = createRouter({
       component: EventStreaming,
       meta: { requiresAuth: true }
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('@/components/AdminPanel.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
   ]
 })
 
@@ -61,6 +67,27 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     // Redirect to home if trying to access protected route without auth
     next('/')
+  } else if (to.meta.requiresAdmin) {
+    // Check if user has admin role
+    let userRoles = []
+    
+    if (currentUser) {
+      try {
+        const user = JSON.parse(currentUser)
+        userRoles = user.roles || []
+      } catch (e) {
+        console.error('Error parsing user:', e)
+      }
+    }
+    
+    const isAdmin = userRoles.includes('Admin') || userRoles.includes('SuperAdmin') || !!adminUser
+    
+    if (!isAdmin) {
+      // Redirect non-admin users to dashboard
+      next('/dashboard')
+    } else {
+      next()
+    }
   } else {
     next()
   }

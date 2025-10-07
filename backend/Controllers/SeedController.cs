@@ -33,7 +33,7 @@ namespace Backend.Controllers
             try
             {
                 _logger.LogInformation("Starting enhanced business data seeding...");
-                await EnhancedDataSeeder.SeedAsync(_context);
+                await DataSeeder.SeedAsync(_context);
                 _logger.LogInformation("Enhanced business data seeding completed successfully!");
                 
                 return Ok(new { 

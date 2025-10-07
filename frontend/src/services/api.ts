@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5221/api';
+const API_BASE_URL = 'http://localhost:5221/api';
 
 // TypeScript interfaces for API responses
 export interface ApiResponse<T> {
@@ -24,7 +24,7 @@ export interface RegisterRequest {
   phoneNumber?: string;
   department?: string;
   portId?: number;
-  roles: string[];
+  roles?: string[]; // Optional - backend assigns default role
 }
 
 export interface AuthResponse {
@@ -569,6 +569,81 @@ export const authApi = {
 
   isAuthenticated(): boolean {
     return !!getToken();
+  },
+
+  async changePassword(passwordData: { currentPassword: string; newPassword: string }): Promise<void> {
+    await api.post('/auth/change-password', passwordData);
+  },
+
+  async updateProfile(profileData: { fullName: string; email: string; phoneNumber?: string; department?: string }): Promise<User> {
+    const response: AxiosResponse<User> = await api.put('/auth/profile', profileData);
+    return response.data;
+  }
+};
+
+// Role Application API
+export interface RoleApplicationRequest {
+  requestedRole: string;
+  justification: string;
+}
+
+export interface RoleApplication {
+  applicationId: number;
+  userId: number;
+  requestedRole: string;
+  justification: string;
+  status: string;
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: number;
+  reviewNotes?: string;
+  applicantName: string;
+  reviewerName?: string;
+}
+
+export interface AvailableRoleDto {
+  name: string;
+  description: string;
+  permissions: string[];
+  requiresApproval: boolean;
+}
+
+export const roleApplicationApi = {
+  async getAvailableRoles(): Promise<AvailableRoleDto[]> {
+    const response: AxiosResponse<AvailableRoleDto[]> = await api.get('/role-applications/available-roles');
+    return response.data;
+  },
+
+  async submitApplication(request: RoleApplicationRequest): Promise<RoleApplication> {
+    const response: AxiosResponse<RoleApplication> = await api.post('/role-applications', request);
+    return response.data;
+  },
+
+  async getMyApplications(): Promise<RoleApplication[]> {
+    const response: AxiosResponse<RoleApplication[]> = await api.get('/role-applications/my-applications');
+    return response.data;
+  },
+
+  async cancelApplication(applicationId: number): Promise<void> {
+    await api.post(`/role-applications/${applicationId}/cancel`);
+  },
+
+  // Admin endpoints
+  async getPendingApplications(): Promise<RoleApplication[]> {
+    const response: AxiosResponse<RoleApplication[]> = await api.get('/role-applications/pending');
+    return response.data;
+  },
+
+  async getAllApplications(): Promise<RoleApplication[]> {
+    const response: AxiosResponse<RoleApplication[]> = await api.get('/role-applications/all');
+    return response.data;
+  },
+
+  async reviewApplication(applicationId: number, status: 'Approved' | 'Rejected', notes?: string): Promise<void> {
+    await api.post(`/role-applications/${applicationId}/review`, {
+      status,
+      reviewNotes: notes
+    });
   }
 };
 
