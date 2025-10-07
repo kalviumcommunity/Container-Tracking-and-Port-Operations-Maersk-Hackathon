@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-    <div class="flex items-center gap-3 mb-6">
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl mx-auto">
+    <div class="flex items-cent      // Roles loaded successfullyr gap-3 mb-6">
       <div class="p-2 bg-blue-600 rounded-lg">
         <UserPlus :size="20" class="text-white" />
       </div>
@@ -10,30 +10,75 @@
       </div>
     </div>
 
-    <!-- Available Roles -->
-    <div v-if="availableRoles.length > 0" class="space-y-4">
-      <div v-for="role in availableRoles" :key="role.name" class="border border-slate-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+    <!-- Application Form -->
+    <div v-if="!showRoleSelection && selectedRole" class="space-y-4">
+      <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+        <h3 class="font-medium text-slate-900 mb-2">Requesting: {{ selectedRole.roleName }}</h3>
+        <p class="text-sm text-slate-600">{{ selectedRole.description }}</p>
+      </div>
+
+      <div>
+        <label for="justification" class="block text-sm font-medium text-slate-700 mb-2">
+          Justification <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          id="justification"
+          v-model="justification"
+          rows="4"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+          placeholder="Please explain why you need this role and how you plan to use the additional permissions..."
+          maxlength="1000"
+        ></textarea>
+        <div class="text-xs text-slate-500 mt-1">{{ justification.length }}/1000 characters</div>
+      </div>
+
+      <div class="flex gap-3 pt-4">
+        <button
+          @click="submitApplication"
+          :disabled="isLoading || !justification.trim()"
+          class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
+          <Loader2 v-if="isLoading" :size="16" class="animate-spin" />
+          <span>Submit Application</span>
+        </button>
+        <button
+          @click="cancelApplication"
+          :disabled="isLoading"
+          class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- Available Roles Selection -->
+    <div v-else-if="availableRoles.length > 0" class="space-y-4">
+      <div class="text-sm text-slate-600 mb-4">
+        Select a role to request additional access permissions:
+      </div>
+      
+      <div v-for="role in availableRoles" :key="role.roleName" 
+           :class="[
+             'border rounded-lg p-4 transition-colors',
+             role.canApply ? 'border-slate-200 hover:border-blue-300 cursor-pointer' : 'border-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
+           ]"
+           @click="role.canApply && selectRole(role)">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <h3 class="font-medium text-slate-900">{{ role.name }}</h3>
+            <h3 class="font-medium text-slate-900">{{ role.roleName }}</h3>
             <p class="text-sm text-slate-600 mt-1">{{ role.description }}</p>
             <div class="flex items-center gap-4 mt-3">
-              <span class="text-xs px-2 py-1 bg-slate-100 rounded text-slate-700">
-                {{ role.permissions?.length || 0 }} permissions
+              <span v-if="!role.canApply" class="text-xs px-2 py-1 bg-gray-100 rounded text-gray-700">
+                {{ role.reasonCannotApply }}
               </span>
-              <span v-if="role.requiresApproval" class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded">
-                Requires approval
+              <span v-else class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                Available to request
               </span>
             </div>
           </div>
-          <button
-            @click="applyForRole(role.name)"
-            :disabled="isLoading"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Loader2 v-if="isLoading" :size="16" class="animate-spin" />
-            <span v-else>Apply</span>
-          </button>
+          <div v-if="role.canApply" class="flex items-center text-blue-600">
+            <ChevronRight :size="20" />
+          </div>
         </div>
       </div>
     </div>
@@ -65,48 +110,78 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { UserPlus, Shield, CheckCircle, AlertTriangle, Loader2 } from 'lucide-vue-next'
+import { UserPlus, Shield, CheckCircle, AlertTriangle, Loader2, ChevronRight } from 'lucide-vue-next'
 import { roleApplicationApi } from '../services/api'
 
 interface AvailableRole {
-  name: string
+  roleName: string
   description: string
-  permissions: string[]
-  requiresApproval: boolean
+  canApply: boolean
+  reasonCannotApply?: string
 }
 
 const availableRoles = ref<AvailableRole[]>([])
+const selectedRole = ref<AvailableRole | null>(null)
+const showRoleSelection = ref(true)
+const justification = ref('')
 const isLoading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 
-const emit = defineEmits(['application-submitted'])
+const emit = defineEmits(['application-submitted', 'close'])
 
 const loadAvailableRoles = async () => {
   try {
+    // Load available roles
     const roles = await roleApplicationApi.getAvailableRoles()
+    console.log('Loaded roles:', roles)
     availableRoles.value = roles
   } catch (error: any) {
     console.error('Failed to load available roles:', error)
-    errorMessage.value = 'Failed to load available roles'
+    console.error('Error details:', error.response?.data || error.message)
+    errorMessage.value = 'Failed to load available roles. Please make sure you are logged in.'
   }
 }
 
-const applyForRole = async (roleName: string) => {
+const selectRole = (role: AvailableRole) => {
+  if (!role.canApply) return
+  
+  selectedRole.value = role
+  showRoleSelection.value = false
+  justification.value = `I am requesting the ${role.roleName} role to expand my operational capabilities. This role will allow me to contribute more effectively to our team's objectives.`
+}
+
+const cancelApplication = () => {
+  selectedRole.value = null
+  showRoleSelection.value = true
+  justification.value = ''
+  errorMessage.value = ''
+  successMessage.value = ''
+}
+
+const submitApplication = async () => {
+  if (!selectedRole.value || !justification.value.trim()) {
+    errorMessage.value = 'Please provide a justification for your role request'
+    return
+  }
+
   isLoading.value = true
   errorMessage.value = ''
   successMessage.value = ''
   
   try {
     await roleApplicationApi.submitApplication({
-      requestedRole: roleName,
-      justification: `Requesting ${roleName} role for expanded operational access.`
+      requestedRole: selectedRole.value.roleName,
+      justification: justification.value.trim()
     })
     
-    successMessage.value = `Application for ${roleName} role submitted successfully! It will be reviewed by an administrator.`
+    successMessage.value = `Application for ${selectedRole.value.roleName} role submitted successfully! It will be reviewed by an administrator.`
     
-    // Refresh available roles
+    // Reset form and emit success
     setTimeout(() => {
+      selectedRole.value = null
+      showRoleSelection.value = true
+      justification.value = ''
       loadAvailableRoles()
       emit('application-submitted')
     }, 2000)

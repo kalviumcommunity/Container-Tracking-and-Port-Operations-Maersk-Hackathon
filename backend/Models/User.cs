@@ -68,6 +68,16 @@ namespace Backend.Models
         public bool IsActive { get; set; } = true;
 
         /// <summary>
+        /// Indicates if the user account is blocked by admin
+        /// </summary>
+        public bool IsBlocked { get; set; } = false;
+
+        /// <summary>
+        /// Indicates if the user account is soft deleted
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
         /// Date when the user account was created
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

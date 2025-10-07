@@ -7,7 +7,7 @@ namespace Backend.Extensions
     public static class ServiceExtensions
     {
         /// <summary>
-        /// Seeds the database with initial data if it's empty
+        /// Seeds the database with production data if it's empty
         /// </summary>
         public static async Task SeedDatabaseAsync(this WebApplication app)
         {
@@ -17,7 +17,8 @@ namespace Backend.Extensions
                 try
                 {
                     var context = services.GetRequiredService<ApplicationDbContext>();
-                    await DataSeeder.SeedAsync(context);
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    await ProductionDataSeeder.SeedAsync(context, logger);
                 }
                 catch (Exception ex)
                 {

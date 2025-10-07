@@ -528,7 +528,7 @@ const loadAvailableContainers = async () => {
       weight: container.weight || 0
     }))
     
-    console.log('Loaded containers from API:', availableContainers.value)
+    
   } catch (error) {
     console.error('Failed to load containers from API:', error)
     

@@ -1,7 +1,9 @@
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:5221/api';
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-api-domain.com/api' 
+  : 'http://localhost:5221/api';
 
 // TypeScript interfaces for API responses
 export interface ApiResponse<T> {
@@ -602,10 +604,10 @@ export interface RoleApplication {
 }
 
 export interface AvailableRoleDto {
-  name: string;
+  roleName: string;
   description: string;
-  permissions: string[];
-  requiresApproval: boolean;
+  canApply: boolean;
+  reasonCannotApply?: string;
 }
 
 export const roleApplicationApi = {

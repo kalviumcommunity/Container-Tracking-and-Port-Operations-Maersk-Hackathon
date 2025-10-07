@@ -109,16 +109,17 @@
                       <span>Account Settings</span>
                     </button>
 
-                    <!-- Admin Panel (if admin) -->
-                    <button
+                    <!-- Admin Dashboard (if admin) -->
+                    <router-link
                       v-if="isAdmin"
-                      @click="openAdminPanel"
-                      class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-3"
+                      to="/admin-dashboard"
+                      @click="showUserDropdown = false"
+                      class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-3 no-underline"
                     >
                       <UserCog class="w-4 h-4 text-slate-400" />
-                      <span>Admin Panel</span>
+                      <span>Admin Dashboard</span>
                       <span class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">Admin</span>
-                    </button>
+                    </router-link>
 
                     <hr class="my-1 border-slate-100" />
 
@@ -319,6 +320,7 @@ import {
   Anchor, 
   Activity,
   User,
+  Users,
   LogIn,
   LogOut,
   UserPlus,
@@ -402,11 +404,6 @@ export default {
           name: 'Event Stream',
           path: '/event-streaming',
           icon: Activity
-        },
-        {
-          name: 'User Management',
-          path: '/admin-dashboard',
-          icon: Users
         }
       ]
     }
@@ -416,6 +413,11 @@ export default {
       return this.currentUser?.roles?.includes('Admin') || 
              this.currentUser?.roles?.includes('SuperAdmin')
 
+    },
+    filteredNavigationItems() {
+      // Return all navigation items for authenticated users
+      // No role-based filtering needed for main navigation
+      return this.navigationItems
     }
   },
   async mounted() {
