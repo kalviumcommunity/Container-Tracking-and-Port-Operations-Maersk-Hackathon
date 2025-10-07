@@ -20,7 +20,7 @@
           <!-- Navigation Links -->
           <div class="flex items-center" v-if="isAuthenticated">
             <router-link
-              v-for="item in navigationItems"
+              v-for="item in filteredNavigationItems"
               :key="item.name"
               :to="item.path"
               class="flex items-center gap-2 px-3 py-2 mx-1 rounded-lg font-medium transition-all duration-200 hover:bg-slate-50"
@@ -195,7 +195,7 @@
           <!-- Navigation Links (only if authenticated) -->
           <div v-if="isAuthenticated" class="flex flex-col gap-1 mb-4">
             <router-link
-              v-for="item in navigationItems"
+              v-for="item in filteredNavigationItems"
               :key="item.name"
               :to="item.path"
               @click="closeMobileMenu"
@@ -353,6 +353,7 @@ export default {
     Key,
     Settings,
     UserCog,
+
     LoginForm,
     RegistrationForm,
     RoleApplication,
@@ -401,6 +402,11 @@ export default {
           name: 'Event Stream',
           path: '/event-streaming',
           icon: Activity
+        },
+        {
+          name: 'User Management',
+          path: '/admin-dashboard',
+          icon: Users
         }
       ]
     }
@@ -409,6 +415,7 @@ export default {
     isAdmin() {
       return this.currentUser?.roles?.includes('Admin') || 
              this.currentUser?.roles?.includes('SuperAdmin')
+
     }
   },
   async mounted() {
