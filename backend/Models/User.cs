@@ -68,6 +68,16 @@ namespace Backend.Models
         public bool IsActive { get; set; } = true;
 
         /// <summary>
+        /// Indicates if the user account is blocked by admin
+        /// </summary>
+        public bool IsBlocked { get; set; } = false;
+
+        /// <summary>
+        /// Indicates if the user account is soft deleted
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
         /// Date when the user account was created
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -86,6 +96,17 @@ namespace Backend.Models
         /// User roles for authorization
         /// </summary>
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        
+        /// <summary>
+        /// Role applications submitted by this user
+        /// </summary>
+        public ICollection<RoleApplication> RoleApplications { get; set; } = new List<RoleApplication>();
+
+        /// <summary>
+        /// Role applications reviewed by this user (if admin)
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.InverseProperty("ReviewedByUser")]
+        public ICollection<RoleApplication> ReviewedApplications { get; set; } = new List<RoleApplication>();
         
     }
 }

@@ -11,22 +11,19 @@ namespace Backend.Models
     public class Container
     {
         /// <summary>
-        /// Unique identifier for the container using industry standard format
+        /// Unique identifier for the container using industry standard format (e.g., MSCU1234567)
         /// </summary>
         [Key]
+        [Required]
+        [MaxLength(11)]
         public string ContainerId { get; set; } = string.Empty;
         
         /// <summary>
-        /// Container number in standard format (e.g., MSCU1234567)
+        /// Type/category of cargo being transported (Electronics, Dairy, Automotive, etc.)
         /// </summary>
         [Required]
-        [MaxLength(11)]
-        public string ContainerNumber { get; set; } = string.Empty;
-        
-        /// <summary>
-        /// Name or description of the container
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
+        [MaxLength(100)]
+        public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
         /// Type of container (Dry, Refrigerated, Tank, OpenTop, FlatRack)

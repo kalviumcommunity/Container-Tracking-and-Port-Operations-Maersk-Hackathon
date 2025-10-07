@@ -35,6 +35,8 @@ namespace Backend.Services
         /// </summary>
         public async Task SeedDataAsync()
         {
+            _logger.LogInformation("Starting data seeding process");
+            
             try
             {
                 // Ensure database is created
@@ -122,43 +124,55 @@ namespace Backend.Services
         /// </summary>
         private async Task SeedRolesAsync()
         {
-            var existingRoles = await _context.Roles.Select(r => r.Name).ToListAsync();
-
-            var rolesToSeed = new List<Role>
+            _logger.LogInformation("Starting role seeding");
+            
+            try
             {
-                new Role 
-                { 
-                    Name = Roles.Admin, 
-                    Description = "System administrator with full access to all features and data", 
-                    IsSystemRole = true 
-                },
-                new Role 
-                { 
-                    Name = Roles.PortManager, 
-                    Description = "Port manager with administrative access to assigned port operations", 
-                    IsSystemRole = true 
-                },
-                new Role 
-                { 
-                    Name = Roles.Operator, 
-                    Description = "Port operator with access to operational features for assigned port", 
-                    IsSystemRole = true 
-                },
-                new Role 
-                { 
-                    Name = Roles.Viewer, 
-                    Description = "Read-only access to port data and reports", 
-                    IsSystemRole = true 
-                }
-            };
+                var existingRoles = await _context.Roles.Select(r => r.Name).ToListAsync();
 
-            foreach (var role in rolesToSeed)
-            {
-                if (!existingRoles.Contains(role.Name))
+                var rolesToSeed = new List<Role>
                 {
-                    _context.Roles.Add(role);
-                    _logger.LogInformation($"Added role: {role.Name}");
+                    new Role 
+                    { 
+                        Name = Roles.Admin, 
+                        Description = "System administrator with full access to all features and data", 
+                        IsSystemRole = true 
+                    },
+                    new Role 
+                    { 
+                        Name = Roles.PortManager, 
+                        Description = "Port manager with administrative access to assigned port operations", 
+                        IsSystemRole = true 
+                    },
+                    new Role 
+                    { 
+                        Name = Roles.Operator, 
+                        Description = "Port operator with access to operational features for assigned port", 
+                        IsSystemRole = true 
+                    },
+                    new Role 
+                    { 
+                        Name = Roles.Viewer, 
+                        Description = "Read-only access to port data and reports", 
+                        IsSystemRole = true 
+                    }
+                };
+                
+                foreach (var role in rolesToSeed)
+                {
+                    if (!existingRoles.Contains(role.Name))
+                    {
+                        _context.Roles.Add(role);
+                        _logger.LogInformation($"Added role: {role.Name}");
+                    }
                 }
+                
+                _logger.LogInformation("Role seeding completed successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during role seeding");
+                throw;
             }
         }
 
@@ -234,7 +248,7 @@ namespace Backend.Services
         private async Task SeedAdminUserAsync()
         {
             const string adminUsername = "admin";
-            const string adminEmail = "admin@maersk.com";
+            const string adminEmail = "admin@example.com";
             const string defaultPassword = "Admin123!";
 
             var existingAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Username == adminUsername);

@@ -32,19 +32,21 @@ namespace Backend.Controllers
         {
             try
             {
-                _logger.LogInformation("Starting enhanced business data seeding...");
-                await EnhancedDataSeeder.SeedAsync(_context);
-                _logger.LogInformation("Enhanced business data seeding completed successfully!");
+                _logger.LogInformation("Starting production data seeding...");
+                await ProductionDataSeeder.SeedAsync(_context, _logger);
+                _logger.LogInformation("Production data seeding completed successfully!");
                 
                 return Ok(new { 
                     success = true, 
-                    message = "Enhanced business data seeding completed successfully!",
+                    message = "Production data seeding completed successfully!",
                     data = new {
-                        ports = "25 major world ports",
-                        ships = "60+ ships from major shipping lines", 
-                        containers = "300 containers with diverse cargo",
-                        berthAssignments = "120+ berth assignments",
-                        shipContainers = "80+ ship-container operations"
+                        roles = "4 user roles (Admin, PortManager, Operator, Viewer)",
+                        users = "4 test users with proper role assignments",
+                        ports = "3 major ports with realistic data",
+                        berths = "15 berths across all ports",
+                        ships = "3 ships with proper specifications",
+                        containers = "100 containers with diverse cargo",
+                        assignments = "Sample berth assignments"
                     }
                 });
             }

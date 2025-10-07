@@ -61,7 +61,7 @@ namespace Backend.Services
             return new ContainerDetailDto
             {
                 ContainerId = container.ContainerId,
-                Name = container.Name,
+                CargoType = container.CargoType,
                 Type = container.Type,
                 Status = container.Status,
                 CurrentLocation = container.CurrentLocation,
@@ -73,7 +73,7 @@ namespace Backend.Services
                 {
                     Id = ba.Id,
                     ContainerId = ba.ContainerId,
-                    ContainerName = container.Name,
+                    ContainerName = container.CargoType,
                     BerthId = ba.BerthId,
                     BerthName = ba.Berth?.Name,
                     AssignedAt = ba.AssignedAt,
@@ -85,7 +85,7 @@ namespace Backend.Services
                     ShipId = sc.ShipId,
                     ShipName = sc.Ship?.Name,
                     ContainerId = sc.ContainerId,
-                    ContainerName = container.Name,
+                    ContainerName = container.CargoType,
                     LoadedAt = sc.LoadedAt
                 }).ToList()
             };
@@ -145,7 +145,7 @@ namespace Backend.Services
             var container = new Container
             {
                 ContainerId = createDto.ContainerId,
-                Name = createDto.Name,
+                CargoType = createDto.CargoType,
                 Type = createDto.Type,
                 Status = createDto.Status,
                 CurrentLocation = createDto.CurrentLocation,
@@ -173,7 +173,7 @@ namespace Backend.Services
             }
             
             // Update fields
-            existingContainer.Name = updateDto.Name;
+            existingContainer.CargoType = updateDto.CargoType;
             existingContainer.Type = updateDto.Type;
             existingContainer.Status = updateDto.Status;
             existingContainer.CurrentLocation = updateDto.CurrentLocation;
@@ -204,7 +204,7 @@ namespace Backend.Services
             return new ContainerDto
             {
                 ContainerId = container.ContainerId,
-                Name = container.Name,
+                CargoType = container.CargoType,
                 Type = container.Type,
                 Status = container.Status,
                 CurrentLocation = container.CurrentLocation,

@@ -11,27 +11,51 @@
           <div class="flex items-center space-x-4">
             <div class="bg-blue-800 rounded-lg px-4 py-2">
               <div class="text-blue-100 text-sm">Total Users</div>
-              <div class="text-white text-2xl font-bold">{{ filteredUsers.length }}</div>
+              <div class="text-white text-2xl font-bold">
+                {{ systemStats?.totalUsers || users.length }}
+              </div>
             </div>
             <div class="bg-blue-800 rounded-lg px-4 py-2">
-              <div class="text-blue-100 text-sm">Pending Requests</div>
-              <div class="text-white text-2xl font-bold">{{ allPendingRequests.length }}</div>
+              <div class="text-blue-100 text-sm">Active Users</div>
+              <div class="text-white text-2xl font-bold">
+                {{ systemStats?.activeUsers || users.filter(u => u.isActive && !u.isBlocked).length }}
+              </div>
             </div>
-            <button
-              @click="showAddUserModal = true"
-              class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              <span>Add New User</span>
-            </button>
+            <div class="bg-blue-800 rounded-lg px-4 py-2">
+              <div class="text-blue-100 text-sm">Blocked Users</div>
+              <div class="text-white text-2xl font-bold">
+                {{ systemStats?.blockedUsers || blockedUsersCount }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="max-w-7xl mx-auto px-6 py-6">
+      <!-- Error Message -->
+      <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex">
+          <svg class="w-5 h-5 text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+          </svg>
+          <div class="ml-3">
+            <p class="text-sm text-red-800">{{ errorMessage }}</p>
+            <button @click="errorMessage = ''" class="mt-2 text-xs text-red-600 underline hover:text-red-500">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div v-if="isLoading" class="bg-blue-50 border border-blue-200 rounded-lg p-8 mb-6">
+        <div class="flex items-center justify-center">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span class="ml-3 text-blue-700">Loading users...</span>
+        </div>
+      </div>
+
       <!-- Tabs Navigation -->
       <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
         <div class="border-b border-gray-200">
@@ -66,11 +90,11 @@
             >
               <div class="flex items-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                 </svg>
                 <span>Role Requests</span>
-                <span v-if="allPendingRequests.length > 0" class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full ml-2">
-                  {{ allPendingRequests.length }}
+                <span v-if="pendingRequests.length > 0" class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full ml-2">
+                  {{ pendingRequests.length }}
                 </span>
               </div>
             </button>
@@ -117,9 +141,10 @@
               class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Roles</option>
-              <option v-for="role in availableRoles" :key="role.id" :value="role.name">
-                {{ role.name }}
-              </option>
+              <option value="Admin">Admin</option>
+              <option value="PortManager">Port Manager</option>
+              <option value="Operator">Operator</option>
+              <option value="Viewer">Viewer</option>
             </select>
             <select
               v-model="statusFilter"
@@ -138,7 +163,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           <div
             v-for="user in filteredUsers"
-            :key="user.id"
+            :key="user.userId || user.id"
             class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4"
             :class="getUserCardBorderColor(user)"
           >
@@ -243,79 +268,6 @@
         </div>
       </div>
 
-      <!-- Role Requests Tab -->
-      <div v-if="activeTab === 'requests'" class="space-y-6">
-        <div v-if="allPendingRequests.length === 0" class="text-center py-12">
-          <div class="bg-white rounded-lg shadow-md p-8">
-            <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-            <h3 class="text-xl font-medium text-gray-900 mb-2">No Pending Requests</h3>
-            <p class="text-gray-500">All role requests have been processed.</p>
-          </div>
-        </div>
-
-        <div v-for="request in allPendingRequests" :key="request.id" class="bg-white rounded-lg shadow-md border-l-4 border-orange-400">
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-4">
-                <div class="flex-shrink-0 h-12 w-12">
-                  <div class="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
-                    {{ request.userName.charAt(0).toUpperCase() }}
-                  </div>
-                </div>
-                <div>
-                  <h3 class="text-lg font-medium text-gray-900">{{ request.userName }}</h3>
-                  <p class="text-sm text-gray-500">{{ request.userEmail }}</p>
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-sm text-gray-500">{{ formatDate(request.requestedAt) }}</div>
-                <span :class="getRequestStatusColor(request.status)" 
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1">
-                  {{ request.status.toUpperCase() }}
-                </span>
-              </div>
-            </div>
-
-            <div class="bg-gray-50 rounded-lg p-4 mb-4">
-              <div class="flex items-center space-x-2 mb-2">
-                <span class="text-sm font-medium text-gray-700">Requested Role:</span>
-                <span :class="getRoleColor(request.requestedRole)" 
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                  {{ request.requestedRole }}
-                </span>
-              </div>
-              <div class="text-sm text-gray-700">
-                <span class="font-medium">Reason:</span>
-                <p class="mt-1">{{ request.reason }}</p>
-              </div>
-            </div>
-
-            <div class="flex space-x-3">
-              <button
-                @click="approveRequest(request)"
-                class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span>Approve Request</span>
-              </button>
-              <button
-                @click="rejectRequest(request)"
-                class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-                <span>Reject Request</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Analytics Tab -->
       <div v-if="activeTab === 'analytics'" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -366,12 +318,12 @@
             <div class="flex items-center">
               <div class="p-3 rounded-full bg-orange-100">
                 <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Pending Requests</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ allPendingRequests.length }}</p>
+                <p class="text-sm font-medium text-gray-600">Deleted Users</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ deletedUsersCount }}</p>
               </div>
             </div>
           </div>
@@ -400,55 +352,130 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Add User Modal -->
-    <div v-if="showAddUserModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Add New User</h3>
-          <form @submit.prevent="addUser" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Full Name</label>
-              <input v-model="newUser.fullName" type="text" required 
-                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+      <!-- Role Requests Tab -->
+      <div v-if="activeTab === 'requests'" class="space-y-6">
+        <!-- Pending Requests -->
+        <div class="bg-white rounded-lg shadow-md">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-medium text-gray-900">Pending Role Requests</h3>
+              <span class="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
+                {{ pendingRequests.length }} pending
+              </span>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Email</label>
-              <input v-model="newUser.email" type="email" required 
-                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <div v-if="pendingRequests.length === 0" class="p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No pending requests</h3>
+            <p class="mt-1 text-sm text-gray-500">All role requests have been processed.</p>
+          </div>
+
+          <div v-else class="divide-y divide-gray-200">
+            <div v-for="request in pendingRequests" :key="request.applicationId" class="p-6">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3 mb-3">
+                    <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span class="text-sm font-medium text-blue-800">{{ request.fullName.charAt(0).toUpperCase() }}</span>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-medium text-gray-900">{{ request.fullName }}</h4>
+                      <p class="text-sm text-gray-600">{{ request.username }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <div class="flex items-center space-x-2 mb-2">
+                      <span class="text-sm text-gray-600">Requesting role:</span>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {{ request.requestedRole }}
+                      </span>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                      <span class="font-medium">Justification:</span>
+                      <p class="mt-1 text-gray-700">{{ request.justification }}</p>
+                    </div>
+                  </div>
+
+                  <div class="text-xs text-gray-500">
+                    Requested on {{ formatDate(request.requestedAt) }}
+                  </div>
+                </div>
+
+                <div class="flex space-x-2 ml-6">
+                  <button
+                    @click="approveRequest(request.applicationId)"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Approve
+                  </button>
+                  <button
+                    @click="rejectRequest(request.applicationId)"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Reject
+                  </button>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Department</label>
-              <input v-model="newUser.department" type="text" 
-                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+
+        <!-- Recent Decisions -->
+        <div class="bg-white rounded-lg shadow-md">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Decisions</h3>
+          </div>
+          
+          <div v-if="recentRequests.length === 0" class="p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No recent decisions</h3>
+            <p class="mt-1 text-sm text-gray-500">Role request decisions will appear here.</p>
+          </div>
+
+          <div v-else class="divide-y divide-gray-200">
+            <div v-for="request in recentRequests" :key="request.applicationId" class="p-6">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3 mb-2">
+                    <div class="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <span class="text-xs font-medium text-gray-600">{{ request.fullName.charAt(0).toUpperCase() }}</span>
+                    </div>
+                    <div>
+                      <span class="text-sm font-medium text-gray-900">{{ request.fullName }}</span>
+                      <span class="text-sm text-gray-600 ml-2">requested</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-1">
+                        {{ request.requestedRole }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ formatDate(request.reviewedAt) }}
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <span :class="[
+                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                    request.status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  ]">
+                    {{ request.status }}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Phone Number</label>
-              <input v-model="newUser.phoneNumber" type="tel" 
-                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Initial Role</label>
-              <select v-model="newUser.initialRole" 
-                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="Viewer">Viewer</option>
-                <option value="Container Operator">Container Operator</option>
-                <option value="Logistics Coordinator">Logistics Coordinator</option>
-                <option value="Security Officer">Security Officer</option>
-              </select>
-            </div>
-            <div class="flex justify-end space-x-2 pt-4">
-              <button type="button" @click="showAddUserModal = false" 
-                      class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
-                Cancel
-              </button>
-              <button type="submit" 
-                      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Add User
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -459,16 +486,15 @@
         <div class="mt-3">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Manage Roles - {{ selectedUser?.fullName }}</h3>
           <div class="space-y-3">
-            <div v-for="role in availableRoles" :key="role.id" class="flex items-center justify-between">
-              <span class="text-sm text-gray-700">{{ role.name }}</span>
+            <div v-for="role in backendRoles" :key="role" class="flex items-center justify-between">
+              <span class="text-sm text-gray-700">{{ role }}</span>
               <label class="inline-flex items-center">
                 <input
                   type="checkbox"
-                  :checked="selectedUser?.roles.includes(role.name)"
-                  @change="toggleRole(role.name, $event.target.checked)"
+                  :checked="selectedUser?.roles.includes(role)"
+                  @change="toggleRole(role, $event.target.checked)"
                   class="form-checkbox h-4 w-4 text-blue-600"
                 />
-                <span class="ml-2 text-sm text-gray-600">{{ role.level }}</span>
               </label>
             </div>
           </div>
@@ -489,60 +515,108 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { userStore, roleHelpers } from '@/stores/userStore'
+import { ref, computed, onMounted, watch } from 'vue'
+import { userManagementApi } from '@/services/userManagementApi'
+import { roleApplicationApi } from '@/services/api'
 
 // Reactive data
 const activeTab = ref('users')
 const searchQuery = ref('')
 const selectedRole = ref('')
 const statusFilter = ref('')
-const showAddUserModal = ref(false)
 const showRoleModal = ref(false)
 const selectedUser = ref(null)
+const isLoading = ref(false)
+const errorMessage = ref('')
+const users = ref([])
+const systemStats = ref(null)
+const pendingRequests = ref([])
+const recentRequests = ref([])
 
-// Form data
-const newUser = ref({
-  fullName: '',
-  email: '',
-  department: '',
-  phoneNumber: '',
-  initialRole: 'Viewer'
-})
+// Backend roles (matching our actual backend constants)
+const backendRoles = ['Admin', 'PortManager', 'Operator', 'Viewer']
 
-// Computed properties using the store
-const users = computed(() => userStore.users.filter(user => !user.isDeleted || statusFilter.value === 'deleted'))
-const roleRequests = computed(() => userStore.roleRequests)
-const availableRoles = computed(() => userStore.availableRoles)
+// API Methods
+const loadUsers = async () => {
+  try {
+    isLoading.value = true
+    errorMessage.value = ''
+    const response = await userManagementApi.getUsers()
+    users.value = response.users || []
+  } catch (error) {
+    errorMessage.value = 'Failed to load users: ' + error.message
+    console.error('Error loading users:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
-const allPendingRequests = computed(() => {
-  return userStore.getPendingRequests()
-})
+const loadSystemStats = async () => {
+  try {
+    const stats = await userManagementApi.getSystemStats()
+    systemStats.value = stats
+  } catch (error) {
+    console.error('Error loading system stats:', error)
+  }
+}
 
+const performSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    await loadUsers()
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    const response = await userManagementApi.searchUsers(searchQuery.value.trim())
+    users.value = response.users || []
+  } catch (error) {
+    errorMessage.value = 'Search failed: ' + error.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Computed properties
 const filteredUsers = computed(() => {
   let filtered = users.value
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
+  // Apply search filter
+  if (searchQuery.value.trim()) {
+    const search = searchQuery.value.toLowerCase()
     filtered = filtered.filter(user => 
-      user.fullName.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query) ||
-      user.department?.toLowerCase().includes(query)
+      user.fullName.toLowerCase().includes(search) ||
+      user.email.toLowerCase().includes(search) ||
+      (user.department && user.department.toLowerCase().includes(search))
     )
   }
 
+  // Apply role filter
   if (selectedRole.value) {
-    filtered = filtered.filter(user => user.roles.includes(selectedRole.value))
+    filtered = filtered.filter(user => 
+      user.roles && user.roles.includes(selectedRole.value)
+    )
   }
 
+  // Apply status filter
   if (statusFilter.value) {
-    filtered = filtered.filter(user => {
-      if (statusFilter.value === 'active') return user.isActive && !user.isBlocked && !user.isDeleted
-      if (statusFilter.value === 'inactive') return !user.isActive && !user.isBlocked && !user.isDeleted
-      if (statusFilter.value === 'blocked') return user.isBlocked
-      if (statusFilter.value === 'deleted') return user.isDeleted
-      return true
-    })
+    switch (statusFilter.value) {
+      case 'active':
+        filtered = filtered.filter(user => user.isActive && !user.isBlocked && !user.isDeleted)
+        break
+      case 'inactive':
+        filtered = filtered.filter(user => !user.isActive && !user.isBlocked && !user.isDeleted)
+        break
+      case 'blocked':
+        filtered = filtered.filter(user => user.isBlocked)
+        break
+      case 'deleted':
+        filtered = filtered.filter(user => user.isDeleted)
+        break
+    }
+  } else {
+    // By default, don't show deleted users unless specifically filtered
+    filtered = filtered.filter(user => !user.isDeleted)
   }
 
   return filtered
@@ -556,12 +630,16 @@ const blockedUsersCount = computed(() =>
   users.value.filter(user => user.isBlocked).length
 )
 
+const deletedUsersCount = computed(() => 
+  users.value.filter(user => user.isDeleted).length
+)
+
 const roleDistribution = computed(() => {
   const roleCount = {}
   const totalUsers = users.value.filter(user => !user.isDeleted).length
   
   users.value.forEach(user => {
-    if (!user.isDeleted) {
+    if (!user.isDeleted && user.roles) {
       user.roles.forEach(role => {
         roleCount[role] = (roleCount[role] || 0) + 1
       })
@@ -575,12 +653,36 @@ const roleDistribution = computed(() => {
   })).sort((a, b) => b.count - a.count)
 })
 
-// Methods using store functions and role helpers
-const getRoleColor = roleHelpers.getRoleColor
-const getRequestStatusColor = roleHelpers.getRequestStatusColor
-const formatDate = roleHelpers.formatDate
-const getUserStatusColor = roleHelpers.getUserStatusColor
-const getUserStatusText = roleHelpers.getUserStatusText
+// Helper functions
+const formatDate = (dateString) => {
+  if (!dateString) return 'Never'
+  const date = new Date(dateString)
+  return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString()
+}
+
+const getRoleColor = (role) => {
+  const colors = {
+    'Admin': 'bg-red-100 text-red-800',
+    'PortManager': 'bg-purple-100 text-purple-800',
+    'Operator': 'bg-blue-100 text-blue-800',
+    'Viewer': 'bg-gray-100 text-gray-800'
+  }
+  return colors[role] || 'bg-gray-100 text-gray-800'
+}
+
+const getUserStatusColor = (user) => {
+  if (user.isDeleted) return 'bg-gray-100 text-gray-800'
+  if (user.isBlocked) return 'bg-red-100 text-red-800'
+  if (!user.isActive) return 'bg-yellow-100 text-yellow-800'
+  return 'bg-green-100 text-green-800'
+}
+
+const getUserStatusText = (user) => {
+  if (user.isDeleted) return 'Deleted'
+  if (user.isBlocked) return 'Blocked'
+  if (!user.isActive) return 'Inactive'
+  return 'Active'
+}
 
 const getUserCardBorderColor = (user) => {
   if (user.isDeleted) return 'border-gray-400'
@@ -589,29 +691,7 @@ const getUserCardBorderColor = (user) => {
   return 'border-green-400'
 }
 
-const addUser = () => {
-  const userData = {
-    fullName: newUser.value.fullName,
-    email: newUser.value.email,
-    username: newUser.value.email.split('@')[0],
-    department: newUser.value.department,
-    phoneNumber: newUser.value.phoneNumber,
-    roles: [newUser.value.initialRole]
-  }
-  
-  userStore.addUser(userData)
-  showAddUserModal.value = false
-  
-  // Reset form
-  newUser.value = {
-    fullName: '',
-    email: '',
-    department: '',
-    phoneNumber: '',
-    initialRole: 'Viewer'
-  }
-}
-
+// User management actions
 const manageUserRoles = (user) => {
   selectedUser.value = { ...user }
   showRoleModal.value = true
@@ -629,47 +709,166 @@ const toggleRole = (roleName, isChecked) => {
   }
 }
 
-const saveUserRoles = () => {
+const saveUserRoles = async () => {
   if (!selectedUser.value) return
   
-  userStore.updateUserRoles(selectedUser.value.id, selectedUser.value.roles)
-  showRoleModal.value = false
-  selectedUser.value = null
-}
-
-const deleteUser = (user) => {
-  if (confirm(`Are you sure you want to delete ${user.fullName}? This action can be undone by restoring the user.`)) {
-    userStore.deleteUser(user.id)
+  try {
+    isLoading.value = true
+    const userId = selectedUser.value.userId || selectedUser.value.id
+    
+    await userManagementApi.updateUserRoles(userId, { roles: selectedUser.value.roles })
+    
+    // Update the user in our local array
+    const userIndex = users.value.findIndex(u => (u.userId || u.id) === userId)
+    if (userIndex !== -1) {
+      users.value[userIndex].roles = [...selectedUser.value.roles]
+    }
+    
+    showRoleModal.value = false
+    selectedUser.value = null
+  } catch (error) {
+    errorMessage.value = 'Failed to update user roles: ' + error.message
+  } finally {
+    isLoading.value = false
   }
 }
 
-const restoreUser = (user) => {
-  if (confirm(`Are you sure you want to restore ${user.fullName}?`)) {
-    userStore.restoreUser(user.id)
+const deleteUser = async (user) => {
+  if (!confirm(`Are you sure you want to delete ${user.fullName}? This action can be undone by restoring the user.`)) {
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    const userId = user.userId || user.id
+    
+    await userManagementApi.deleteUser(userId)
+    
+    // Update the user in our local array
+    const userIndex = users.value.findIndex(u => (u.userId || u.id) === userId)
+    if (userIndex !== -1) {
+      users.value[userIndex].isDeleted = true
+    }
+  } catch (error) {
+    errorMessage.value = 'Failed to delete user: ' + error.message
+  } finally {
+    isLoading.value = false
   }
 }
 
-const blockUser = (user) => {
+const restoreUser = async (user) => {
+  if (!confirm(`Are you sure you want to restore ${user.fullName}?`)) {
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    const userId = user.userId || user.id
+    
+    await userManagementApi.restoreUser(userId)
+    
+    // Update the user in our local array
+    const userIndex = users.value.findIndex(u => (u.userId || u.id) === userId)
+    if (userIndex !== -1) {
+      users.value[userIndex].isDeleted = false
+    }
+  } catch (error) {
+    errorMessage.value = 'Failed to restore user: ' + error.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const blockUser = async (user) => {
   const action = user.isBlocked ? 'unblock' : 'block'
-  if (confirm(`Are you sure you want to ${action} ${user.fullName}?`)) {
-    userStore.blockUser(user.id)
+  if (!confirm(`Are you sure you want to ${action} ${user.fullName}?`)) {
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    const userId = user.userId || user.id
+    
+    await userManagementApi.updateUserStatus(userId, !user.isBlocked)
+    
+    // Update the user in our local array
+    const userIndex = users.value.findIndex(u => (u.userId || u.id) === userId)
+    if (userIndex !== -1) {
+      users.value[userIndex].isBlocked = !user.isBlocked
+    }
+  } catch (error) {
+    errorMessage.value = `Failed to ${action} user: ${error.message}`
+  } finally {
+    isLoading.value = false
   }
 }
 
-const approveRequest = (request) => {
-  if (confirm(`Approve role request for ${request.requestedRole} by ${request.userName}?`)) {
-    userStore.approveRoleRequest(request.id)
+// Role Request Methods
+const loadRoleRequests = async () => {
+  try {
+    const [pending, all] = await Promise.all([
+      roleApplicationApi.getPendingApplications(),
+      roleApplicationApi.getAllApplications()
+    ])
+    
+    pendingRequests.value = pending
+    // Get recent approved/rejected requests (last 10)
+    recentRequests.value = all
+      .filter(request => request.status !== 'Pending')
+      .sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt))
+      .slice(0, 10)
+  } catch (error) {
+    console.error('Error loading role requests:', error)
+    errorMessage.value = 'Failed to load role requests: ' + error.message
   }
 }
 
-const rejectRequest = (request) => {
-  if (confirm(`Reject role request for ${request.requestedRole} by ${request.userName}?`)) {
-    userStore.rejectRoleRequest(request.id)
+const approveRequest = async (applicationId) => {
+  try {
+    await roleApplicationApi.reviewApplication(applicationId, 'Approved', 'Request approved by administrator')
+    await loadRoleRequests()
+    await loadUsers() // Refresh users to show updated roles
+  } catch (error) {
+    errorMessage.value = 'Failed to approve request: ' + error.message
   }
 }
 
-onMounted(() => {
+const rejectRequest = async (applicationId) => {
+  const reason = prompt('Please provide a reason for rejection (optional):')
+  try {
+    await roleApplicationApi.reviewApplication(applicationId, 'Rejected', reason || 'Request rejected by administrator')
+    await loadRoleRequests()
+  } catch (error) {
+    errorMessage.value = 'Failed to reject request: ' + error.message
+  }
+}
+
+// Initialize component
+onMounted(async () => {
   console.log('Admin User Management component mounted')
+  await loadUsers()
+  await loadSystemStats()
+  await loadRoleRequests()
+})
+
+// Watch for search query changes with debouncing
+let searchTimeout = null
+watch(searchQuery, (newValue) => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    if (newValue.trim()) {
+      performSearch()
+    } else {
+      loadUsers()
+    }
+  }, 300)
+})
+
+// Watch for active tab changes to load role requests when needed
+watch(activeTab, (newTab) => {
+  if (newTab === 'requests') {
+    loadRoleRequests()
+  }
 })
 </script>
 

@@ -69,7 +69,7 @@ namespace Backend.Services
                 {
                     Id = ba.Id,
                     ContainerId = ba.ContainerId,
-                    ContainerName = ba.Container?.Name,
+                    ContainerName = ba.Container?.CargoType,
                     BerthId = ba.BerthId,
                     BerthName = berth.Name,
                     AssignedAt = ba.AssignedAt,

@@ -1,13 +1,24 @@
 import { reactive } from 'vue'
+import { userManagementApi, userManagementHelpers } from '@/services/userManagementApi'
 
 // Shared store for user management
 export const userStore = reactive({
-  // Users data
-  users: [
+  // State
+  users: [],
+  loading: false,
+  error: null,
+  currentPage: 1,
+  pageSize: 10,
+  totalUsers: 0,
+  totalPages: 0,
+  systemStats: null,
+  
+  // Legacy users data (kept for compatibility with existing components)
+  legacyUsers: [
     {
       id: 1,
       fullName: 'John Smith',
-      email: 'john.smith@maersk.com',
+      email: 'john.smith@example.com',
       username: 'jsmith',
       department: 'Port Operations',
       phoneNumber: '+1-555-0123',
@@ -21,7 +32,7 @@ export const userStore = reactive({
     {
       id: 2,
       fullName: 'Sarah Johnson',
-      email: 'sarah.johnson@maersk.com',
+      email: 'sarah.johnson@example.com',
       username: 'sjohnson',
       department: 'Container Operations',
       phoneNumber: '+1-555-0124',
@@ -35,7 +46,7 @@ export const userStore = reactive({
     {
       id: 3,
       fullName: 'Michael Chen',
-      email: 'michael.chen@maersk.com',
+      email: 'michael.chen@example.com',
       username: 'mchen',
       department: 'Logistics',
       phoneNumber: '+1-555-0125',
@@ -49,7 +60,7 @@ export const userStore = reactive({
     {
       id: 4,
       fullName: 'Emily Davis',
-      email: 'emily.davis@maersk.com',
+      email: 'emily.davis@example.com',
       username: 'edavis',
       department: 'Security',
       phoneNumber: '+1-555-0126',
@@ -63,7 +74,7 @@ export const userStore = reactive({
     {
       id: 5,
       fullName: 'David Wilson',
-      email: 'david.wilson@maersk.com',
+      email: 'david.wilson@example.com',
       username: 'dwilson',
       department: 'IT Support',
       phoneNumber: '+1-555-0127',
@@ -77,7 +88,7 @@ export const userStore = reactive({
     {
       id: 6,
       fullName: 'Admin User',
-      email: 'admin@maersk.com',
+      email: 'admin@example.com',
       username: 'admin',
       department: 'Administration',
       phoneNumber: '+1-555-0100',
@@ -97,7 +108,7 @@ export const userStore = reactive({
       id: 1,
       userId: 3,
       userName: 'Michael Chen',
-      userEmail: 'michael.chen@maersk.com',
+      userEmail: 'michael.chen@example.com',
       requestedRole: 'Supervisor',
       reason: 'I have been promoted to team lead and need supervisor privileges to manage my team effectively.',
       status: 'pending',
@@ -107,7 +118,7 @@ export const userStore = reactive({
       id: 2,
       userId: 4,
       userName: 'Emily Davis',
-      userEmail: 'emily.davis@maersk.com',
+      userEmail: 'emily.davis@example.com',
       requestedRole: 'Port Manager',
       reason: 'Need access to port management features for the new security protocols implementation.',
       status: 'pending',
@@ -117,7 +128,7 @@ export const userStore = reactive({
       id: 3,
       userId: 2,
       userName: 'Sarah Johnson',
-      userEmail: 'sarah.johnson@maersk.com',
+      userEmail: 'sarah.johnson@example.com',
       requestedRole: 'Container Manager',
       reason: 'Requesting container manager role to handle advanced container operations and reporting.',
       status: 'approved',
@@ -128,7 +139,7 @@ export const userStore = reactive({
       id: 4,
       userId: 2,
       userName: 'Sarah Johnson',
-      userEmail: 'sarah.johnson@maersk.com',
+      userEmail: 'sarah.johnson@example.com',
       requestedRole: 'Supervisor',
       reason: 'Need supervisor access to manage the new container operations team.',
       status: 'pending',
@@ -203,85 +214,235 @@ export const userStore = reactive({
     }
   ],
 
-  // Actions
+  // API Methods
+  async fetchUsers(params = {}) {
+    this.loading = true
+    this.error = null
+    try {
+      const response = await userManagementApi.getUsers({
+        pageNumber: params.pageNumber || this.currentPage,
+        pageSize: params.pageSize || this.pageSize,
+        searchTerm: params.searchTerm,
+        role: params.role,
+        isActive: params.isActive,
+        isBlocked: params.isBlocked
+      })
+      
+      this.users = response.users
+      this.totalUsers = response.totalCount
+      this.currentPage = response.pageNumber
+      this.pageSize = response.pageSize
+      this.totalPages = response.totalPages
+      
+      return response
+    } catch (error) {
+      this.error = error.message || 'Failed to fetch users'
+      console.error('Error fetching users:', error)
+      throw error
+    } finally {
+      this.loading = false
+    }
+  },
+
+  async fetchSystemStats() {
+    try {
+      this.systemStats = await userManagementApi.getSystemStats()
+      return this.systemStats
+    } catch (error) {
+      console.error('Error fetching system stats:', error)
+      throw error
+    }
+  },
+
+  async updateUserRoles(userId, roles) {
+    this.loading = true
+    this.error = null
+    try {
+      const response = await userManagementApi.updateUserRoles(userId, roles)
+      if (response.success) {
+        // Update local user data
+        const userIndex = this.users.findIndex(u => u.userId === userId)
+        if (userIndex !== -1) {
+          this.users[userIndex] = { ...this.users[userIndex], ...response.data }
+        }
+      }
+      return response
+    } catch (error) {
+      this.error = error.message || 'Failed to update user roles'
+      throw error
+    } finally {
+      this.loading = false
+    }
+  },
+
+  async toggleUserBlock(userId, reason = '') {
+    this.loading = true
+    this.error = null
+    try {
+      const user = this.users.find(u => u.userId === userId)
+      if (!user) throw new Error('User not found')
+      
+      const response = await userManagementApi.updateUserStatus(userId, !user.isBlocked, reason)
+      if (response.success) {
+        // Update local user data
+        const userIndex = this.users.findIndex(u => u.userId === userId)
+        if (userIndex !== -1) {
+          this.users[userIndex] = { ...this.users[userIndex], ...response.data }
+        }
+      }
+      return response
+    } catch (error) {
+      this.error = error.message || 'Failed to update user status'
+      throw error
+    } finally {
+      this.loading = false
+    }
+  },
+
+  async deleteUser(userId, reason = '') {
+    this.loading = true
+    this.error = null
+    try {
+      const response = await userManagementApi.deleteUser(userId, reason)
+      if (response.success) {
+        // Remove user from local data or mark as deleted
+        const userIndex = this.users.findIndex(u => u.userId === userId)
+        if (userIndex !== -1) {
+          this.users[userIndex].isDeleted = true
+          this.users[userIndex].isActive = false
+        }
+      }
+      return response
+    } catch (error) {
+      this.error = error.message || 'Failed to delete user'
+      throw error
+    } finally {
+      this.loading = false
+    }
+  },
+
+  async searchUsers(searchTerm, pageNumber = 1) {
+    return await this.fetchUsers({ 
+      searchTerm, 
+      pageNumber,
+      pageSize: this.pageSize 
+    })
+  },
+
+  async getUsersByRole(role, pageNumber = 1) {
+    return await this.fetchUsers({ 
+      role, 
+      pageNumber,
+      pageSize: this.pageSize 
+    })
+  },
+
+  async getBlockedUsers(pageNumber = 1) {
+    return await this.fetchUsers({ 
+      isBlocked: true, 
+      pageNumber,
+      pageSize: this.pageSize 
+    })
+  },
+
+  // Legacy Actions (kept for compatibility)
   addUser(user) {
     const newUser = {
       ...user,
-      id: Math.max(...this.users.map(u => u.id)) + 1,
+      id: Math.max(...this.legacyUsers.map(u => u.id)) + 1,
       createdAt: new Date().toISOString(),
       isActive: true,
       lastLoginAt: null
     }
-    this.users.push(newUser)
+    this.legacyUsers.push(newUser)
     return newUser
   },
 
   updateUser(userId, updates) {
-    const userIndex = this.users.findIndex(u => u.id === userId)
+    // Try API first for current users, fallback to legacy
+    const userIndex = this.users.findIndex(u => u.userId === userId || u.id === userId)
     if (userIndex !== -1) {
       this.users[userIndex] = { ...this.users[userIndex], ...updates }
       return this.users[userIndex]
+    }
+    
+    // Fallback to legacy users
+    const legacyUserIndex = this.legacyUsers.findIndex(u => u.id === userId)
+    if (legacyUserIndex !== -1) {
+      this.legacyUsers[legacyUserIndex] = { ...this.legacyUsers[legacyUserIndex], ...updates }
+      return this.legacyUsers[legacyUserIndex]
     }
     return null
   },
 
   toggleUserStatus(userId) {
-    const user = this.users.find(u => u.id === userId)
+    // Use API method if possible
+    if (this.users.some(u => u.userId === userId)) {
+      return this.toggleUserBlock(userId)
+    }
+    
+    // Fallback to legacy
+    const user = this.legacyUsers.find(u => u.id === userId)
     if (user) {
       user.isActive = !user.isActive
     }
     return user
   },
 
-  updateUserRoles(userId, roles) {
-    const user = this.users.find(u => u.id === userId)
+  // Legacy method kept for compatibility
+  legacyUpdateUserRoles(userId, roles) {
+    const user = this.legacyUsers.find(u => u.id === userId)
     if (user) {
       user.roles = [...roles]
     }
     return user
   },
 
-  deleteUser(userId) {
-    const userIndex = this.users.findIndex(u => u.id === userId)
+  // Legacy delete methods
+  legacyDeleteUser(userId) {
+    const userIndex = this.legacyUsers.findIndex(u => u.id === userId)
     if (userIndex !== -1) {
-      // Mark as deleted instead of removing
-      this.users[userIndex].isDeleted = true
-      this.users[userIndex].isActive = false
-      console.log(`User ${userId} has been deleted`)
+      this.legacyUsers[userIndex].isDeleted = true
+      this.legacyUsers[userIndex].isActive = false
       return true
     }
     return false
   },
 
   permanentDeleteUser(userId) {
-    const userIndex = this.users.findIndex(u => u.id === userId)
+    const userIndex = this.legacyUsers.findIndex(u => u.id === userId)
     if (userIndex !== -1) {
-      this.users.splice(userIndex, 1)
-      console.log(`User ${userId} has been permanently deleted`)
+      this.legacyUsers.splice(userIndex, 1)
       return true
     }
     return false
   },
 
   blockUser(userId) {
-    const user = this.users.find(u => u.id === userId)
+    // Use API method if possible
+    if (this.users.some(u => u.userId === userId)) {
+      return this.toggleUserBlock(userId)
+    }
+    
+    // Fallback to legacy
+    const user = this.legacyUsers.find(u => u.id === userId)
     if (user) {
       user.isBlocked = !user.isBlocked
       if (user.isBlocked) {
         user.isActive = false
       }
-      console.log(`User ${userId} block status changed to:`, user.isBlocked ? 'Blocked' : 'Unblocked')
+      console.log(`Legacy user ${userId} block status changed to:`, user.isBlocked ? 'Blocked' : 'Unblocked')
       return true
     }
     return false
   },
 
   restoreUser(userId) {
-    const user = this.users.find(u => u.id === userId)
+    const user = this.legacyUsers.find(u => u.id === userId)
     if (user && user.isDeleted) {
       user.isDeleted = false
       user.isActive = true
-      console.log(`User ${userId} has been restored`)
+      console.log(`Legacy user ${userId} has been restored`)
       return true
     }
     return false
@@ -331,8 +492,73 @@ export const userStore = reactive({
     return false
   },
 
+  // Helper methods
   getUserById(userId) {
-    return this.users.find(u => u.id === userId)
+    // Check API users first
+    let user = this.users.find(u => u.userId === userId || u.id === userId)
+    if (user) return user
+    
+    // Fallback to legacy users
+    return this.legacyUsers.find(u => u.id === userId)
+  },
+
+  getAllUsers() {
+    // Return API users if available, otherwise legacy users
+    if (this.users.length > 0) {
+      return this.users
+    }
+    return this.legacyUsers.filter(u => !u.isDeleted)
+  },
+
+  getActiveUsers() {
+    if (this.users.length > 0) {
+      return this.users.filter(u => u.isActive && !u.isDeleted)
+    }
+    return this.legacyUsers.filter(u => u.isActive && !u.isDeleted)
+  },
+
+  getFilteredUsers(filters = {}) {
+    const allUsers = this.getAllUsers()
+    
+    return allUsers.filter(user => {
+      if (filters.searchTerm) {
+        const searchTerm = filters.searchTerm.toLowerCase()
+        const matchesSearch = 
+          user.fullName?.toLowerCase().includes(searchTerm) ||
+          user.email?.toLowerCase().includes(searchTerm) ||
+          user.username?.toLowerCase().includes(searchTerm) ||
+          user.department?.toLowerCase().includes(searchTerm)
+        if (!matchesSearch) return false
+      }
+      
+      if (filters.role) {
+        if (!user.roles.includes(filters.role)) return false
+      }
+      
+      if (filters.isActive !== undefined) {
+        if (user.isActive !== filters.isActive) return false
+      }
+      
+      if (filters.isBlocked !== undefined) {
+        if (user.isBlocked !== filters.isBlocked) return false
+      }
+      
+      if (filters.isDeleted !== undefined) {
+        if (user.isDeleted !== filters.isDeleted) return false
+      }
+      
+      return true
+    })
+  },
+
+  // Initialize store with API data
+  async initialize() {
+    try {
+      await this.fetchUsers()
+      await this.fetchSystemStats()
+    } catch (error) {
+      console.warn('Failed to initialize user store with API data, using legacy data:', error)
+    }
   },
 
   getRoleByName(roleName) {

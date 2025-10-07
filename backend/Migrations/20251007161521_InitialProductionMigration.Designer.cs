@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251006102657_FinalEnhancedSchemaWithConstraints")]
-    partial class FinalEnhancedSchemaWithConstraints
+    [Migration("20251007161521_InitialProductionMigration")]
+    partial class InitialProductionMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -218,7 +218,7 @@ namespace backend.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ContainerId")
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(11)");
 
                     b.Property<decimal?>("Cost")
                         .HasColumnType("numeric");
@@ -277,20 +277,21 @@ namespace backend.Migrations
             modelBuilder.Entity("Backend.Models.Container", b =>
                 {
                     b.Property<string>("ContainerId")
-                        .HasColumnType("text");
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)");
 
                     b.Property<string>("CargoDescription")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("CargoType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Condition")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<string>("ContainerNumber")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("character varying(11)");
 
                     b.Property<string>("Coordinates")
                         .IsRequired()
@@ -312,10 +313,6 @@ namespace backend.Migrations
 
                     b.Property<decimal?>("MaxWeight")
                         .HasColumnType("numeric");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<int?>("ShipId")
                         .HasColumnType("integer");
@@ -345,10 +342,6 @@ namespace backend.Migrations
 
                     b.HasIndex("ContainerId");
 
-                    b.HasIndex("ContainerNumber")
-                        .HasDatabaseName("IX_Containers_ContainerNumber_Unique")
-                        .HasFilter("\"ContainerNumber\" IS NOT NULL AND \"ContainerNumber\" != ''");
-
                     b.HasIndex("ShipId");
 
                     b.ToTable("Containers");
@@ -370,7 +363,7 @@ namespace backend.Migrations
 
                     b.Property<string>("ContainerId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(11)");
 
                     b.Property<string>("Coordinates")
                         .IsRequired()
@@ -474,7 +467,7 @@ namespace backend.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("ContainerId")
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(11)");
 
                     b.Property<string>("Coordinates")
                         .IsRequired()
@@ -704,6 +697,58 @@ namespace backend.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("Backend.Models.RoleApplication", b =>
+                {
+                    b.Property<int>("ApplicationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ApplicationId"));
+
+                    b.Property<string>("Justification")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RequestedRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ApplicationId");
+
+                    b.HasIndex("RequestedAt");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RoleApplications");
+                });
+
             modelBuilder.Entity("Backend.Models.RolePermission", b =>
                 {
                     b.Property<int>("RoleId")
@@ -826,7 +871,7 @@ namespace backend.Migrations
 
                     b.Property<string>("ContainerId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(11)");
 
                     b.Property<DateTime>("LoadedAt")
                         .HasColumnType("timestamp with time zone");
@@ -869,6 +914,12 @@ namespace backend.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastLoginAt")
@@ -1092,6 +1143,24 @@ namespace backend.Migrations
                     b.Navigation("Ship");
                 });
 
+            modelBuilder.Entity("Backend.Models.RoleApplication", b =>
+                {
+                    b.HasOne("Backend.Models.User", "ReviewedByUser")
+                        .WithMany("ReviewedApplications")
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Backend.Models.User", "User")
+                        .WithMany("RoleApplications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReviewedByUser");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Backend.Models.RolePermission", b =>
                 {
                     b.HasOne("Backend.Models.User", "GrantedByUser")
@@ -1237,6 +1306,10 @@ namespace backend.Migrations
 
             modelBuilder.Entity("Backend.Models.User", b =>
                 {
+                    b.Navigation("ReviewedApplications");
+
+                    b.Navigation("RoleApplications");
+
                     b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618

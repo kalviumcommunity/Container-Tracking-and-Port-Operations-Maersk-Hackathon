@@ -388,7 +388,7 @@ export default {
     async loadOperationData() {
       try {
         this.loading = true;
-        console.log('Loading port operation data...');
+        // Loading port operation data
 
         // Load all data in parallel
         const [portsResponse, berthsResponse, shipsResponse, containersResponse, assignmentsResponse] = await Promise.all([
@@ -399,13 +399,7 @@ export default {
           berthAssignmentApi.getAll()
         ]);
 
-        console.log('API Responses:', {
-          ports: portsResponse,
-          berths: berthsResponse,
-          ships: shipsResponse,
-          containers: containersResponse,
-          assignments: assignmentsResponse
-        });
+        // API data loaded successfully
 
         this.ports = portsResponse.data || [];
         this.berths = berthsResponse.data || [];

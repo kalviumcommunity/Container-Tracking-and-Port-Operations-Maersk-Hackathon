@@ -35,42 +35,124 @@
             </router-link>
           </div>
 
-          <!-- Authentication Buttons -->
+          <!-- Authentication Section -->
           <div class="flex items-center gap-2">
-            <div v-if="isAuthenticated" class="flex items-center gap-2">
-              <!-- User Info -->
-              <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
-                <User :size="16" class="text-slate-600" />
-                <span class="text-sm font-medium text-slate-700">{{ currentUser?.username }}</span>
+            <div v-if="isAuthenticated" class="relative">
+              <!-- User Dropdown -->
+              <div class="relative">
+                <button 
+                  @click="showUserDropdown = !showUserDropdown"
+                  class="flex items-center space-x-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <User class="w-5 h-5 text-slate-600" />
+                  <span class="text-sm font-medium text-slate-700">{{ currentUser?.username || 'User' }}</span>
+                  <ChevronDown class="w-4 h-4 text-slate-500 transition-transform duration-200" :class="{ 'rotate-180': showUserDropdown }" />
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div 
+                  v-if="showUserDropdown"
+                  class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50"
+                  @click.stop
+                >
+                  <!-- User Info Header -->
+                  <div class="px-4 py-3 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                      <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <User class="w-5 h-5 text-white" />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-900 truncate">{{ currentUser?.fullName || currentUser?.username }}</p>
+                        <p class="text-xs text-slate-500 truncate">{{ currentUser?.email }}</p>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                          <span 
+                            v-for="role in currentUser?.roles" 
+                            :key="role"
+                            class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full"
+                          >
+                            {{ role }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Menu Items -->
+                  <div class="py-1">
+                    <!-- Role Application -->
+                    <button
+                      @click="openRoleApplication"
+                      class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-3"
+                    >
+                      <Shield class="w-4 h-4 text-slate-400" />
+                      <span>Request Additional Access</span>
+                      <span v-if="pendingApplicationsCount > 0" class="ml-auto bg-orange-100 text-orange-800 text-xs px-2 py-0.5 rounded-full">
+                        {{ pendingApplicationsCount }}
+                      </span>
+                    </button>
+
+                    <!-- Change Password -->
+                    <button
+                      @click="openChangePassword"
+                      class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-3"
+                    >
+                      <Key class="w-4 h-4 text-slate-400" />
+                      <span>Change Password</span>
+                    </button>
+
+                    <!-- Account Settings -->
+                    <button
+                      @click="openAccountSettings"
+                      class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-3"
+                    >
+                      <Settings class="w-4 h-4 text-slate-400" />
+                      <span>Account Settings</span>
+                    </button>
+
+                    <!-- Admin Dashboard (if admin) -->
+                    <router-link
+                      v-if="isAdmin"
+                      to="/admin-dashboard"
+                      @click="showUserDropdown = false"
+                      class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-3 no-underline"
+                    >
+                      <UserCog class="w-4 h-4 text-slate-400" />
+                      <span>Admin Dashboard</span>
+                      <span class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">Admin</span>
+                    </router-link>
+
+                    <hr class="my-1 border-slate-100" />
+
+                    <!-- Logout -->
+                    <button
+                      @click="handleLogout"
+                      class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3"
+                    >
+                      <LogOut class="w-4 h-4 text-red-500" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <!-- Logout Button -->
-              <button
-                @click="handleLogout"
-                class="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-              >
-                <LogOut :size="16" />
-                <span class="text-sm font-medium">Logout</span>
-              </button>
             </div>
-            <div v-else class="flex items-center gap-2">
-              <!-- Login Button -->
+
+            <!-- Login/Register buttons for non-authenticated users -->
+            <div v-else class="flex items-center space-x-2">
               <button
                 @click="showLoginModal = true"
-                class="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                class="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all duration-200"
               >
                 <LogIn :size="16" />
                 <span class="text-sm font-medium">Sign In</span>
               </button>
-              <!-- Register Button -->
               <button
                 @click="showRegisterModal = true"
-                class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-all duration-200"
+                class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200"
               >
                 <UserPlus :size="16" />
                 <span class="text-sm font-medium">Sign Up</span>
               </button>
             </div>
-          </div>
         </div>
 
         <!-- Mobile Menu Button -->
@@ -101,6 +183,7 @@
               ></span>
             </div>
           </button>
+        </div>
         </div>
       </div>
 
@@ -168,6 +251,7 @@
         </div>
       </div>
     </div>
+    
 
     <!-- Authentication Modals -->
     <!-- Login Modal -->
@@ -187,6 +271,42 @@
         @cancel="showRegisterModal = false"
       />
     </div>
+
+    <!-- Role Application Modal -->
+    <div 
+      v-if="showRoleApplicationModal" 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click="showRoleApplicationModal = false"
+    >
+      <RoleApplication 
+        @close="showRoleApplicationModal = false"
+        @application-submitted="onApplicationSubmitted"
+      />
+    </div>
+
+    <!-- Change Password Modal -->
+    <div 
+      v-if="showChangePasswordModal" 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click="showChangePasswordModal = false"
+    >
+      <ChangePassword 
+        @close="showChangePasswordModal = false"
+        @password-changed="onPasswordChanged"
+      />
+    </div>
+
+    <!-- Account Settings Modal -->
+    <div 
+      v-if="showAccountSettingsModal" 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click="showAccountSettingsModal = false"
+    >
+      <AccountSettings 
+        @close="showAccountSettingsModal = false"
+        @profile-updated="onProfileUpdated"
+      />
+    </div>
   </nav>
 </template>
 
@@ -200,15 +320,22 @@ import {
   Anchor, 
   Activity,
   User,
+  Users,
   LogIn,
   LogOut,
   UserPlus,
-  Users,
-  UserCheck
+  ChevronDown,
+  Shield,
+  Key,
+  Settings,
+  UserCog
 } from 'lucide-vue-next'
 import LoginForm from '../forms/LoginForm.vue'
 import RegistrationForm from '../forms/RegistrationForm.vue'
-import { authApi } from '../services/api'
+import RoleApplication from '../components/RoleApplication.vue'
+import ChangePassword from '../components/ChangePassword.vue'
+import AccountSettings from '../components/AccountSettings.vue'
+import { authApi, roleApplicationApi } from '../services/api'
 
 export default {
   name: 'Navbar',
@@ -223,10 +350,17 @@ export default {
     LogIn,
     LogOut,
     UserPlus,
-    Users,
-    UserCheck,
+    ChevronDown,
+    Shield,
+    Key,
+    Settings,
+    UserCog,
+
     LoginForm,
-    RegistrationForm
+    RegistrationForm,
+    RoleApplication,
+    ChangePassword,
+    AccountSettings
   },
   setup() {
     const route = useRoute()
@@ -237,8 +371,13 @@ export default {
       isMobileMenuOpen: false,
       showLoginModal: false,
       showRegisterModal: false,
+      showUserDropdown: false,
+      showRoleApplicationModal: false,
+      showChangePasswordModal: false,
+      showAccountSettingsModal: false,
       currentUser: null,
       isAuthenticated: false,
+      pendingApplicationsCount: 0,
       // Navigation items configuration
       navigationItems: [
         {
@@ -265,32 +404,31 @@ export default {
           name: 'Event Stream',
           path: '/event-streaming',
           icon: Activity
-        },
-        {
-          name: 'User Management',
-          path: '/admin-dashboard',
-          icon: Users
         }
       ]
     }
   },
   computed: {
+    isAdmin() {
+      return this.currentUser?.roles?.includes('Admin') || 
+             this.currentUser?.roles?.includes('SuperAdmin')
+
+    },
     filteredNavigationItems() {
-      return this.navigationItems.filter(item => {
-        // Show admin-only items only if user is admin or has admin roles
-        if (item.adminOnly) {
-          return this.currentUser && (
-            this.currentUser.isAdmin || 
-            this.currentUser.roles?.includes('System Administrator') ||
-            this.currentUser.roles?.includes('Port Manager')
-          )
-        }
-        return true
-      })
+      // Return all navigation items for authenticated users
+      // No role-based filtering needed for main navigation
+      return this.navigationItems
     }
   },
   async mounted() {
     await this.checkAuthStatus()
+    if (this.isAuthenticated) {
+      await this.loadPendingApplicationsCount()
+    }
+    document.addEventListener('click', this.handleClickOutside)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside)
   },
   methods: {
     // Mobile menu methods
@@ -398,6 +536,57 @@ export default {
         this.currentUser = null
         this.isAuthenticated = false
         this.$router.push('/')
+      }
+    },
+
+    // New dropdown methods
+    async loadPendingApplicationsCount() {
+      try {
+        const applications = await roleApplicationApi.getMyApplications()
+        this.pendingApplicationsCount = applications.filter(app => app.status === 'Pending').length
+      } catch (error) {
+        console.error('Error loading applications count:', error)
+      }
+    },
+
+    openRoleApplication() {
+      this.showRoleApplicationModal = true
+      this.showUserDropdown = false
+    },
+
+    openChangePassword() {
+      this.showChangePasswordModal = true
+      this.showUserDropdown = false
+    },
+
+    openAccountSettings() {
+      this.showAccountSettingsModal = true
+      this.showUserDropdown = false
+    },
+
+    openAdminPanel() {
+      this.$router.push('/admin')
+      this.showUserDropdown = false
+    },
+
+    onApplicationSubmitted() {
+      this.loadPendingApplicationsCount()
+      // Show success message could be added here
+    },
+
+    onPasswordChanged() {
+      // Show success message could be added here
+    },
+
+    onProfileUpdated() {
+      this.checkAuthStatus()
+      // Show success message could be added here
+    },
+
+    // Close dropdown when clicking outside
+    handleClickOutside(event) {
+      if (!this.$el.contains(event.target)) {
+        this.showUserDropdown = false
       }
     }
   }

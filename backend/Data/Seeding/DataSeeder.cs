@@ -35,6 +35,7 @@ namespace Backend.Data.Seeding
             }
             
             // Seed in proper order to maintain foreign key relationships
+            await SeedRoles(context);
             await SeedUsers(context);
             await SeedPorts(context);
             await SeedBerths(context);
@@ -50,9 +51,55 @@ namespace Backend.Data.Seeding
 
         private static async Task SeedUsers(ApplicationDbContext context)
         {
-            if (await context.Users.AnyAsync())
+            // Check if users exist
+            bool usersExist = await context.Users.AnyAsync();
+            
+            if (usersExist)
             {
-                Console.WriteLine("Users already exist, skipping user seeding...");
+                // Check if UserRoles need to be assigned for test users
+                var testUsers = await context.Users
+                    .Where(u => u.Username == "operator1" || u.Username == "supervisor1" || u.Username == "controller1")
+                    .ToListAsync();
+                
+                if (testUsers.Count == 3)
+                {
+                    var userIds = testUsers.Select(u => u.UserId).ToList();
+                    var existingUserRoles = await context.UserRoles
+                        .Where(ur => userIds.Contains(ur.UserId))
+                        .CountAsync();
+                    
+                    if (existingUserRoles == 0)
+                    {
+                        // Assign default roles to test users
+                        var rolesList = await context.Roles.ToListAsync();
+                        var operatorRoleEntity = rolesList.FirstOrDefault(r => r.Name == "Operator");
+                        var viewerRoleEntity = rolesList.FirstOrDefault(r => r.Name == "Viewer");
+                        
+                        if (operatorRoleEntity != null && viewerRoleEntity != null)
+                        {
+                            var userRolesToAdd = new List<UserRole>();
+                            
+                            var operator1 = testUsers.First(u => u.Username == "operator1");
+                            var supervisor1 = testUsers.First(u => u.Username == "supervisor1");
+                            var controller1 = testUsers.First(u => u.Username == "controller1");
+                            
+                            // operator1: Operator + Viewer
+                            userRolesToAdd.Add(new UserRole { UserId = operator1.UserId, RoleId = operatorRoleEntity.RoleId, AssignedAt = DateTime.UtcNow });
+                            userRolesToAdd.Add(new UserRole { UserId = operator1.UserId, RoleId = viewerRoleEntity.RoleId, AssignedAt = DateTime.UtcNow });
+                            
+                            // supervisor1: Operator
+                            userRolesToAdd.Add(new UserRole { UserId = supervisor1.UserId, RoleId = operatorRoleEntity.RoleId, AssignedAt = DateTime.UtcNow });
+                            
+                            // controller1: Viewer
+                            userRolesToAdd.Add(new UserRole { UserId = controller1.UserId, RoleId = viewerRoleEntity.RoleId, AssignedAt = DateTime.UtcNow });
+                            
+                            await context.UserRoles.AddRangeAsync(userRolesToAdd);
+                            await context.SaveChangesAsync();
+                            Console.WriteLine($"Assigned roles to {testUsers.Count} test users.");
+                        }
+                    }
+                }
+                
                 return;
             }
 
@@ -60,18 +107,9 @@ namespace Backend.Data.Seeding
             {
                 new User
                 {
-                    Username = "admin",
-                    FullName = "System Administrator",
-                    Email = "admin@maersk.com",
-                    Department = "IT Administration",
-                    CreatedAt = DateTime.UtcNow.AddDays(-30),
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new User
-                {
                     Username = "operator1",
                     FullName = "John Hansen",
-                    Email = "john.hansen@maersk.com",
+                    Email = "john.hansen@example.com",
                     Department = "Port Operations",
                     CreatedAt = DateTime.UtcNow.AddDays(-25),
                     UpdatedAt = DateTime.UtcNow
@@ -80,7 +118,7 @@ namespace Backend.Data.Seeding
                 {
                     Username = "supervisor1",
                     FullName = "Sarah Nielsen",
-                    Email = "sarah.nielsen@maersk.com",
+                    Email = "sarah.nielsen@example.com",
                     Department = "Port Management",
                     CreatedAt = DateTime.UtcNow.AddDays(-20),
                     UpdatedAt = DateTime.UtcNow
@@ -89,7 +127,7 @@ namespace Backend.Data.Seeding
                 {
                     Username = "controller1",
                     FullName = "Lars Andersen",
-                    Email = "lars.andersen@maersk.com",
+                    Email = "lars.andersen@example.com",
                     Department = "Traffic Control",
                     CreatedAt = DateTime.UtcNow.AddDays(-15),
                     UpdatedAt = DateTime.UtcNow
@@ -99,6 +137,98 @@ namespace Backend.Data.Seeding
             await context.Users.AddRangeAsync(users);
             await context.SaveChangesAsync();
             Console.WriteLine($"Seeded {users.Count} users.");
+            
+            // NOW ASSIGN ROLES TO THESE USERS
+            Console.WriteLine("Assigning roles to seeded users...");
+            
+            // Get the roles we need
+            var roles = await context.Roles.ToListAsync();
+            var operatorRole = roles.FirstOrDefault(r => r.Name == "Operator");
+            var viewerRole = roles.FirstOrDefault(r => r.Name == "Viewer");
+            
+            if (operatorRole != null && viewerRole != null)
+            {
+                // Assign roles to the seeded users
+                var userRoles = new List<UserRole>
+                {
+                    new UserRole
+                    {
+                        UserId = users[0].UserId, // operator1 gets Operator + Viewer roles
+                        RoleId = operatorRole.RoleId,
+                        AssignedAt = DateTime.UtcNow
+                    },
+                    new UserRole
+                    {
+                        UserId = users[0].UserId, // operator1 also gets Viewer
+                        RoleId = viewerRole.RoleId,
+                        AssignedAt = DateTime.UtcNow
+                    },
+                    new UserRole
+                    {
+                        UserId = users[1].UserId, // supervisor1 gets Operator role
+                        RoleId = operatorRole.RoleId,
+                        AssignedAt = DateTime.UtcNow
+                    },
+                    new UserRole
+                    {
+                        UserId = users[2].UserId, // controller1 gets Viewer role
+                        RoleId = viewerRole.RoleId,
+                        AssignedAt = DateTime.UtcNow
+                    }
+                };
+                
+                await context.UserRoles.AddRangeAsync(userRoles);
+                await context.SaveChangesAsync();
+                Console.WriteLine($"Assigned roles to {userRoles.Count} users.");
+            }
+            else
+            {
+                Console.WriteLine("WARNING: Could not find Operator or Viewer roles to assign!");
+            }
+        }
+
+        private static async Task SeedRoles(ApplicationDbContext context)
+        {
+            if (await context.Roles.AnyAsync())
+            {
+                return;
+            }
+
+            var roles = new List<Role>
+            {
+                new Role
+                {
+                    Name = "Admin",
+                    Description = "Full system access with user management and administrative privileges",
+                    IsSystemRole = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Role
+                {
+                    Name = "PortManager",
+                    Description = "Manage port operations, berth assignments, and oversee container handling",
+                    IsSystemRole = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Role
+                {
+                    Name = "Operator",
+                    Description = "Perform day-to-day operations, handle container movements and basic tasks",
+                    IsSystemRole = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Role
+                {
+                    Name = "Viewer",
+                    Description = "Read-only access to view system data and generate reports",
+                    IsSystemRole = true,
+                    CreatedAt = DateTime.UtcNow
+                }
+            };
+
+            await context.Roles.AddRangeAsync(roles);
+            await context.SaveChangesAsync();
+            Console.WriteLine($"Seeded {roles.Count} roles.");
         }
 
         private static async Task SeedPorts(ApplicationDbContext context)
@@ -387,6 +517,21 @@ namespace Backend.Data.Seeding
                 "Chemicals", "Pharmaceuticals", "Consumer Goods", "Raw Materials", "Furniture" 
             };
 
+            // Define logical cargo categories with consistent data
+            var cargoCategories = new[]
+            {
+                new { Type = "Electronics", Description = "Laptops, smartphones, tablets from Samsung factory", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Dairy Products", Description = "Fresh milk, cheese, yogurt, and dairy products", ContainerType = "Refrigerated", TempRange = (int?)4 },
+                new { Type = "Frozen Foods", Description = "Frozen vegetables, meat, ice cream products", ContainerType = "Refrigerated", TempRange = (int?)-18 },
+                new { Type = "Automotive Parts", Description = "Car engines, transmissions, brake systems, tires", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Pharmaceuticals", Description = "Medical supplies, vaccines, prescription drugs", ContainerType = "Refrigerated", TempRange = (int?)2 },
+                new { Type = "Textiles", Description = "Cotton fabrics, clothing, fashion accessories", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Chemicals", Description = "Industrial chemicals, cleaning compounds", ContainerType = "Hazardous", TempRange = (int?)null },
+                new { Type = "Furniture", Description = "Wooden furniture, chairs, tables, home decor", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Machinery", Description = "Industrial equipment, construction machinery", ContainerType = "Dry", TempRange = (int?)null },
+                new { Type = "Food Products", Description = "Canned goods, grains, processed foods", ContainerType = "Dry", TempRange = (int?)null }
+            };
+
             for (int i = 1; i <= 50; i++)
             {
                 var random = new Random(i);
@@ -395,20 +540,22 @@ namespace Backend.Data.Seeding
                 var size = containerSizes[random.Next(containerSizes.Length)];
                 var maxWeight = size == "20ft" ? 25000 : size == "40ft" ? 30000 : 32000;
                 
+                // Select a logical cargo category
+                var cargoCategory = cargoCategories[random.Next(cargoCategories.Length)];
+                
                 containers.Add(new Container
                 {
                     ContainerId = GenerateContainerId(i),
-                    ContainerNumber = GenerateContainerNumber(i),
-                    Name = $"Container {i:D3}",
-                    Type = random.Next(0, 10) > 7 ? "Refrigerated" : "Dry",
+                    CargoType = cargoCategory.Type,
+                    Type = cargoCategory.ContainerType,
                     Status = ship == null ? "In Port" : ship.Status == "Docked" ? "Loading" : "In Transit",
                     Size = size,
                     Weight = random.Next(5000, (int)(maxWeight * 0.8m)),
                     MaxWeight = maxWeight,
                     Condition = conditions[random.Next(conditions.Length)],
-                    Temperature = random.Next(0, 10) > 7 ? random.Next(-18, 2) : null,
+                    Temperature = cargoCategory.TempRange,
                     Destination = destinations[random.Next(destinations.Length)],
-                    CargoDescription = cargoDescriptions[random.Next(cargoDescriptions.Length)],
+                    CargoDescription = cargoCategory.Description,
                     CurrentLocation = ship?.CurrentPort?.Name ?? "Container Yard",
                     Coordinates = ship?.Coordinates ?? "55.6761,12.5683",
                     EstimatedArrival = DateTime.UtcNow.AddDays(random.Next(1, 14)),
@@ -532,8 +679,8 @@ namespace Backend.Data.Seeding
                     Category = category,
                     Priority = priority,
                     Status = status,
-                    Title = GenerateEventTitle(eventType, ship?.Name, container?.ContainerNumber),
-                    Description = GenerateEventDescription(eventType, ship?.Name, container?.ContainerNumber, berth?.Name),
+                    Title = GenerateEventTitle(eventType, ship?.Name, container?.ContainerId),
+                    Description = GenerateEventDescription(eventType, ship?.Name, container?.ContainerId, berth?.Name),
                     Source = "Port Operations System",
                     ContainerId = container?.ContainerId,
                     ShipId = ship?.ShipId,
@@ -698,16 +845,6 @@ namespace Backend.Data.Seeding
             var random = new Random(index);
             var prefix = prefixes[random.Next(prefixes.Length)];
             return $"{prefix}{(1000000 + index):D7}";
-        }
-
-        private static string GenerateContainerNumber(int index)
-        {
-            var owners = new[] { "MSKU", "MSCU", "COSU", "EVGU" };
-            var random = new Random(index);
-            var owner = owners[random.Next(owners.Length)];
-            var serial = (100000 + index).ToString();
-            var checkDigit = CalculateCheckDigit(owner + serial);
-            return $"{owner}{serial}{checkDigit}";
         }
 
         private static int CalculateCheckDigit(string containerNumber)

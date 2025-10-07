@@ -87,6 +87,11 @@ namespace Backend.Data
         public DbSet<Analytics> Analytics { get; set; }
 
         /// <summary>
+        /// Role applications submitted by users
+        /// </summary>
+        public DbSet<RoleApplication> RoleApplications { get; set; }
+
+        /// <summary>
         /// Configure entity relationships and constraints
         /// </summary>
         /// <param name="modelBuilder">Model builder for configuring the database</param>
@@ -167,10 +172,6 @@ namespace Backend.Data
 
             // Add indexes for better query performance
             modelBuilder.Entity<Container>().HasIndex(c => c.ContainerId);
-            // Only create unique index on ContainerNumber if it's not null and not empty
-            modelBuilder.Entity<Container>().HasIndex(c => c.ContainerNumber)
-                .HasDatabaseName("IX_Containers_ContainerNumber_Unique")
-                .HasFilter("\"ContainerNumber\" IS NOT NULL AND \"ContainerNumber\" != ''");
             modelBuilder.Entity<Ship>().HasIndex(s => s.Name);
             // Only create unique index on ImoNumber if it's not null
             modelBuilder.Entity<Ship>().HasIndex(s => s.ImoNumber)
@@ -366,6 +367,25 @@ namespace Backend.Data
                 .HasForeignKey(rp => rp.GrantedByUserId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
+                
+            // Configure RoleApplication relationships
+            modelBuilder.Entity<RoleApplication>()
+                .HasOne(ra => ra.User)
+                .WithMany(u => u.RoleApplications)
+                .HasForeignKey(ra => ra.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<RoleApplication>()
+                .HasOne(ra => ra.ReviewedByUser)
+                .WithMany(u => u.ReviewedApplications)
+                .HasForeignKey(ra => ra.ReviewedBy)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            // Add indexes for RoleApplication
+            modelBuilder.Entity<RoleApplication>().HasIndex(ra => ra.UserId);
+            modelBuilder.Entity<RoleApplication>().HasIndex(ra => ra.Status);
+            modelBuilder.Entity<RoleApplication>().HasIndex(ra => ra.RequestedAt);
         }
     }
 }

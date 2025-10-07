@@ -159,14 +159,16 @@ builder.Services.AddAuthorization();
 builder.Services.RegisterRepositories()
                 .RegisterServices();
 
-// Register authentication services
+// Register authentication and role management services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRoleApplicationService, RoleApplicationService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
-    ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5173" };
+    ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5173", "http://localhost:5174" };
 
 var isProduction = builder.Environment.IsProduction();
 
@@ -239,21 +241,19 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var seedService = scope.ServiceProvider.GetRequiredService<IDataSeedService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     
     try
     {
-        // Seed initial authentication data
-        await seedService.SeedDataAsync();
+        // Use the new production seeder for clean, consistent data
+        await Backend.Data.Seeding.ProductionDataSeeder.SeedAsync(context, logger);
         
-        // Seed comprehensive sample data (ports, ships, containers, etc.)
-            await Backend.Data.Seeding.DataSeeder.SeedAsync(context, forceReseed: false);        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("Database initialized and seeded successfully with comprehensive sample data");
+        logger.LogInformation("Database initialized and seeded successfully with production data");
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database");
+        throw;
     }
 }
 
