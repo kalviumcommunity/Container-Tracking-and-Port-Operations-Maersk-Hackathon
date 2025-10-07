@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Cryptography;
 using System.Text;
 using Backend.Data;
@@ -383,22 +384,22 @@ namespace Backend.Services
         #region Private Methods
 
         /// <summary>
-        /// Hash password using SHA256
+        /// Hash password using ASP.NET Core Identity's secure PasswordHasher with salt
         /// </summary>
         private static string HashPassword(string password)
         {
-            using var sha256 = SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(hashedBytes);
+            var passwordHasher = new PasswordHasher<User>();
+            return passwordHasher.HashPassword(new User(), password);
         }
 
         /// <summary>
-        /// Verify password against hash
+        /// Verify password against hash using ASP.NET Core Identity's PasswordHasher
         /// </summary>
         private static bool VerifyPassword(string password, string hash)
         {
-            var computedHash = HashPassword(password);
-            return computedHash == hash;
+            var passwordHasher = new PasswordHasher<User>();
+            var result = passwordHasher.VerifyHashedPassword(new User(), hash, password);
+            return result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded;
         }
 
         /// <summary>

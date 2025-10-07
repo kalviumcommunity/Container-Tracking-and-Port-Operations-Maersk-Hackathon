@@ -127,7 +127,7 @@ export class UserManagementApiService {
     try {
       const response: AxiosResponse<ApiResponse<string>> = await apiClient.post(
         `/usermanagement/${userId}/block`, 
-        isBlocked
+        { isBlocked, reason }
       )
       return response.data
     } catch (error) {

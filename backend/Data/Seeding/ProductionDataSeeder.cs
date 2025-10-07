@@ -416,11 +416,12 @@ namespace Backend.Data.Seeding
                 var size = random.Next(2) == 0 ? 20 : 40;
                 var maxWeight = size == 20 ? 28000 : 32500;
                 var currentWeight = random.Next(5000, maxWeight);
+                var containerType = containerTypes[random.Next(containerTypes.Length)];
 
                 containers.Add(new Container
                 {
                     ContainerId = $"DEMO{i:D6}",
-                    Type = containerTypes[random.Next(containerTypes.Length)],
+                    Type = containerType,
                     Size = size == 20 ? "20ft" : "40ft",
                     Weight = currentWeight,
                     MaxWeight = maxWeight,
@@ -431,7 +432,7 @@ namespace Backend.Data.Seeding
                     CurrentLocation = ships[random.Next(ships.Count)].Name,
                     ShipId = ships[random.Next(ships.Count)].ShipId,
                     Coordinates = $"{random.Next(50, 56)}.{random.Next(1000, 9999)},{random.Next(3, 13)}.{random.Next(1000, 9999)}",
-                    Temperature = containerTypes[random.Next(containerTypes.Length)] == "Refrigerated" ? random.Next(-20, 5) : null,
+                    Temperature = containerType == "Refrigerated" ? random.Next(-20, 5) : null,
                     Condition = random.Next(10) > 7 ? "Damaged" : "Good",
                     EstimatedArrival = DateTime.UtcNow.AddHours(random.Next(6, 168)), // 6 hours to 1 week
                     CreatedAt = DateTime.UtcNow.AddDays(-random.Next(1, 30)),
@@ -491,13 +492,12 @@ namespace Backend.Data.Seeding
         }
 
         /// <summary>
-        /// Hash password using SHA256 - same method as AuthService
+        /// Hash password using ASP.NET Core Identity's secure PasswordHasher with salt
         /// </summary>
         private static string HashPassword(string password)
         {
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(hashedBytes);
+            var passwordHasher = new PasswordHasher<User>();
+            return passwordHasher.HashPassword(new User(), password);
         }
 
         /// <summary>

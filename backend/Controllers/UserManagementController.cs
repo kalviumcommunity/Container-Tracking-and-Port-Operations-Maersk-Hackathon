@@ -149,24 +149,36 @@ namespace Backend.Controllers
         /// </summary>
         [HttpPost("{id}/block")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> ToggleUserBlock(int id, [FromBody] bool isBlocked)
+        public async Task<IActionResult> ToggleUserBlock(int id, [FromBody] BlockUserDto blockDto)
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
                 var userExists = await _userManagementService.UserExistsAsync(id);
                 if (!userExists)
                 {
                     return NotFound(new { message = "User not found" });
                 }
 
-                var success = await _userManagementService.BlockUserAsync(id, isBlocked);
+                var success = await _userManagementService.BlockUserAsync(id, blockDto.IsBlocked);
                 if (!success)
                 {
                     return BadRequest(new { message = "Failed to update user block status" });
                 }
 
-                var action = isBlocked ? "blocked" : "unblocked";
-                return Ok(new { message = $"User {action} successfully" });
+                var action = blockDto.IsBlocked ? "blocked" : "unblocked";
+                var logMessage = !string.IsNullOrWhiteSpace(blockDto.Reason) 
+                    ? $"User {action} successfully. Reason: {blockDto.Reason}" 
+                    : $"User {action} successfully";
+                    
+                _logger.LogInformation("User {UserId} {Action}. Reason: {Reason}", 
+                    id, action, blockDto.Reason ?? "No reason provided");
+                    
+                return Ok(new { message = logMessage });
             }
             catch (Exception ex)
             {

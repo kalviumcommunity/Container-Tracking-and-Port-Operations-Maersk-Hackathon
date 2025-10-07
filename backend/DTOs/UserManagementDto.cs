@@ -41,6 +41,15 @@ namespace Backend.DTOs
     }
 
     /// <summary>
+    /// DTO for block/unblock user request
+    /// </summary>
+    public class BlockUserDto
+    {
+        public bool IsBlocked { get; set; }
+        public string? Reason { get; set; }
+    }
+
+    /// <summary>
     /// DTO for system statistics
     /// </summary>
     public class SystemStatsDto

@@ -2,6 +2,8 @@ using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace Backend.Services
 {
@@ -124,10 +126,15 @@ namespace Backend.Services
 
         public async Task<bool> UpdateUserAsync(int userId, UpdateUserDto updateDto)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId && !u.IsDeleted);
-                if (user == null) return false;
+                if (user == null) 
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
 
                 // Update fields if provided
                 if (!string.IsNullOrWhiteSpace(updateDto.FullName))
@@ -135,12 +142,27 @@ namespace Backend.Services
 
                 if (!string.IsNullOrWhiteSpace(updateDto.Email))
                 {
-                    // Check if email is already taken by another user
-                    var emailExists = await _context.Users
-                        .AnyAsync(u => u.UserId != userId && u.Email == updateDto.Email && !u.IsDeleted);
-                    if (emailExists) return false;
+                    var trimmedEmail = updateDto.Email.Trim().ToLower();
                     
-                    user.Email = updateDto.Email.Trim().ToLower();
+                    // Validate email format
+                    if (!IsValidEmail(trimmedEmail))
+                    {
+                        _logger.LogWarning("Invalid email format provided for user {UserId}: {Email}", userId, updateDto.Email);
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
+                    
+                    // Check if email is already taken by another user (within transaction)
+                    var emailExists = await _context.Users
+                        .AnyAsync(u => u.UserId != userId && u.Email == trimmedEmail && !u.IsDeleted);
+                    if (emailExists) 
+                    {
+                        _logger.LogWarning("Email already exists for another user: {Email}", trimmedEmail);
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
+                    
+                    user.Email = trimmedEmail;
                 }
 
                 if (updateDto.Department != null)
@@ -151,12 +173,14 @@ namespace Backend.Services
 
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 _logger.LogInformation("User {UserId} updated successfully", userId);
                 return true;
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error updating user {UserId}", userId);
                 return false;
             }
@@ -331,6 +355,26 @@ namespace Backend.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking if user {UserId} exists", userId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validate email format and domain
+        /// </summary>
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var emailAttribute = new EmailAddressAttribute();
+                return emailAttribute.IsValid(email) && 
+                       Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+            }
+            catch
+            {
                 return false;
             }
         }
