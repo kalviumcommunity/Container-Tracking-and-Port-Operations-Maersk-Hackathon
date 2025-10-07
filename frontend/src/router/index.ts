@@ -4,6 +4,7 @@ import Dashboard from '../components/Dashboard.vue'
 import ContainerManagement from '@/components/ContainerManagement.vue'
 import PortOperationManagement from '@/components/PortOperationManagement.vue'
 import EventStreaming from '@/components/EventStreaming.vue'
+import AdminDashboard from '@/components/AdminDashboard.vue'
 import { authApi } from '../services/api'
 
 const router = createRouter({
@@ -40,6 +41,24 @@ const router = createRouter({
       path: '/event-streaming',
       name: 'event-streaming',
       component: EventStreaming,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/user-management',
+      name: 'user-management',
+      component: AdminDashboard,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin-dashboard',
+      name: 'admin-dashboard',
+      component: AdminDashboard,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/combined-management',
+      name: 'combined-management',
+      component: AdminDashboard,
       meta: { requiresAuth: true }
     },
   ]
