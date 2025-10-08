@@ -624,25 +624,9 @@ ContainerHub:
 └── SendToRole(role, message) → Role-based notifications
 ```
 
-### **Business Intelligence**
-- **Predictive Analytics**: ETA predictions and capacity planning
-- **Performance Trends**: Historical data analysis with machine learning
-- **Operational Insights**: Efficiency recommendations based on patterns
-- **Custom Reports**: Flexible reporting system with export capabilities
 
-### **IoT Integration (Future)**
-```
-IoT Sensor Integration:
-├── Temperature Sensors → Refrigerated container monitoring
-├── Humidity Sensors → Cargo condition tracking
-├── Vibration Sensors → Container handling quality metrics
-├── GPS Trackers → Real-time location data
-└── RFID Tags → Automated container identification
 
-Data Pipeline:
-MQTT Broker → IoT Gateway → SignalR Hub → 
-Real-time Dashboard → Historical Analytics
-```
+
 
 ### **Integration Ready**
 - **API-First Design**: Easy third-party integrations with comprehensive OpenAPI specs

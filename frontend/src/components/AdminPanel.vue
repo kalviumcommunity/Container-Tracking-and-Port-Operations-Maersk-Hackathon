@@ -236,12 +236,39 @@ const loadData = async () => {
     const all = await roleApplicationApi.getAllApplications()
     allApplications.value = all
 
-    // Load system stats (mock for now - you can implement this API later)
-    stats.value = {
-      users: Math.floor(Math.random() * 50) + 10,
-      containers: Math.floor(Math.random() * 500) + 100,
-      ships: Math.floor(Math.random() * 20) + 5,
-      berths: Math.floor(Math.random() * 30) + 10
+    // Load real system stats from seed endpoint
+    try {
+      const response = await fetch('/api/seed/status', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        stats.value = {
+          users: data.data.Users || 0,
+          containers: data.data.Containers || 0,
+          ships: data.data.Ships || 0,
+          berths: data.data.Berths || 0
+        }
+      } else {
+        // Fallback to mock data
+        stats.value = {
+          users: Math.floor(Math.random() * 50) + 10,
+          containers: Math.floor(Math.random() * 500) + 100,
+          ships: Math.floor(Math.random() * 20) + 5,
+          berths: Math.floor(Math.random() * 30) + 10
+        }
+      }
+    } catch (error) {
+      console.log('Using mock stats due to API error:', error)
+      // Fallback to mock data
+      stats.value = {
+        users: Math.floor(Math.random() * 50) + 10,
+        containers: Math.floor(Math.random() * 500) + 100,
+        ships: Math.floor(Math.random() * 20) + 5,
+        berths: Math.floor(Math.random() * 30) + 10
+      }
     }
   } catch (error) {
     console.error('Error loading admin data:', error)

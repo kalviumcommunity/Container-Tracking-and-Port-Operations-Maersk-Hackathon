@@ -17,7 +17,7 @@ namespace Backend.Attributes
         /// <summary>
         /// Require specific permissions
         /// </summary>
-        /// <param name="permissions">Required permissions</param>
+        /// <param name="permission">Required permission</param>
         /// <param name="requireAll">If true, user must have all permissions. If false, user needs at least one.</param>
         public RequirePermissionAttribute(string permission, bool requireAll = false)
         {
@@ -291,85 +291,5 @@ namespace Backend.Attributes
             // User doesn't have access to this user's data
             context.Result = new ForbidResult();
         }
-    }
-}
-
-namespace Backend.Constants
-{
-    /// <summary>
-    /// System role constants
-    /// </summary>
-    public static class Roles
-    {
-        public const string Admin = "Admin";
-        public const string PortManager = "PortManager";
-        public const string Operator = "Operator";
-        public const string Viewer = "Viewer";
-
-        public static readonly string[] All = { Admin, PortManager, Operator, Viewer };
-        public static readonly string[] Management = { Admin, PortManager };
-        public static readonly string[] Operations = { Admin, PortManager, Operator };
-    }
-
-    /// <summary>
-    /// System permission constants
-    /// </summary>
-    public static class Permissions
-    {
-        // Global permissions
-        public const string GlobalPortAccess = "GlobalPortAccess";
-        public const string ManageAllPorts = "ManageAllPorts";
-        public const string ManageUsers = "ManageUsers";
-        public const string ManageRoles = "ManageRoles";
-        public const string ViewSystemReports = "ViewSystemReports";
-
-        // Port management permissions
-        public const string ManagePortDetails = "ManagePortDetails";
-        public const string ViewPortDetails = "ViewPortDetails";
-        public const string ViewPortReports = "ViewPortReports";
-
-        // Container permissions
-        public const string ManageContainers = "ManageContainers";
-        public const string ViewContainers = "ViewContainers";
-        public const string TrackContainers = "TrackContainers";
-
-        // Ship permissions
-        public const string ManageShips = "ManageShips";
-        public const string ViewShips = "ViewShips";
-        public const string ScheduleShips = "ScheduleShips";
-
-        // Cargo permissions
-        public const string ManageCargo = "ManageCargo";
-        public const string ViewCargo = "ViewCargo";
-
-        // Berth permissions
-        public const string ManageBerths = "ManageBerths";
-        public const string ViewBerths = "ViewBerths";
-        public const string AllocateBerths = "AllocateBerths";
-
-        // Berth Assignment permissions
-        public const string ManageBerthAssignments = "ManageBerthAssignments";
-        public const string ViewBerthAssignments = "ViewBerthAssignments";
-
-        // Port permissions
-        public const string ManagePorts = "ManagePorts";
-        public const string ViewPorts = "ViewPorts";
-
-        // Equipment permissions
-        public const string ManageEquipment = "ManageEquipment";
-        public const string ViewEquipment = "ViewEquipment";
-
-        // All permissions array for seeding
-        public static readonly string[] All = {
-            GlobalPortAccess, ManageAllPorts, ManageUsers, ManageRoles, ViewSystemReports,
-            ManagePortDetails, ViewPortDetails, ViewPortReports,
-            ManageContainers, ViewContainers, TrackContainers,
-            ManageShips, ViewShips, ScheduleShips,
-            ManageCargo, ViewCargo,
-            ManageBerths, ViewBerths, AllocateBerths,
-            ManageBerthAssignments, ViewBerthAssignments,
-            ManagePorts, ViewPorts,
-            ManageEquipment, ViewEquipment
-        };
     }
 }

@@ -1,5 +1,5 @@
 using Backend.Data;
-using Backend.Data.Seeding;
+using Backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Extensions
@@ -18,7 +18,12 @@ namespace Backend.Extensions
                 {
                     var context = services.GetRequiredService<ApplicationDbContext>();
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    await ProductionDataSeeder.SeedAsync(context, logger);
+                    
+                    // Use comprehensive seeding service instead of simple one
+                    var comprehensiveSeeding = services.GetRequiredService<ComprehensiveDataSeedingService>();
+                    await comprehensiveSeeding.SeedAllAsync();
+                    
+                    logger.LogInformation("Database seeding completed successfully");
                 }
                 catch (Exception ex)
                 {
