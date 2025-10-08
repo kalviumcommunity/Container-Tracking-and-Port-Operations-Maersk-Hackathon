@@ -105,7 +105,7 @@ namespace Backend.Controllers
         /// <param name="registerDto">User registration data</param>
         /// <returns>Created user information</returns>
         [HttpPost("admin/register")]
-        [RequirePermission(Permissions.ManageUsers)]
+        [RequirePermission(Backend.Constants.Permissions.ManageUsers)]
         public async Task<ActionResult<UserDto>> AdminRegister([FromBody] RegisterDto registerDto)
         {
             try
@@ -300,7 +300,7 @@ namespace Backend.Controllers
         /// <param name="roleNames">Role names to assign</param>
         /// <returns>Success status</returns>
         [HttpPost("users/{userId}/roles")]
-        [RequirePermission(Permissions.ManageUsers)]
+        [RequirePermission(Backend.Constants.Permissions.ManageUsers)]
         public async Task<ActionResult> AssignRoles(int userId, [FromBody] List<string> roleNames)
         {
             try
@@ -331,7 +331,7 @@ namespace Backend.Controllers
         /// <param name="roleNames">Role names to remove</param>
         /// <returns>Success status</returns>
         [HttpDelete("users/{userId}/roles")]
-        [RequirePermission(Permissions.ManageUsers)]
+        [RequirePermission(Backend.Constants.Permissions.ManageUsers)]
         public async Task<ActionResult> RemoveRoles(int userId, [FromBody] List<string> roleNames)
         {
             try
@@ -361,7 +361,7 @@ namespace Backend.Controllers
         /// <param name="userId">User ID</param>
         /// <returns>Success status</returns>
         [HttpPost("users/{userId}/deactivate")]
-        [RequirePermission(Permissions.ManageUsers)]
+        [RequirePermission(Backend.Constants.Permissions.ManageUsers)]
         public async Task<ActionResult> DeactivateUser(int userId)
         {
             try
@@ -386,7 +386,7 @@ namespace Backend.Controllers
         /// <param name="userId">User ID</param>
         /// <returns>Success status</returns>
         [HttpPost("users/{userId}/activate")]
-        [RequirePermission(Permissions.ManageUsers)]
+        [RequirePermission(Backend.Constants.Permissions.ManageUsers)]
         public async Task<ActionResult> ActivateUser(int userId)
         {
             try

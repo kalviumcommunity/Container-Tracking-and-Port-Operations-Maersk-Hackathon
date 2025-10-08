@@ -24,10 +24,24 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Gets all containers
+        /// Gets containers with pagination and filtering
+        /// </summary>
+        /// <param name="filter">Filter and pagination parameters</param>
+        /// <returns>Paginated containers</returns>
+        [HttpGet]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<ContainerDto>>), 200)]
+        public async Task<IActionResult> GetContainers([FromQuery] ContainerFilterDto filter)
+        {
+            var containers = await _containerService.GetFilteredContainersAsync(filter);
+            return Ok(ApiResponse<PaginatedResponse<ContainerDto>>.Ok(containers));
+        }
+
+        /// <summary>
+        /// Gets all containers (legacy endpoint - use GET / with pagination instead)
         /// </summary>
         /// <returns>All containers</returns>
-        [HttpGet]
+        [HttpGet("all")]
         [RequirePermission("ViewContainers")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContainerDto>>), 200)]
         public async Task<IActionResult> GetAllContainers()
@@ -189,6 +203,54 @@ namespace Backend.Controllers
             {
                 return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
+        }
+        
+        /// <summary>
+        /// Gets container statistics and analytics
+        /// </summary>
+        /// <returns>Container statistics</returns>
+        [HttpGet("statistics")]
+        [RequirePermission("ViewContainers")]
+        [ProducesResponseType(typeof(ApiResponse<ContainerStatsDto>), 200)]
+        public async Task<IActionResult> GetContainerStatistics()
+        {
+            var stats = await _containerService.GetContainerStatisticsAsync();
+            return Ok(ApiResponse<ContainerStatsDto>.Ok(stats));
+        }
+
+        /// <summary>
+        /// Bulk update container statuses
+        /// </summary>
+        /// <param name="bulkUpdate">Bulk update request</param>
+        /// <returns>Update results</returns>
+        [HttpPatch("bulk-status")]
+        [RequirePermission("ManageContainers")]
+        [ProducesResponseType(typeof(ApiResponse<BulkUpdateResultDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        public async Task<IActionResult> BulkUpdateStatus([FromBody] BulkStatusUpdateDto bulkUpdate)
+        {
+            try
+            {
+                var result = await _containerService.BulkUpdateStatusAsync(bulkUpdate);
+                return Ok(ApiResponse<BulkUpdateResultDto>.Ok(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Export containers to CSV
+        /// </summary>
+        /// <param name="filter">Filter parameters for export</param>
+        /// <returns>CSV file</returns>
+        [HttpGet("export")]
+        [RequirePermission("ViewContainers")]
+        public async Task<IActionResult> ExportContainers([FromQuery] ContainerFilterDto filter)
+        {
+            var csvData = await _containerService.ExportContainersAsync(filter);
+            return File(csvData, "text/csv", $"containers_{DateTime.UtcNow:yyyyMMdd}.csv");
         }
         
         /// <summary>

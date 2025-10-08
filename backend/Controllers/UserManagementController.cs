@@ -27,8 +27,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Get paginated list of users (Admin only)
         /// </summary>
-        [HttpGet]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UsersPagedResponse>> GetUsers(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20,
@@ -53,8 +53,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Get user details by ID (Admin only)
         /// </summary>
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserListDto>> GetUser(int id)
         {
             try
@@ -77,8 +77,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Update user information (Admin only)
         /// </summary>
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateDto)
         {
             try
@@ -112,8 +112,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Update user roles (Admin only)
         /// </summary>
-        [HttpPut("{id}/roles")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpPut("{id}/roles")]
+    [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUserRoles(int id, [FromBody] UpdateUserRolesDto rolesDto)
         {
             try
@@ -147,8 +147,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Block or unblock a user (Admin only)
         /// </summary>
-        [HttpPost("{id}/block")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpPost("{id}/block")]
+    [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleUserBlock(int id, [FromBody] BlockUserDto blockDto)
         {
             try
@@ -190,8 +190,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Soft delete or restore a user (Admin only)
         /// </summary>
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleUserDelete(int id, [FromQuery] bool restore = false)
         {
             try
@@ -215,8 +215,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Update user status (Admin only)
         /// </summary>
-        [HttpPut("{id}/status")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpPut("{id}/status")]
+    [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] UpdateUserStatusDto statusDto)
         {
             try
@@ -250,8 +250,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Get system statistics (Admin only)
         /// </summary>
-        [HttpGet("stats")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpGet("stats")]
+    [Authorize(Roles = "Admin")]
         public async Task<ActionResult<SystemStatsDto>> GetSystemStats()
         {
             try
@@ -269,8 +269,8 @@ namespace Backend.Controllers
         /// <summary>
         /// Get available roles in the system (Admin only)
         /// </summary>
-        [HttpGet("roles")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+    [HttpGet("roles")]
+    [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<string>>> GetAvailableRoles()
         {
             try

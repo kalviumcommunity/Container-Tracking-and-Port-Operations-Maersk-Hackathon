@@ -309,6 +309,14 @@ PortTrack Container Operations/
 - `GET|POST|PATCH /api/role-applications` - Role request system
 - `POST /api/seed` - Database seeding operations
 
+### **Analytics Endpoints** (NEW)
+- `GET /api/analytics/dashboard-stats` - Dashboard statistics and KPIs
+- `GET /api/analytics/throughput` - Container throughput analysis
+- `GET /api/analytics/berth-utilization` - Berth utilization metrics
+- `GET /api/analytics/realtime-metrics` - Real-time operational data
+- `POST /api/analytics/custom-report` - Generate custom reports
+- `GET /api/analytics/export` - Export analytics data (CSV format)
+
 ### **Real-Time Features**
 - WebSocket support for live updates
 - Event streaming for operational changes

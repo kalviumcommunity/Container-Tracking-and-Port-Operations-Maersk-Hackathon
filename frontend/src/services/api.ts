@@ -189,9 +189,10 @@ api.interceptors.response.use(
 export const containerApi = {
   async getAll(): Promise<{ data: Container[] }> {
     try {
-      const response = await api.get('/containers');
-      // Handle both direct array and ApiResponse wrapper
-      const data = response.data.data || response.data || [];
+      const response = await api.get('/containers/all');
+      // Ensure we always return an array
+      const raw = response.data?.data ?? response.data ?? [];
+      const data: Container[] = Array.isArray(raw) ? raw : [];
       return { data };
     } catch (error) {
       console.error('Error fetching containers:', error);
@@ -201,9 +202,9 @@ export const containerApi = {
 
   async getContainers(): Promise<Container[]> {
     try {
-      const response = await api.get('/Containers');
-      // Handle the API response structure
-      return response.data.data || response.data || [];
+      const response = await api.get('/containers/all');
+      const raw = response.data?.data ?? response.data ?? [];
+      return Array.isArray(raw) ? raw : [];
     } catch (error) {
       console.error('Error fetching containers:', error);
       return [];
@@ -646,6 +647,123 @@ export const roleApplicationApi = {
       status,
       reviewNotes: notes
     });
+  }
+};
+
+// Analytics API (NEW)
+export const analyticsApi = {
+  async getDashboardStats(): Promise<any> {
+    try {
+      const response = await api.get('/analytics/dashboard-stats');
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  },
+
+  async getThroughputData(period: string = 'daily', days: number = 30): Promise<any> {
+    try {
+      const response = await api.get('/analytics/throughput', {
+        params: { period, days }
+      });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching throughput data:', error);
+      throw error;
+    }
+  },
+
+  async getBerthUtilization(portId?: number, days: number = 30): Promise<any> {
+    try {
+      const response = await api.get('/analytics/berth-utilization', {
+        params: { portId, days }
+      });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching berth utilization:', error);
+      throw error;
+    }
+  },
+
+  async getRealtimeMetrics(): Promise<any> {
+    try {
+      const response = await api.get('/analytics/realtime-metrics');
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching realtime metrics:', error);
+      throw error;
+    }
+  },
+
+  async generateCustomReport(request: any): Promise<any> {
+    try {
+      const response = await api.post('/analytics/custom-report', request);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error generating custom report:', error);
+      throw error;
+    }
+  },
+
+  async exportAnalytics(reportType: string, fromDate: string, toDate: string): Promise<Blob> {
+    try {
+      const response = await api.get('/analytics/export', {
+        params: { reportType, fromDate, toDate },
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting analytics:', error);
+      throw error;
+    }
+  }
+};
+
+// Seed API for database management
+export const seedApi = {
+  async getStatus(): Promise<any> {
+    try {
+      const response = await api.get('/seed/status');
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching seed status:', error);
+      throw error;
+    }
+  },
+
+  async triggerSimpleSeeding(): Promise<any> {
+    try {
+      const response = await api.post('/seed/simple');
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering simple seeding:', error);
+      throw error;
+    }
+  },
+
+  async triggerComprehensiveSeeding(forceReseed: boolean = false): Promise<any> {
+    try {
+      const response = await api.post('/seed/comprehensive', null, {
+        params: { forceReseed }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering comprehensive seeding:', error);
+      throw error;
+    }
+  },
+
+  async clearDatabase(confirmToken: string): Promise<any> {
+    try {
+      const response = await api.delete('/seed/clear', {
+        params: { confirmToken }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      throw error;
+    }
   }
 };
 

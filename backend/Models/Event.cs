@@ -125,6 +125,12 @@ namespace Backend.Models
         public bool IsResolved { get; set; }
         
         /// <summary>
+        /// Severity level (Critical, High, Medium, Low)
+        /// </summary>
+        [MaxLength(20)]
+        public string Severity { get; set; } = string.Empty;
+        
+        /// <summary>
         /// When the event occurred
         /// </summary>
         [Required]

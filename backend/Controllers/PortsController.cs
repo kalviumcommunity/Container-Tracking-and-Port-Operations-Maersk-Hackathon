@@ -118,8 +118,8 @@ namespace Backend.Controllers
         /// <param name="id">The ID of the port to update</param>
         /// <param name="updateDto">Updated port data</param>
         /// <returns>The updated port</returns>
-        [HttpPut("{id}")]
-        [RequirePermission("ManagePorts")]
+    [HttpPut("{id}")]
+    [RequirePermission("ManagePortDetails")]
         [ProducesResponseType(typeof(ApiResponse<PortDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
@@ -145,8 +145,8 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The ID of the port to delete</param>
         /// <returns>Success message</returns>
-        [HttpDelete("{id}")]
-        [RequirePermission("ManagePorts")]
+    [HttpDelete("{id}")]
+    [RequirePermission("ManageAllPorts")]
         [ProducesResponseType(typeof(ApiResponse<object>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         public async Task<IActionResult> DeletePort(int id)

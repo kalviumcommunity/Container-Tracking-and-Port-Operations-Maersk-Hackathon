@@ -90,9 +90,28 @@ namespace Backend.Services
                     (u.Username == loginDto.Username || u.Email == loginDto.Username) 
                     && u.IsActive);
 
-            if (user == null || !VerifyPassword(loginDto.Password, user.PasswordHash))
+            if (user == null)
             {
                 return null;
+            }
+
+            // First try Identity hasher
+            var passwordHasher = new PasswordHasher<User>();
+            var verifyResult = passwordHasher.VerifyHashedPassword(new User(), user.PasswordHash, loginDto.Password);
+            if (verifyResult != PasswordVerificationResult.Success && verifyResult != PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                // Fallback: legacy SHA-256 (from seeding)
+                var legacyHash = ComputeLegacySha256(loginDto.Password);
+                if (string.Equals(legacyHash, user.PasswordHash, StringComparison.Ordinal))
+                {
+                    // Upgrade hash to Identity format
+                    user.PasswordHash = HashPassword(loginDto.Password);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             // Update last login
@@ -390,6 +409,16 @@ namespace Backend.Services
         {
             var passwordHasher = new PasswordHasher<User>();
             return passwordHasher.HashPassword(new User(), password);
+        }
+
+        /// <summary>
+        /// Compute legacy SHA-256 base64 hash used by older seeding
+        /// </summary>
+        private static string ComputeLegacySha256(string password)
+        {
+            using var sha256 = SHA256.Create();
+            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToBase64String(hashedBytes);
         }
 
         /// <summary>

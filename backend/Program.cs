@@ -89,7 +89,10 @@ var dbSslMode = Environment.GetEnvironmentVariable("DB_SSL_MODE") ?? "Prefer";
 // Build connection string with secure SSL support for Azure (removed Trust Server Certificate=true)
 connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={dbSslMode}";
 
-Console.WriteLine($"Connecting to database: {dbName} on {dbHost}:{dbPort} with SSL Mode={dbSslMode}");
+// SECURITY: Use proper logging instead of Console.WriteLine to avoid exposing connection details
+var startupLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
+startupLogger.LogInformation("Connecting to database: {DatabaseName} on {Host}:{Port} with SSL Mode={SslMode}", 
+    dbName, dbHost, dbPort, dbSslMode);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -164,7 +167,23 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoleApplicationService, RoleApplicationService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
-builder.Services.AddScoped<IDataSeedService, DataSeedService>();
+
+// Register password hashing service
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+// Register seeding services
+builder.Services.AddScoped<SimpleDataSeedingService>();
+builder.Services.AddScoped<ComprehensiveDataSeedingService>();
+
+// Register business services (single registration only)
+builder.Services.AddScoped<IContainerService, ContainerService>();
+builder.Services.AddScoped<IShipService, ShipService>();
+builder.Services.AddScoped<IPortService, PortService>();
+builder.Services.AddScoped<IBerthService, BerthService>();
+builder.Services.AddScoped<IBerthAssignmentService, BerthAssignmentService>();
+builder.Services.AddScoped<IShipContainerService, ShipContainerService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IEventService, EventService>(); // Add EventService
 
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
@@ -237,24 +256,46 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Initialize database and seed data
+// Initialize database and seed if empty
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var simpleSeedingService = scope.ServiceProvider.GetRequiredService<SimpleDataSeedingService>();
+    var comprehensiveSeedingService = scope.ServiceProvider.GetRequiredService<ComprehensiveDataSeedingService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
+
     try
     {
-        // Use the new production seeder for clean, consistent data
-        await Backend.Data.Seeding.ProductionDataSeeder.SeedAsync(context, logger);
-        
-        logger.LogInformation("Database initialized and seeded successfully with production data");
+        // Ensure database exists
+        await simpleSeedingService.SeedAllDataAsync(isProduction: true);
+
+        // Bootstrap comprehensive data (roles, permissions, default admin, sample data)
+        var hasUsers = await context.Users.AnyAsync();
+        var hasPorts = await context.Ports.AnyAsync();
+        var hasContainers = await context.Containers.AnyAsync();
+        var hasShips = await context.Ships.AnyAsync();
+        var hasBerths = await context.Berths.AnyAsync();
+
+        var businessDataMissing = !hasPorts || !hasContainers || !hasShips || !hasBerths;
+
+        if (!hasUsers || businessDataMissing)
+        {
+            await comprehensiveSeedingService.SeedAllAsync(forceReseed: false);
+            logger.LogInformation("Comprehensive seeding executed (users: {HasUsers}, business missing: {BusinessMissing})", hasUsers, businessDataMissing);
+        }
+        else
+        {
+            logger.LogInformation("Comprehensive seeding skipped (users and business data already present).");
+        }
+
+        logger.LogInformation("Database initialization completed successfully");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while seeding the database");
+        logger.LogError(ex, "An error occurred while initializing the database");
         throw;
     }
 }
+
 
 app.Run();

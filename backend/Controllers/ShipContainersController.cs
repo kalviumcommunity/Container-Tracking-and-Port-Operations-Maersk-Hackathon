@@ -26,7 +26,7 @@ namespace Backend.Controllers
         /// </summary>
         /// <returns>All ship container operations</returns>
         [HttpGet]
-        [RequirePermission("ViewShipContainers")]
+        [RequirePermission("ViewCargo")] // Changed from ViewShipContainers to ViewCargo
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ShipContainerDto>>), 200)]
         public async Task<IActionResult> GetAllShipContainers()
         {
@@ -40,6 +40,7 @@ namespace Backend.Controllers
         /// <param name="id">The ID of the ship container operation</param>
         /// <returns>The ship container operation</returns>
         [HttpGet("{id}")]
+        [RequirePermission("ViewCargo")] // Changed from ViewShipContainers to ViewCargo
         [ProducesResponseType(typeof(ApiResponse<ShipContainerDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         public async Task<IActionResult> GetShipContainer(int id)
@@ -107,6 +108,7 @@ namespace Backend.Controllers
         /// <param name="createDto">Ship container operation data</param>
         /// <returns>The created ship container operation</returns>
         [HttpPost]
+        [RequirePermission("ManageCargo")] // Added proper permission
         [ProducesResponseType(typeof(ApiResponse<ShipContainerDto>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> CreateShipContainer([FromBody] ShipContainerCreateUpdateDto createDto)
@@ -156,6 +158,7 @@ namespace Backend.Controllers
         /// <param name="loadRequest">Load container request</param>
         /// <returns>The created ship container operation</returns>
         [HttpPost("load")]
+        [RequirePermission("ManageCargo")] // Added proper permission
         [ProducesResponseType(typeof(ApiResponse<ShipContainerDto>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> LoadContainer([FromBody] LoadContainerRequest loadRequest)
