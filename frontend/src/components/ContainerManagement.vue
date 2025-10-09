@@ -1416,11 +1416,3 @@ th span {
   }
 }
 </style>
-  
-  .bg-gradient-to-r {
-    background: #f3f4f6 !important;
-    color: #000 !important;
-    -webkit-print-color-adjust: exact;
-  }
-}
-</style>

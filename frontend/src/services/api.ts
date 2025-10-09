@@ -73,10 +73,16 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    // Process successful response
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    // Don't log 404 errors for development endpoints - they're expected when backend routes aren't fully implemented
+    if (error.response?.status !== 404) {
+      console.error('API Error:', error.response?.data || error.message);
+    } else {
+      console.warn('API endpoint not found:', error.config?.url);
+    }
     
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401) {
