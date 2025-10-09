@@ -336,6 +336,7 @@ import RoleApplication from '../components/RoleApplication.vue'
 import ChangePassword from '../components/ChangePassword.vue'
 import AccountSettings from '../components/AccountSettings.vue'
 import { authApi, roleApplicationApi } from '../services/api'
+import { useToast } from '../composables/useToast.js'
 
 export default {
   name: 'Navbar',
@@ -364,7 +365,8 @@ export default {
   },
   setup() {
     const route = useRoute()
-    return { currentRoute: route }
+    const { success, info } = useToast()
+    return { currentRoute: route, toast: { success, info } }
   },
   data() {
     return {
@@ -502,6 +504,9 @@ export default {
       this.isAuthenticated = true
       this.showLoginModal = false
       
+      // Show success toast
+      this.toast.success('Welcome back! You have been logged in successfully.')
+      
       // Redirect to dashboard after login
       if (this.$route.path === '/') {
         this.$router.push('/dashboard')
@@ -514,6 +519,9 @@ export default {
       // Set user as logged in
       this.currentUser = user
       this.isAuthenticated = true
+      
+      // Show success toast
+      this.toast.success('Account created successfully! Welcome to PortTrack!')
       
       // Redirect to dashboard after registration
       this.$router.push('/dashboard')
@@ -535,6 +543,10 @@ export default {
         
         this.currentUser = null
         this.isAuthenticated = false
+        
+        // Show success toast
+        this.toast.info('You have been logged out successfully.')
+        
         this.$router.push('/')
       }
     },
