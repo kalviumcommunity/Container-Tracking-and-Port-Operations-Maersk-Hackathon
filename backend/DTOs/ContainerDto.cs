@@ -117,6 +117,11 @@ namespace Backend.DTOs
         public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
+        /// Description of the cargo being transported
+        /// </summary>
+        public string CargoDescription { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
         [Required]
@@ -128,9 +133,44 @@ namespace Backend.DTOs
         public string Status { get; set; } = string.Empty;
         
         /// <summary>
+        /// Condition of the container (Good, Damaged, Needs Repair)
+        /// </summary>
+        public string Condition { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Current physical location of the container
         /// </summary>
         public string CurrentLocation { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Final destination port or location
+        /// </summary>
+        public string Destination { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Weight of the container in kilograms
+        /// </summary>
+        public decimal Weight { get; set; }
+        
+        /// <summary>
+        /// Maximum weight capacity in kilograms
+        /// </summary>
+        public decimal? MaxWeight { get; set; }
+        
+        /// <summary>
+        /// Size of the container (20ft, 40ft, 45ft)
+        /// </summary>
+        public string Size { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Temperature setting for refrigerated containers (Celsius)
+        /// </summary>
+        public decimal? Temperature { get; set; }
+        
+        /// <summary>
+        /// Last known GPS coordinates (latitude,longitude)
+        /// </summary>
+        public string Coordinates { get; set; } = string.Empty;
         
         /// <summary>
         /// Foreign key to the ship this container is currently on (nullable)
@@ -146,22 +186,62 @@ namespace Backend.DTOs
         /// <summary>
         /// Type/category of cargo being transported (Electronics, Dairy, Automotive, etc.)
         /// </summary>
-        public string CargoType { get; set; } = string.Empty;
+        public string? CargoType { get; set; }
+        
+        /// <summary>
+        /// Description of the cargo being transported
+        /// </summary>
+        public string? CargoDescription { get; set; }
         
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
-        public string Type { get; set; }
+        public string? Type { get; set; }
         
         /// <summary>
         /// Current status of the container (e.g., Empty, Loaded, In Transit)
         /// </summary>
-        public string Status { get; set; }
+        public string? Status { get; set; }
+        
+        /// <summary>
+        /// Condition of the container (Good, Damaged, Needs Repair)
+        /// </summary>
+        public string? Condition { get; set; }
         
         /// <summary>
         /// Current physical location of the container
         /// </summary>
-        public string CurrentLocation { get; set; }
+        public string? CurrentLocation { get; set; }
+        
+        /// <summary>
+        /// Final destination port or location
+        /// </summary>
+        public string? Destination { get; set; }
+        
+        /// <summary>
+        /// Weight of the container in kilograms
+        /// </summary>
+        public decimal? Weight { get; set; }
+        
+        /// <summary>
+        /// Maximum weight capacity in kilograms
+        /// </summary>
+        public decimal? MaxWeight { get; set; }
+        
+        /// <summary>
+        /// Size of the container (20ft, 40ft, 45ft)
+        /// </summary>
+        public string? Size { get; set; }
+        
+        /// <summary>
+        /// Temperature setting for refrigerated containers (Celsius)
+        /// </summary>
+        public decimal? Temperature { get; set; }
+        
+        /// <summary>
+        /// Last known GPS coordinates (latitude,longitude)
+        /// </summary>
+        public string? Coordinates { get; set; }
         
         /// <summary>
         /// Foreign key to the ship this container is currently on (nullable)
