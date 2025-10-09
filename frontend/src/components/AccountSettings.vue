@@ -88,22 +88,6 @@
         </p>
       </div>
 
-      <!-- Error Message -->
-      <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-3">
-        <div class="flex items-center gap-2">
-          <AlertTriangle class="w-4 h-4 text-red-600" />
-          <p class="text-sm text-red-600">{{ error }}</p>
-        </div>
-      </div>
-
-      <!-- Success Message -->
-      <div v-if="success" class="bg-green-50 border border-green-200 rounded-lg p-3">
-        <div class="flex items-center gap-2">
-          <CheckCircle class="w-4 h-4 text-green-600" />
-          <p class="text-sm text-green-600">{{ success }}</p>
-        </div>
-      </div>
-
       <!-- Action Buttons -->
       <div class="flex space-x-3 pt-4">
         <button
@@ -131,8 +115,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { X, AlertTriangle, CheckCircle, Loader2 } from 'lucide-vue-next'
 import { authApi } from '../services/api'
+import { useToast } from '../composables/useToast.js'
 
 const emit = defineEmits(['close', 'profile-updated'])
+const { success: showSuccess, error: showError, warning } = useToast()
 
 const form = ref({
   fullName: '',
@@ -143,8 +129,6 @@ const form = ref({
 
 const currentUser = ref(null)
 const loading = ref(false)
-const error = ref('')
-const success = ref('')
 
 const isFormValid = computed(() => {
   return form.value.fullName.trim() && 
@@ -175,11 +159,12 @@ const loadCurrentUser = async () => {
 }
 
 const updateProfile = async () => {
-  if (!isFormValid.value) return
+  if (!isFormValid.value) {
+    warning('Please fill in all required fields with valid information.')
+    return
+  }
 
   loading.value = true
-  error.value = ''
-  success.value = ''
 
   try {
     await authApi.updateProfile({
@@ -189,7 +174,7 @@ const updateProfile = async () => {
       department: form.value.department || undefined
     })
 
-    success.value = 'Profile updated successfully!'
+    showSuccess('Profile updated successfully! 🎉')
     
     // Update localStorage
     if (currentUser.value) {
@@ -210,7 +195,16 @@ const updateProfile = async () => {
 
   } catch (err: any) {
     console.error('Update profile error:', err)
-    error.value = err.response?.data?.message || 'Failed to update profile. Please try again.'
+    
+    if (err.response?.status === 400) {
+      showError('Invalid information provided. Please check your input and try again.')
+    } else if (err.response?.status === 409) {
+      showError('Email address is already in use by another account.')
+    } else if (err.response?.data?.message) {
+      showError(err.response.data.message)
+    } else {
+      showError('Failed to update profile. Please try again.')
+    }
   } finally {
     loading.value = false
   }

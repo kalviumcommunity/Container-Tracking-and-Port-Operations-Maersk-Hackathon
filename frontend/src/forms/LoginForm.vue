@@ -114,21 +114,6 @@
           </p>
         </div>
       </form>
-
-      <!-- Messages -->
-      <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div class="flex items-center gap-2">
-          <AlertTriangle :size="20" class="text-red-600" />
-          <p class="text-red-800">{{ errorMessage }}</p>
-        </div>
-      </div>
-
-      <div v-if="successMessage" class="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div class="flex items-center gap-2">
-          <CheckCircle :size="20" class="text-green-600" />
-          <p class="text-green-800">{{ successMessage }}</p>
-        </div>
-        </div>
       </div>
     </div>
 </template>
@@ -137,8 +122,10 @@
 import { ref, reactive } from 'vue'
 import { Ship, User, Lock, LogIn, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 import { authApi } from '../services/api'
+import { useToast } from '../composables/useToast.js'
 
 const emit = defineEmits(['login-success', 'show-register', 'cancel'])
+const { success, error: showError } = useToast()
 
 interface LoginForm {
   username: string
@@ -155,8 +142,6 @@ const form = reactive<LoginForm>({
 const errors = reactive<Partial<Record<keyof LoginForm, string>>>({})
 const showPassword = ref(false)
 const isLoading = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
 
 const validate = (): boolean => {
   Object.keys(errors).forEach(key => delete errors[key as keyof LoginForm])
@@ -178,8 +163,6 @@ const handleSubmit = async () => {
   if (!validate()) return
   
   isLoading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
   
   try {
     // Use JWT authentication API
@@ -191,7 +174,7 @@ const handleSubmit = async () => {
     const response = await authApi.login(loginRequest)
     
     // Successful authentication
-    successMessage.value = 'Login successful! Redirecting...'
+    success('Login successful! Welcome back! 🎉')
     
     // Save user session
     const currentUser = {
@@ -215,11 +198,11 @@ const handleSubmit = async () => {
   } catch (error: any) {
     console.error('Login error:', error)
     if (error.response?.status === 401) {
-      errorMessage.value = 'Invalid username or password.'
+      showError('Invalid username or password.')
     } else if (error.response?.data?.message) {
-      errorMessage.value = error.response.data.message
+      showError(error.response.data.message)
     } else {
-      errorMessage.value = 'Login failed. Please try again.'
+      showError('Login failed. Please try again.')
     }
   } finally {
     isLoading.value = false
