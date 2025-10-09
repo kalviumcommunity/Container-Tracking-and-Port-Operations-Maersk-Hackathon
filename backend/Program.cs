@@ -59,7 +59,7 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-});
+});     
 
 // Add controllers and API explorer with JSON options
 builder.Services.AddControllers()
