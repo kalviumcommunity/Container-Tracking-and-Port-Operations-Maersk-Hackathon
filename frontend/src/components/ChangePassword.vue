@@ -92,22 +92,6 @@
         </p>
       </div>
 
-      <!-- Error Message -->
-      <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-3">
-        <div class="flex items-center gap-2">
-          <AlertTriangle class="w-4 h-4 text-red-600" />
-          <p class="text-sm text-red-600">{{ error }}</p>
-        </div>
-      </div>
-
-      <!-- Success Message -->
-      <div v-if="success" class="bg-green-50 border border-green-200 rounded-lg p-3">
-        <div class="flex items-center gap-2">
-          <CheckCircle class="w-4 h-4 text-green-600" />
-          <p class="text-sm text-green-600">{{ success }}</p>
-        </div>
-      </div>
-
       <!-- Action Buttons -->
       <div class="flex space-x-3 pt-4">
         <button
@@ -135,8 +119,10 @@
 import { ref, computed } from 'vue'
 import { Eye, EyeOff, X, AlertTriangle, CheckCircle, Loader2 } from 'lucide-vue-next'
 import { authApi } from '../services/api'
+import { useToast } from '../composables/useToast.js'
 
 const emit = defineEmits(['close', 'password-changed'])
+const { success: showSuccess, error: showError, warning } = useToast()
 
 const form = ref({
   currentPassword: '',
@@ -148,8 +134,6 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false) 
 const showConfirmPassword = ref(false)
 const loading = ref(false)
-const error = ref('')
-const success = ref('')
 
 const isFormValid = computed(() => {
   return form.value.currentPassword &&
@@ -160,11 +144,12 @@ const isFormValid = computed(() => {
 })
 
 const changePassword = async () => {
-  if (!isFormValid.value) return
+  if (!isFormValid.value) {
+    warning('Please fill in all fields correctly before submitting.')
+    return
+  }
 
   loading.value = true
-  error.value = ''
-  success.value = ''
 
   try {
     await authApi.changePassword({
@@ -172,7 +157,15 @@ const changePassword = async () => {
       newPassword: form.value.newPassword
     })
 
-    success.value = 'Password changed successfully!'
+    showSuccess('Password changed successfully! 🎉')
+    
+    // Reset form
+    form.value = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
+    
     setTimeout(() => {
       emit('password-changed')
       emit('close')
@@ -180,7 +173,16 @@ const changePassword = async () => {
 
   } catch (err: any) {
     console.error('Change password error:', err)
-    error.value = err.response?.data?.message || 'Failed to change password. Please try again.'
+    
+    if (err.response?.status === 401) {
+      showError('Current password is incorrect. Please try again.')
+    } else if (err.response?.status === 400) {
+      showError('Invalid password format. Password must be at least 6 characters long.')
+    } else if (err.response?.data?.message) {
+      showError(err.response.data.message)
+    } else {
+      showError('Failed to change password. Please try again.')
+    }
   } finally {
     loading.value = false
   }

@@ -5,6 +5,7 @@ import ContainerManagement from '@/components/ContainerManagement.vue'
 import PortOperationManagement from '@/components/PortOperationManagement.vue'
 import EventStreaming from '@/components/EventStreaming.vue'
 import AdminDashboard from '@/components/AdminDashboard.vue'
+import TestForms from '@/test-forms.vue'
 import { authApi } from '../services/api'
 
 const router = createRouter({
@@ -43,8 +44,11 @@ const router = createRouter({
       component: EventStreaming,
       meta: { requiresAuth: true }
     },
-
-
+    {
+      path: '/test-forms',
+      name: 'test-forms',
+      component: TestForms
+    },
     {
       path: '/admin-dashboard',
       name: 'admin-dashboard',

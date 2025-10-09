@@ -89,22 +89,6 @@
       <h3 class="text-lg font-medium text-slate-900 mb-2">All Roles Assigned</h3>
       <p class="text-slate-600">You have access to all available roles or have pending applications.</p>
     </div>
-
-    <!-- Success Message -->
-    <div v-if="successMessage" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-      <div class="flex items-center gap-2">
-        <CheckCircle :size="20" class="text-green-600" />
-        <p class="text-green-800">{{ successMessage }}</p>
-      </div>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="errorMessage" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-      <div class="flex items-center gap-2">
-        <AlertTriangle :size="20" class="text-red-600" />
-        <p class="text-red-800">{{ errorMessage }}</p>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -112,6 +96,10 @@
 import { ref, onMounted } from 'vue'
 import { UserPlus, Shield, CheckCircle, AlertTriangle, Loader2, ChevronRight } from 'lucide-vue-next'
 import { roleApplicationApi } from '../services/api'
+import { useToast } from '../composables/useToast.js'
+
+const emit = defineEmits(['close', 'application-submitted'])
+const { success: showSuccess, error: showError, warning } = useToast()
 
 interface AvailableRole {
   roleName: string
@@ -125,10 +113,6 @@ const selectedRole = ref<AvailableRole | null>(null)
 const showRoleSelection = ref(true)
 const justification = ref('')
 const isLoading = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
-
-const emit = defineEmits(['application-submitted', 'close'])
 
 const loadAvailableRoles = async () => {
   try {
@@ -139,7 +123,7 @@ const loadAvailableRoles = async () => {
   } catch (error: any) {
     console.error('Failed to load available roles:', error)
     console.error('Error details:', error.response?.data || error.message)
-    errorMessage.value = 'Failed to load available roles. Please make sure you are logged in.'
+    showError('Failed to load available roles. Please make sure you are logged in.')
   }
 }
 
@@ -155,19 +139,15 @@ const cancelApplication = () => {
   selectedRole.value = null
   showRoleSelection.value = true
   justification.value = ''
-  errorMessage.value = ''
-  successMessage.value = ''
 }
 
 const submitApplication = async () => {
   if (!selectedRole.value || !justification.value.trim()) {
-    errorMessage.value = 'Please provide a justification for your role request'
+    warning('Please provide a justification for your role request')
     return
   }
 
   isLoading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
   
   try {
     await roleApplicationApi.submitApplication({
@@ -175,7 +155,7 @@ const submitApplication = async () => {
       justification: justification.value.trim()
     })
     
-    successMessage.value = `Application for ${selectedRole.value.roleName} role submitted successfully! It will be reviewed by an administrator.`
+    showSuccess(`Application for ${selectedRole.value.roleName} role submitted successfully! It will be reviewed by an administrator.`)
     
     // Reset form and emit success
     setTimeout(() => {
@@ -188,7 +168,16 @@ const submitApplication = async () => {
     
   } catch (error: any) {
     console.error('Failed to submit application:', error)
-    errorMessage.value = error.response?.data?.message || 'Failed to submit application'
+    
+    if (error.response?.status === 409) {
+      showError('You already have a pending application for this role.')
+    } else if (error.response?.status === 403) {
+      showError('You are not authorized to apply for this role.')
+    } else if (error.response?.data?.message) {
+      showError(error.response.data.message)
+    } else {
+      showError('Failed to submit application. Please try again.')
+    }
   } finally {
     isLoading.value = false
   }
