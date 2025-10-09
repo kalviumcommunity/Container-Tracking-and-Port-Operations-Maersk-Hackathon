@@ -1,123 +1,18 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://your-api-domain.com/api' 
   : 'http://localhost:5221/api';
 
-// TypeScript interfaces for API responses
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-}
-
-// Authentication interfaces
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-  fullName: string;
-  phoneNumber?: string;
-  department?: string;
-  portId?: number;
-  roles?: string[]; // Optional - backend assigns default role
-}
-
-export interface AuthResponse {
-  token: string;
-  expires: string;
-  user: User;
-}
-
-export interface User {
-  userId: number;
-  username: string;
-  email: string;
-  fullName: string;
-  phoneNumber?: string;
-  department?: string;
-  portId?: number;
-  roles: string[];
-  permissions: string[];
-  isActive: boolean;
-  lastLoginAt?: string;
-  createdAt: string;
-}
-
-export interface Container {
-  containerId: string;
-  name: string;
-  type: string;
-  status: string;
-  currentLocation: string;
-  createdAt: string;
-  updatedAt: string;
-  shipId?: number;
-  shipName?: string;
-  weight?: number;
-  destination?: string;
-}
-
-export interface Port {
-  id: number;
-  name: string;
-  code: string;
-  country: string;
-  location?: string;
-  capacity?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Ship {
-  id: number;
-  name: string;
-  imoNumber?: string;
-  flag?: string;
-  type?: string;
-  capacity?: number;
-  status?: string;
-  portId?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Berth {
-  id: number;
-  identifier: string;
-  type: string;
-  status: string;
-  capacity?: number;
-  portId: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface BerthAssignment {
-  id: number;
-  berthId: number;
-  shipId: number;
-  assignedAt: string;
-  scheduledDeparture?: string;
-  actualDeparture?: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Create axios instance with TypeScript support
-const api = axios.create({
+// Create axios instance
+export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
 });
 
 // Token management
@@ -146,6 +41,7 @@ const setToken = (token: string): void => {
 
 const removeToken = (): void => {
   localStorage.removeItem('auth_token');
+  localStorage.removeItem('current_user'); // Also clear current user
   delete api.defaults.headers.common['Authorization'];
 };
 
@@ -181,351 +77,33 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
+    
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      console.warn('Authentication failed - clearing tokens and redirecting to login');
+      removeToken();
+      
+      // Only redirect if we're not already on the login page
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+        window.location.href = '/login';
+      }
+    }
+    
     return Promise.reject(error);
   }
 );
 
-// Container API
-export const containerApi = {
-  async getAll(): Promise<{ data: Container[] }> {
-    try {
-      const response = await api.get('/containers/all');
-      // Ensure we always return an array
-      const raw = response.data?.data ?? response.data ?? [];
-      const data: Container[] = Array.isArray(raw) ? raw : [];
-      return { data };
-    } catch (error) {
-      console.error('Error fetching containers:', error);
-      return { data: [] };
-    }
-  },
-
-  async getContainers(): Promise<Container[]> {
-    try {
-      const response = await api.get('/containers/all');
-      const raw = response.data?.data ?? response.data ?? [];
-      return Array.isArray(raw) ? raw : [];
-    } catch (error) {
-      console.error('Error fetching containers:', error);
-      return [];
-    }
-  },
-
-  async getById(id: number): Promise<Container | null> {
-    try {
-      const response = await api.get(`/containers/${id}`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching container ${id}:`, error);
-      return null;
-    }
-  },
-
-  async getDetails(id: number): Promise<Container | null> {
-    try {
-      const response = await api.get(`/containers/${id}/details`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching container details ${id}:`, error);
-      return null;
-    }
-  },
-
-  async getByLocation(location: string): Promise<Container[]> {
-    try {
-      const response = await api.get(`/containers/location/${location}`);
-      return response.data.data || response.data || [];
-    } catch (error) {
-      console.error(`Error fetching containers by location ${location}:`, error);
-      return [];
-    }
-  },
-
-  async getByStatus(status: string): Promise<Container[]> {
-    try {
-      const response = await api.get(`/containers/status/${status}`);
-      return response.data.data || response.data || [];
-    } catch (error) {
-      console.error(`Error fetching containers by status ${status}:`, error);
-      return [];
-    }
-  },
-
-  async getByShip(shipId: number): Promise<Container[]> {
-    try {
-      const response = await api.get(`/containers/ship/${shipId}`);
-      return response.data.data || response.data || [];
-    } catch (error) {
-      console.error(`Error fetching containers by ship ${shipId}:`, error);
-      return [];
-    }
-  },
-
-  async create(containerData: Partial<Container>): Promise<Container | null> {
-    try {
-      const response = await api.post('/containers', containerData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error creating container:', error);
-      throw error;
-    }
-  },
-
-  async update(id: number, containerData: Partial<Container>): Promise<Container | null> {
-    try {
-      const response = await api.put(`/containers/${id}`, containerData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error updating container ${id}:`, error);
-      throw error;
-    }
-  },
-
-  async delete(id: number): Promise<boolean> {
-    try {
-      await api.delete(`/containers/${id}`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting container ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Port API
-export const portApi = {
-  async getAll(): Promise<{ data: Port[] }> {
-    try {
-      const response = await api.get('/ports');
-      const data = response.data.data || response.data || [];
-      return { data };
-    } catch (error) {
-      console.error('Error fetching ports:', error);
-      return { data: [] };
-    }
-  },
-
-  async getById(id: number): Promise<Port | null> {
-    try {
-      const response = await api.get(`/ports/${id}`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching port ${id}:`, error);
-      return null;
-    }
-  },
-
-  async getDetails(id: number): Promise<Port | null> {
-    try {
-      const response = await api.get(`/ports/${id}/details`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching port details ${id}:`, error);
-      return null;
-    }
-  },
-
-  async create(portData: Partial<Port>): Promise<Port | null> {
-    try {
-      const response = await api.post('/ports', portData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error creating port:', error);
-      throw error;
-    }
-  },
-
-  async update(id: number, portData: Partial<Port>): Promise<Port | null> {
-    try {
-      const response = await api.put(`/ports/${id}`, portData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error updating port ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Ship API
-export const shipApi = {
-  async getAll(): Promise<{ data: Ship[] }> {
-    try {
-      const response = await api.get('/ships');
-      const data = response.data.data || response.data || [];
-      return { data };
-    } catch (error) {
-      console.error('Error fetching ships:', error);
-      return { data: [] };
-    }
-  },
-
-  async getById(id: number): Promise<Ship | null> {
-    try {
-      const response = await api.get(`/ships/${id}`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching ship ${id}:`, error);
-      return null;
-    }
-  },
-
-  async getDetails(id: number): Promise<Ship | null> {
-    try {
-      const response = await api.get(`/ships/${id}/details`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching ship details ${id}:`, error);
-      return null;
-    }
-  },
-
-  async create(shipData: Partial<Ship>): Promise<Ship | null> {
-    try {
-      const response = await api.post('/ships', shipData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error creating ship:', error);
-      throw error;
-    }
-  },
-
-  async update(id: number, shipData: Partial<Ship>): Promise<Ship | null> {
-    try {
-      const response = await api.put(`/ships/${id}`, shipData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error updating ship ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Berth API
-export const berthApi = {
-  async getAll(): Promise<{ data: Berth[] }> {
-    try {
-      const response = await api.get('/berths');
-      const data = response.data.data || response.data || [];
-      return { data };
-    } catch (error) {
-      console.error('Error fetching berths:', error);
-      return { data: [] };
-    }
-  },
-
-  async getById(id: number): Promise<Berth | null> {
-    try {
-      const response = await api.get(`/berths/${id}`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching berth ${id}:`, error);
-      return null;
-    }
-  },
-
-  async getByPort(portId: number): Promise<Berth[]> {
-    try {
-      const response = await api.get(`/berths/port/${portId}`);
-      return response.data.data || response.data || [];
-    } catch (error) {
-      console.error(`Error fetching berths by port ${portId}:`, error);
-      return [];
-    }
-  },
-
-  async create(berthData: Partial<Berth>): Promise<Berth | null> {
-    try {
-      const response = await api.post('/berths', berthData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error creating berth:', error);
-      throw error;
-    }
-  },
-
-  async update(id: number, berthData: Partial<Berth>): Promise<Berth | null> {
-    try {
-      const response = await api.put(`/berths/${id}`, berthData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error updating berth ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Berth Assignment API
-export const berthAssignmentApi = {
-  async getAll(): Promise<{ data: BerthAssignment[] }> {
-    try {
-      const response = await api.get('/berthassignments');
-      const data = response.data.data || response.data || [];
-      return { data };
-    } catch (error) {
-      console.error('Error fetching berth assignments:', error);
-      return { data: [] };
-    }
-  },
-
-  async getById(id: number): Promise<BerthAssignment | null> {
-    try {
-      const response = await api.get(`/berthassignments/${id}`);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error fetching berth assignment ${id}:`, error);
-      return null;
-    }
-  },
-
-  async getByBerth(berthId: number): Promise<BerthAssignment[]> {
-    try {
-      const response = await api.get(`/berthassignments/berth/${berthId}`);
-      return response.data.data || response.data || [];
-    } catch (error) {
-      console.error(`Error fetching berth assignments by berth ${berthId}:`, error);
-      return [];
-    }
-  },
-
-  async create(assignmentData: Partial<BerthAssignment>): Promise<BerthAssignment | null> {
-    try {
-      const response = await api.post('/berthassignments', assignmentData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error creating berth assignment:', error);
-      throw error;
-    }
-  },
-
-  async update(id: number, assignmentData: Partial<BerthAssignment>): Promise<BerthAssignment | null> {
-    try {
-      const response = await api.put(`/berthassignments/${id}`, assignmentData);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error(`Error updating berth assignment ${id}:`, error);
-      throw error;
-    }
-  },
-
-  async delete(id: number): Promise<boolean> {
-    try {
-      await api.delete(`/berthassignments/${id}`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting berth assignment ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Authentication API functions
+// Add Authentication API
 export const authApi = {
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
+  async login(credentials: { username: string; password: string }) {
     try {
-      const response = await api.post<AuthResponse>('/auth/login', credentials);
+      const response = await api.post('/auth/login', credentials);
+      
+      // Store the JWT token in local storage
       if (response.data.token) {
         setToken(response.data.token);
       }
+      
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
@@ -533,12 +111,9 @@ export const authApi = {
     }
   },
 
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
+  async register(userData: { username: string; email: string; password: string }) {
     try {
-      const response = await api.post<AuthResponse>('/auth/register', userData);
-      if (response.data.token) {
-        setToken(response.data.token);
-      }
+      const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
       console.error('Registration error:', error);
@@ -546,226 +121,414 @@ export const authApi = {
     }
   },
 
-  async logout(): Promise<void> {
+  async logout() {
     try {
-      await api.post('/auth/logout');
+      // Call API logout endpoint if available
+      await api.post('/auth/logout').catch(() => {
+        // Silently fail if the endpoint doesn't exist
+        console.warn('Logout endpoint not available, removing token locally');
+      });
+      
+      // Always remove the token locally
+      removeToken();
+      
+      return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
+      
+      // Still remove token on error
       removeToken();
+      
+      return { success: true };
     }
   },
-
-  async getCurrentUser(): Promise<User | null> {
+  
+  async getCurrentUser() {
     try {
-      const token = getToken();
-      if (!token) return null;
-      
-      const response = await api.get<User>('/auth/me');
+      // Try to get user from API first
+      const response = await api.get('/auth/current-user');
       return response.data;
     } catch (error) {
       console.error('Get current user error:', error);
-      removeToken(); // Clear invalid token
-      return null;
+      
+      // Fallback to localStorage if API fails
+      const currentUser = localStorage.getItem('current_user');
+      if (currentUser) {
+        return { user: JSON.parse(currentUser) };
+      }
+      
+      throw error;
     }
   },
-
-  isAuthenticated(): boolean {
-    return !!getToken();
-  },
-
-  async changePassword(passwordData: { currentPassword: string; newPassword: string }): Promise<void> {
-    await api.post('/auth/change-password', passwordData);
-  },
-
-  async updateProfile(profileData: { fullName: string; email: string; phoneNumber?: string; department?: string }): Promise<User> {
-    const response: AxiosResponse<User> = await api.put('/auth/profile', profileData);
-    return response.data;
+  
+  isAuthenticated() {
+    return getToken() !== null;
   }
 };
 
-// Role Application API
-export interface RoleApplicationRequest {
-  requestedRole: string;
-  justification: string;
-}
+// Add Role Application API
+export const roleApplicationApi = {
+  async submitApplication(applicationData: {
+    userId: string;
+    requestedRole: string;
+    reason: string;
+    companyName?: string;
+    companyEmail?: string;
+    position?: string;
+  }) {
+    try {
+      const response = await api.post('/role-applications', applicationData);
+      return response.data;
+    } catch (error) {
+      console.error('Submit role application error:', error);
+      throw error;
+    }
+  },
 
+  async getApplications(filter?: string) {
+    try {
+      const params = filter ? { status: filter } : {};
+      const response = await api.get('/role-applications', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Get role applications error:', error);
+      throw error;
+    }
+  },
+
+  async getUserApplications(userId: string) {
+    try {
+      const response = await api.get(`/role-applications/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Get user applications error for ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  async approveApplication(applicationId: string, reviewNotes?: string) {
+    try {
+      const response = await api.post(`/role-applications/${applicationId}/approve`, { reviewNotes });
+      return response.data;
+    } catch (error) {
+      console.error(`Approve application error for ${applicationId}:`, error);
+      throw error;
+    }
+  },
+
+  async rejectApplication(applicationId: string, reviewNotes: string) {
+    try {
+      const response = await api.post(`/role-applications/${applicationId}/reject`, { reviewNotes });
+      return response.data;
+    } catch (error) {
+      console.error(`Reject application error for ${applicationId}:`, error);
+      throw error;
+    }
+  },
+
+  async withdrawApplication(applicationId: string) {
+    try {
+      const response = await api.post(`/role-applications/${applicationId}/withdraw`);
+      return response.data;
+    } catch (error) {
+      console.error(`Withdraw application error for ${applicationId}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Add Berth API
+export const berthApi = {
+  // Get all berths
+  async getAll() {
+    try {
+      const response = await api.get('/berths');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching berths:', error);
+      throw error;
+    }
+  },
+
+  // Get berth by ID
+  async getById(id: number | string) {
+    try {
+      const response = await api.get(`/berths/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching berth ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Get berth details
+  async getDetails(id: number | string) {
+    try {
+      const response = await api.get(`/berths/${id}/details`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching berth details for ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Get berths by port
+  async getByPort(portId: number | string) {
+    try {
+      const response = await api.get(`/berths/port/${portId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching berths for port ${portId}:`, error);
+      throw error;
+    }
+  },
+
+  // Get berths by status
+  async getByStatus(status: string) {
+    try {
+      const response = await api.get(`/berths/status/${status}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching berths with status ${status}:`, error);
+      throw error;
+    }
+  },
+
+  // Create new berth
+  async create(berthData: {
+    name: string;
+    portId: number;
+    capacity: number;
+    length?: number;
+    width?: number;
+    depth?: number;
+    type?: string;
+    status?: string;
+  }) {
+    try {
+      const response = await api.post('/berths', berthData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating berth:', error);
+      throw error;
+    }
+  },
+
+  // Update berth
+  async update(id: number | string, berthData: {
+    name?: string;
+    capacity?: number;
+    length?: number;
+    width?: number;
+    depth?: number;
+    type?: string;
+    status?: string;
+  }) {
+    try {
+      const response = await api.put(`/berths/${id}`, berthData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating berth ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Delete berth
+  async delete(id: number | string) {
+    try {
+      const response = await api.delete(`/berths/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting berth ${id}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Add Berth Assignment API
+export const berthAssignmentApi = {
+  // Get all berth assignments
+  async getAll() {
+    try {
+      const response = await api.get('/berth-assignments');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching berth assignments:', error);
+      throw error;
+    }
+  },
+
+  // Get berth assignment by ID
+  async getById(id: number | string) {
+    try {
+      const response = await api.get(`/berth-assignments/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching berth assignment ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Assign ship to berth
+  async create(assignmentData: {
+    shipId: number | string;
+    berthId: number | string;
+    scheduledArrival: string;
+    scheduledDeparture: string;
+    containerCount?: number;
+    priority?: string;
+    status?: string;
+  }) {
+    try {
+      const response = await api.post('/berth-assignments', assignmentData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating berth assignment:', error);
+      throw error;
+    }
+  },
+
+  // Update berth assignment
+  async update(id: number | string, updateData: {
+    scheduledArrival?: string;
+    scheduledDeparture?: string;
+    actualArrival?: string;
+    actualDeparture?: string;
+    containerCount?: number;
+    priority?: string;
+    status?: string;
+  }) {
+    try {
+      const response = await api.put(`/berth-assignments/${id}`, updateData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating berth assignment ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Delete berth assignment
+  async delete(id: number | string) {
+    try {
+      const response = await api.delete(`/berth-assignments/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting berth assignment ${id}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Import services to re-export
+import { containerService } from './containerService';
+import { portService } from './portService';
+import { shipService } from './shipService';
+
+// Export renamed services to avoid naming conflicts
+// Direct exports from this file for backward compatibility
+export const containerApi = {
+  // Get containers with filtering and pagination
+  async getContainers(filters = {}) {
+    // Delegate to containerService
+    return await containerService.getContainers(filters);
+  },
+
+  // Legacy method for backward compatibility
+  async getAll() {
+    // Delegate to containerService
+    return await containerService.getAll();
+  },
+
+  async getById(id: string) {
+    // Delegate to containerService
+    return await containerService.getById(id);
+  },
+
+  async getStatistics() {
+    // Delegate to containerService
+    return await containerService.getStatistics();
+  },
+
+  async create(containerData) {
+    // Delegate to containerService
+    return await containerService.create(containerData);
+  },
+
+  async update(containerId, containerData) {
+    // Delegate to containerService
+    return await containerService.update(containerId, containerData);
+  },
+
+  async delete(id: string) {
+    // Delegate to containerService
+    return await containerService.delete(id);
+  },
+
+  async bulkUpdateStatus(bulkUpdate) {
+    // Delegate to containerService
+    return await containerService.bulkUpdateStatus(bulkUpdate);
+  },
+
+  async exportContainers(filters) {
+    // Delegate to containerService
+    return await containerService.exportContainers(filters);
+  }
+};
+
+// Re-export other services with different names to avoid conflicts
+export const portApi = {
+  async getAll() {
+    return await portService.getAll();
+  },
+  async getById(id) {
+    return await portService.getById(id);
+  }
+  // Add other port methods as needed
+};
+
+export const shipApi = {
+  async getAll() {
+    return await shipService.getAll();
+  },
+  async getById(id) {
+    return await shipService.getById(id);
+  }
+  // Add other ship methods as needed
+};
+
+// Export the userManagementApi directly
+export { userManagementApi } from './userManagementApi';
+
+// Export types
+export type { Container, ContainerFilters, ContainerStats, PaginatedResponse } from '../types/container';
+export type { Ship } from './shipService';
+export type { Port } from './portService';
+export type { 
+  UserListDto, 
+  UpdateUserRolesDto, 
+  UpdateUserStatusDto, 
+  SystemStatsDto, 
+  UsersPagedResponse 
+} from './userManagementApi';
+
+// Define Role Application types
 export interface RoleApplication {
-  applicationId: number;
-  userId: number;
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
   requestedRole: string;
-  justification: string;
-  status: string;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Withdrawn';
+  companyName?: string;
+  companyEmail?: string;
+  position?: string;
   submittedAt: string;
   reviewedAt?: string;
-  reviewedBy?: number;
+  reviewedBy?: string;
   reviewNotes?: string;
-  applicantName: string;
-  reviewerName?: string;
 }
 
-export interface AvailableRoleDto {
-  roleName: string;
-  description: string;
-  canApply: boolean;
-  reasonCannotApply?: string;
-}
-
-export const roleApplicationApi = {
-  async getAvailableRoles(): Promise<AvailableRoleDto[]> {
-    const response: AxiosResponse<AvailableRoleDto[]> = await api.get('/role-applications/available-roles');
-    return response.data;
-  },
-
-  async submitApplication(request: RoleApplicationRequest): Promise<RoleApplication> {
-    const response: AxiosResponse<RoleApplication> = await api.post('/role-applications', request);
-    return response.data;
-  },
-
-  async getMyApplications(): Promise<RoleApplication[]> {
-    const response: AxiosResponse<RoleApplication[]> = await api.get('/role-applications/my-applications');
-    return response.data;
-  },
-
-  async cancelApplication(applicationId: number): Promise<void> {
-    await api.post(`/role-applications/${applicationId}/cancel`);
-  },
-
-  // Admin endpoints
-  async getPendingApplications(): Promise<RoleApplication[]> {
-    const response: AxiosResponse<RoleApplication[]> = await api.get('/role-applications/pending');
-    return response.data;
-  },
-
-  async getAllApplications(): Promise<RoleApplication[]> {
-    const response: AxiosResponse<RoleApplication[]> = await api.get('/role-applications/all');
-    return response.data;
-  },
-
-  async reviewApplication(applicationId: number, status: 'Approved' | 'Rejected', notes?: string): Promise<void> {
-    await api.post(`/role-applications/${applicationId}/review`, {
-      status,
-      reviewNotes: notes
-    });
-  }
-};
-
-// Analytics API (NEW)
-export const analyticsApi = {
-  async getDashboardStats(): Promise<any> {
-    try {
-      const response = await api.get('/analytics/dashboard-stats');
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      throw error;
-    }
-  },
-
-  async getThroughputData(period: string = 'daily', days: number = 30): Promise<any> {
-    try {
-      const response = await api.get('/analytics/throughput', {
-        params: { period, days }
-      });
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error fetching throughput data:', error);
-      throw error;
-    }
-  },
-
-  async getBerthUtilization(portId?: number, days: number = 30): Promise<any> {
-    try {
-      const response = await api.get('/analytics/berth-utilization', {
-        params: { portId, days }
-      });
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error fetching berth utilization:', error);
-      throw error;
-    }
-  },
-
-  async getRealtimeMetrics(): Promise<any> {
-    try {
-      const response = await api.get('/analytics/realtime-metrics');
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error fetching realtime metrics:', error);
-      throw error;
-    }
-  },
-
-  async generateCustomReport(request: any): Promise<any> {
-    try {
-      const response = await api.post('/analytics/custom-report', request);
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error generating custom report:', error);
-      throw error;
-    }
-  },
-
-  async exportAnalytics(reportType: string, fromDate: string, toDate: string): Promise<Blob> {
-    try {
-      const response = await api.get('/analytics/export', {
-        params: { reportType, fromDate, toDate },
-        responseType: 'blob'
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error exporting analytics:', error);
-      throw error;
-    }
-  }
-};
-
-// Seed API for database management
-export const seedApi = {
-  async getStatus(): Promise<any> {
-    try {
-      const response = await api.get('/seed/status');
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error('Error fetching seed status:', error);
-      throw error;
-    }
-  },
-
-  async triggerSimpleSeeding(): Promise<any> {
-    try {
-      const response = await api.post('/seed/simple');
-      return response.data;
-    } catch (error) {
-      console.error('Error triggering simple seeding:', error);
-      throw error;
-    }
-  },
-
-  async triggerComprehensiveSeeding(forceReseed: boolean = false): Promise<any> {
-    try {
-      const response = await api.post('/seed/comprehensive', null, {
-        params: { forceReseed }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error triggering comprehensive seeding:', error);
-      throw error;
-    }
-  },
-
-  async clearDatabase(confirmToken: string): Promise<any> {
-    try {
-      const response = await api.delete('/seed/clear', {
-        params: { confirmToken }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error clearing database:', error);
-      throw error;
-    }
-  }
-};
-
-// Export the main axios instance for custom requests
+// Re-export the api for any direct API calls
+export { api as apiClient };
 export default api;

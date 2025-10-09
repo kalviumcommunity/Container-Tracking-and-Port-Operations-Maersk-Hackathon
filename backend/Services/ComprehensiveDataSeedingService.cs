@@ -490,11 +490,12 @@ namespace Backend.Services
             }
         }
 
-        private async Task SeedShippingLinesAsync()
+        private Task SeedShippingLinesAsync()
         {
             _logger.LogInformation("Seeding shipping lines...");
             // This would be a new entity if you want to track shipping companies
             // For now, we'll include this data in the ship names
+            return Task.CompletedTask;
         }
 
         private async Task SeedShipsAsync()
@@ -716,12 +717,35 @@ namespace Backend.Services
                 "Chemicals", "Raw Materials", "Consumer Goods", "Pharmaceuticals", "Oil",
                 "Grain", "Coal", "Steel", "Furniture", "Toys", "Clothing"
             };
+
+            // Enhanced cargo descriptions mapped to cargo types
+            var cargoDescriptions = new Dictionary<string, string[]>
+            {
+                ["Electronics"] = new[] { "Smartphones and tablets", "Laptop computers", "Television sets", "Audio equipment", "Gaming consoles", "Electronic components", "Semiconductor devices" },
+                ["Textiles"] = new[] { "Cotton fabric rolls", "Synthetic yarn", "Finished garments", "Raw cotton bales", "Polyester fabrics", "Denim clothing", "Home textiles" },
+                ["Automotive Parts"] = new[] { "Engine components", "Brake systems", "Transmission parts", "Electrical harnesses", "Tires and wheels", "Body panels", "Interior components" },
+                ["Machinery"] = new[] { "Industrial pumps", "Construction equipment", "Manufacturing tools", "Heavy machinery parts", "Agricultural equipment", "Mining machinery", "Power generators" },
+                ["Food Products"] = new[] { "Frozen seafood", "Canned goods", "Coffee beans", "Rice and grains", "Dairy products", "Processed meat", "Fresh fruits", "Vegetable oil" },
+                ["Chemicals"] = new[] { "Industrial solvents", "Fertilizers", "Plastic resins", "Paint and coatings", "Pharmaceutical ingredients", "Cleaning agents", "Agricultural chemicals" },
+                ["Raw Materials"] = new[] { "Iron ore", "Copper concentrate", "Aluminum ingots", "Timber logs", "Natural rubber", "Mineral ores", "Scrap metal" },
+                ["Consumer Goods"] = new[] { "Household appliances", "Sporting goods", "Beauty products", "Kitchen utensils", "Office supplies", "Personal care items", "Home decorations" },
+                ["Pharmaceuticals"] = new[] { "Prescription medications", "Medical devices", "Vaccine supplies", "Laboratory equipment", "Surgical instruments", "Diagnostic kits", "Health supplements" },
+                ["Oil"] = new[] { "Crude oil", "Refined petroleum", "Lubricating oil", "Diesel fuel", "Gasoline", "Heating oil", "Industrial oil" },
+                ["Grain"] = new[] { "Wheat shipment", "Corn kernels", "Soybeans", "Rice cargo", "Barley grain", "Oats shipment", "Agricultural feed" },
+                ["Coal"] = new[] { "Thermal coal", "Metallurgical coal", "Steam coal", "Anthracite coal", "Lignite coal", "Coal briquettes", "Coke fuel" },
+                ["Steel"] = new[] { "Steel coils", "Steel pipes", "Structural steel", "Steel plates", "Reinforcement bars", "Steel wire", "Galvanized steel" },
+                ["Furniture"] = new[] { "Office furniture", "Home furniture sets", "Wooden chairs", "Metal desks", "Modular furniture", "Outdoor furniture", "Children's furniture" },
+                ["Toys"] = new[] { "Plastic toys", "Educational toys", "Electronic games", "Stuffed animals", "Building blocks", "Action figures", "Board games" },
+                ["Clothing"] = new[] { "Men's apparel", "Women's fashion", "Children's clothing", "Sports wear", "Winter jackets", "Casual wear", "Formal attire" }
+            };
             
             var statuses = new[] 
             { 
                 "Available", "In Transit", "Loading", "Loaded", "Unloading", 
                 "At Port", "In Storage", "Maintenance", "Customs Hold" 
             };
+
+            var conditions = new[] { "Excellent", "Good", "Fair", "Damaged", "Under Repair" };
 
             var containers = new List<Container>();
             var containerPrefixes = new[] { "MAEU", "MSCU", "COSU", "EGLV", "CMAU", "OOLU", "HJMU", "YMLU", "HPLU", "ONEY" };
@@ -730,17 +754,39 @@ namespace Backend.Services
             {
                 var prefix = containerPrefixes[_random.Next(containerPrefixes.Length)];
                 var containerNumber = $"{prefix}{_random.Next(1000000, 9999999)}";
+                var cargoType = cargoTypes[_random.Next(cargoTypes.Length)];
+                var containerType = containerTypes[_random.Next(containerTypes.Length)];
+                var status = statuses[_random.Next(statuses.Length)];
+                var condition = conditions[_random.Next(conditions.Length)];
                 
+                // Get realistic cargo description based on cargo type
+                var possibleDescriptions = cargoDescriptions.ContainsKey(cargoType) 
+                    ? cargoDescriptions[cargoType] 
+                    : new[] { $"Various {cargoType.ToLower()}" };
+                var cargoDescription = possibleDescriptions[_random.Next(possibleDescriptions.Length)];
+
+                // Select random origin and destination ports
+                var originPort = ports[_random.Next(ports.Count)];
+                var destinationPort = ports[_random.Next(ports.Count)];
+                
+                // Ensure origin and destination are different
+                while (destinationPort.PortId == originPort.PortId)
+                {
+                    destinationPort = ports[_random.Next(ports.Count)];
+                }
+
                 var container = new Container
                 {
                     ContainerId = containerNumber,
-                    // Name field removed from Container model
-                    CargoType = cargoTypes[_random.Next(cargoTypes.Length)],
-                    Type = containerTypes[_random.Next(containerTypes.Length)],
-                    Status = statuses[_random.Next(statuses.Length)],
-                    Weight = _random.Next(5000, 28000), // Realistic container weights
+                    CargoType = cargoType,
+                    CargoDescription = cargoDescription,
+                    Type = containerType,
+                    Status = status,
+                    Condition = condition,
+                    Weight = _random.Next(5000, 28000), // Realistic container weights in kg
                     Size = _random.Next(10) < 7 ? "40ft" : "20ft", // 70% are 40ft containers
                     CurrentLocation = ports[_random.Next(ports.Count)].Name,
+                    Destination = destinationPort.Name,
                     CreatedAt = DateTime.UtcNow.AddDays(-_random.Next(1, 365)),
                     UpdatedAt = DateTime.UtcNow.AddHours(-_random.Next(1, 72))
                 };
@@ -749,19 +795,19 @@ namespace Backend.Services
                 if (_random.Next(10) < 3 && ships.Any()) // 30% of containers are on ships
                 {
                     container.ShipId = ships[_random.Next(ships.Count)].ShipId;
+                    container.Status = "In Transit"; // Override status for containers on ships
                 }
 
                 // Set temperature for refrigerated containers
                 if (container.Type == "Refrigerated")
                 {
-                    container.Temperature = _random.Next(-25, 15); // Typical reefer temps
+                    container.Temperature = _random.Next(-25, 15); // Typical reefer temps in Celsius
                 }
 
                 // Set estimated arrival for containers in transit
                 if (container.Status == "In Transit")
                 {
                     container.EstimatedArrival = DateTime.UtcNow.AddHours(_random.Next(6, 336)); // 6 hours to 2 weeks
-                    container.Destination = ports[_random.Next(ports.Count)].Name;
                 }
 
                 containers.Add(container);
@@ -1196,4 +1242,4 @@ namespace Backend.Services
         }
     }
 }
-        
+

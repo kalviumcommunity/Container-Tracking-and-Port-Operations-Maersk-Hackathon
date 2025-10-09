@@ -218,6 +218,9 @@ const handleSubmit = async () => {
       errorMessage.value = 'Invalid username or password.'
     } else if (error.response?.data?.message) {
       errorMessage.value = error.response.data.message
+    } else if (error.response?.data?.title) {
+      // Handle validation errors from ASP.NET Core
+      errorMessage.value = error.response.data.title || 'Login failed. Please check your credentials.'
     } else {
       errorMessage.value = 'Login failed. Please try again.'
     }
