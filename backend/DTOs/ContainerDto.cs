@@ -22,6 +22,11 @@ namespace Backend.DTOs
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
+        public string Type { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Current status of the container
+        /// </summary>
         public string Status { get; set; }
         
         /// <summary>

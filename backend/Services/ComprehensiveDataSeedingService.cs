@@ -750,7 +750,7 @@ namespace Backend.Services
             var containers = new List<Container>();
             var containerPrefixes = new[] { "MAEU", "MSCU", "COSU", "EGLV", "CMAU", "OOLU", "HJMU", "YMLU", "HPLU", "ONEY" };
 
-            for (int i = 1; i <= 500; i++)
+            for (int i = 1; i <= 100; i++)
             {
                 var prefix = containerPrefixes[_random.Next(containerPrefixes.Length)];
                 var containerNumber = $"{prefix}{_random.Next(1000000, 9999999)}";
@@ -1002,9 +1002,9 @@ namespace Backend.Services
         {
             _logger.LogInformation("Seeding events...");
 
-            var containers = await _context.Containers.Take(50).ToListAsync();
-            var ships = await _context.Ships.Take(20).ToListAsync();
-            var berths = await _context.Berths.Take(30).ToListAsync();
+            var containers = await _context.Containers.Take(20).ToListAsync();
+            var ships = await _context.Ships.Take(15).ToListAsync();
+            var berths = await _context.Berths.Take(25).ToListAsync();
             var ports = await _context.Ports.Take(10).ToListAsync();
             var users = await _context.Users.ToListAsync();
 
@@ -1019,7 +1019,7 @@ namespace Backend.Services
             var priorities = new[] { "Low", "Medium", "High", "Critical" };
             var severities = new[] { "Info", "Warning", "Error", "Critical" };
 
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < 40; i++)
             {
                 var eventType = eventTypes[_random.Next(eventTypes.Length)];
                 var priority = priorities[_random.Next(priorities.Length)];

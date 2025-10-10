@@ -290,10 +290,6 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Coordinates")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -361,10 +357,6 @@ namespace backend.Migrations
                     b.Property<string>("ContainerId")
                         .IsRequired()
                         .HasColumnType("character varying(11)");
-
-                    b.Property<string>("Coordinates")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
