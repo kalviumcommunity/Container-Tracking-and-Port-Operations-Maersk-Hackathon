@@ -22,11 +22,6 @@ namespace Backend.DTOs
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
-        public string Type { get; set; }
-        
-        /// <summary>
-        /// Current status of the container (e.g., Empty, Loaded, In Transit)
-        /// </summary>
         public string Status { get; set; }
         
         /// <summary>
@@ -219,7 +214,7 @@ namespace Backend.DTOs
         public string? Destination { get; set; }
         
         /// <summary>
-        /// Weight of the container in kilograms
+        /// Weight of the container in kilograms (nullable to allow setting to 0)
         /// </summary>
         public decimal? Weight { get; set; }
         
@@ -295,9 +290,9 @@ namespace Backend.DTOs
         public string Destination { get; set; } = string.Empty;
         
         /// <summary>
-        /// Weight of the container in kilograms
+        /// Weight of the container in kilograms (nullable to support 0 values explicitly)
         /// </summary>
-        public decimal Weight { get; set; }
+        public decimal? Weight { get; set; }
         
         /// <summary>
         /// Maximum weight capacity in kilograms

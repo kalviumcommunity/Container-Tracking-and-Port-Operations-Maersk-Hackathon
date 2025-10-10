@@ -208,7 +208,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref } from 'vue';
 import { ChevronDownIcon as ChevronDown, ChevronUpIcon as ChevronUp } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -231,8 +231,8 @@ const updateFilter = (key: string, value: any) => {
   emit('apply');
 };
 
-// Add debug logging for ship options
-watchEffect(() => {
-  console.log('ContainerFilters - Ship options received:', props.shipOptions);
-});
+// Development-only debug logging
+if (import.meta.env.DEV) {
+  console.log('ContainerFilters - Development mode: Ship options available:', props.shipOptions?.length || 0);
+}
 </script>

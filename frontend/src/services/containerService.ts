@@ -189,7 +189,7 @@ export class ContainerService {
       condition: data.condition || 'Good',
       currentLocation: data.currentLocation,
       destination: data.destination || '',
-      weight: parseFloat(data.weight?.toString() || '0') || 0,
+      weight: data.weight !== undefined ? parseFloat(data.weight?.toString() || '0') : 0,
       maxWeight: data.maxWeight ? parseFloat(data.maxWeight.toString()) : null,
       size: data.size || '',
       temperature: data.temperature ? parseFloat(data.temperature.toString()) : null,
@@ -200,22 +200,37 @@ export class ContainerService {
   }
 
   private prepareUpdatePayload(data: ContainerUpdateRequest) {
-    return {
-      cargoType: data.cargoType || '',
-      cargoDescription: data.cargoDescription || '',
-      type: data.type,
-      status: data.status,
-      condition: data.condition || 'Good',
-      currentLocation: data.currentLocation,
-      destination: data.destination || '',
-      weight: data.weight ? parseFloat(data.weight.toString()) : 0,
-      maxWeight: data.maxWeight ? parseFloat(data.maxWeight.toString()) : null,
-      size: data.size || '',
-      temperature: data.temperature ? parseFloat(data.temperature.toString()) : null,
-      coordinates: data.coordinates || '',
-      estimatedArrival: data.estimatedArrival || null,
-      shipId: data.shipId ? parseInt(data.shipId.toString()) : null
-    };
+    const payload: any = {};
+    
+    // Only include fields that are actually provided
+    if (data.cargoType !== undefined) payload.cargoType = data.cargoType;
+    if (data.cargoDescription !== undefined) payload.cargoDescription = data.cargoDescription;
+    if (data.type !== undefined) payload.type = data.type;
+    if (data.status !== undefined) payload.status = data.status;
+    if (data.condition !== undefined) payload.condition = data.condition;
+    if (data.currentLocation !== undefined) payload.currentLocation = data.currentLocation;
+    if (data.destination !== undefined) payload.destination = data.destination;
+    
+    // Enhanced weight handling - allow explicit 0 values
+    if (data.weight !== undefined) {
+      payload.weight = data.weight ? parseFloat(data.weight.toString()) : 0;
+    }
+    
+    if (data.maxWeight !== undefined) {
+      payload.maxWeight = data.maxWeight ? parseFloat(data.maxWeight.toString()) : null;
+    }
+    
+    if (data.size !== undefined) payload.size = data.size;
+    if (data.temperature !== undefined) {
+      payload.temperature = data.temperature ? parseFloat(data.temperature.toString()) : null;
+    }
+    if (data.coordinates !== undefined) payload.coordinates = data.coordinates;
+    if (data.estimatedArrival !== undefined) payload.estimatedArrival = data.estimatedArrival;
+    if (data.shipId !== undefined) {
+      payload.shipId = data.shipId ? parseInt(data.shipId.toString()) : null;
+    }
+    
+    return payload;
   }
 }
 

@@ -66,13 +66,13 @@ export interface ContainerUpdateRequest {
   condition?: string;
   currentLocation?: string;
   destination?: string;
-  weight?: number | string;
-  maxWeight?: number | string;
+  weight?: number | string | null; // Allow null to support explicit 0 values
+  maxWeight?: number | string | null;
   size?: string;
-  temperature?: number | string;
+  temperature?: number | string | null;
   coordinates?: string;
   estimatedArrival?: string;
-  shipId?: number | string;
+  shipId?: number | string | null;
 }
 
 export interface ContainerStats {

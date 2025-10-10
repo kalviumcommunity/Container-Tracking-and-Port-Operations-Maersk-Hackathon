@@ -269,7 +269,9 @@ const form = ref({
 
 // Watch for container prop changes
 watch(() => props.container, (newContainer) => {
-  console.log('Container prop changed:', newContainer);
+  if (import.meta.env.DEV) {
+    console.log('Development: Container prop changed');
+  }
   
   if (newContainer) {
     Object.assign(form.value, {
@@ -291,7 +293,9 @@ watch(() => props.container, (newContainer) => {
       shipId: newContainer.shipId || null
     });
     
-    console.log('Form populated with:', form.value);
+    if (import.meta.env.DEV) {
+      console.log('Development: Form populated successfully');
+    }
   }
 }, { immediate: true });
 
@@ -317,7 +321,9 @@ const handleSubmit = () => {
     submissionData.estimatedArrival = null;
   }
   
-  console.log('Submitting form data:', submissionData);
+  if (import.meta.env.DEV) {
+    console.log('Development: Submitting form data');
+  }
   emit('submit', submissionData);
 };
 

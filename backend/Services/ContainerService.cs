@@ -146,38 +146,6 @@ namespace Backend.Services
         }
 
         /// <summary>
-        /// Creates a new container
-        /// </summary>
-        /// <param name="createDto">Container data</param>
-        /// <returns>The created container</returns>
-        public async Task<ContainerDto> CreateAsync(ContainerCreateUpdateDto createDto)
-        {
-            var container = new Container
-            {
-                ContainerId = createDto.ContainerId,
-                CargoType = createDto.CargoType,
-                CargoDescription = createDto.CargoDescription ?? string.Empty,
-                Type = createDto.Type,
-                Status = createDto.Status,
-                Condition = createDto.Condition ?? "Good",
-                CurrentLocation = createDto.CurrentLocation,
-                Destination = createDto.Destination ?? string.Empty,
-                Weight = createDto.Weight,
-                MaxWeight = createDto.MaxWeight,
-                Size = createDto.Size ?? string.Empty,
-                Temperature = createDto.Temperature,
-                Coordinates = createDto.Coordinates ?? string.Empty,
-                EstimatedArrival = createDto.EstimatedArrival,
-                ShipId = createDto.ShipId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            
-            var createdContainer = await _containerRepository.CreateAsync(container);
-            return MapToDto(createdContainer);
-        }
-
-        /// <summary>
         /// Updates an existing container
         /// </summary>
         /// <param name="id">The ID of the container to update</param>
@@ -191,7 +159,7 @@ namespace Backend.Services
                 throw new KeyNotFoundException($"Container with ID {id} not found");
             }
             
-            // Update ALL available fields - this was the missing piece
+            // Update ALL available fields - enhanced weight handling
             if (!string.IsNullOrEmpty(updateDto.CargoType))
                 existingContainer.CargoType = updateDto.CargoType;
             
@@ -213,8 +181,9 @@ namespace Backend.Services
             if (!string.IsNullOrEmpty(updateDto.Destination))
                 existingContainer.Destination = updateDto.Destination;
             
-            if (updateDto.Weight > 0)
-                existingContainer.Weight = updateDto.Weight;
+            // Enhanced weight handling - allow setting to 0 explicitly
+            if (updateDto.Weight.HasValue)
+                existingContainer.Weight = updateDto.Weight.Value;
             
             if (updateDto.MaxWeight.HasValue)
                 existingContainer.MaxWeight = updateDto.MaxWeight;
@@ -238,6 +207,38 @@ namespace Backend.Services
             
             var updatedContainer = await _containerRepository.UpdateAsync(existingContainer);
             return MapToDto(updatedContainer);
+        }
+
+        /// <summary>
+        /// Creates a new container
+        /// </summary>
+        /// <param name="createDto">Container data</param>
+        /// <returns>The created container</returns>
+        public async Task<ContainerDto> CreateAsync(ContainerCreateUpdateDto createDto)
+        {
+            var container = new Container
+            {
+                ContainerId = createDto.ContainerId,
+                CargoType = createDto.CargoType,
+                CargoDescription = createDto.CargoDescription ?? string.Empty,
+                Type = createDto.Type,
+                Status = createDto.Status,
+                Condition = createDto.Condition ?? "Good",
+                CurrentLocation = createDto.CurrentLocation,
+                Destination = createDto.Destination ?? string.Empty,
+                Weight = createDto.Weight ?? 0, // Default to 0 if not provided
+                MaxWeight = createDto.MaxWeight,
+                Size = createDto.Size ?? string.Empty,
+                Temperature = createDto.Temperature,
+                Coordinates = createDto.Coordinates ?? string.Empty,
+                EstimatedArrival = createDto.EstimatedArrival,
+                ShipId = createDto.ShipId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            var createdContainer = await _containerRepository.CreateAsync(container);
+            return MapToDto(createdContainer);
         }
 
         /// <summary>
