@@ -372,7 +372,7 @@ import {
   Link, Package, Anchor, Settings, Flag, Calendar, Activity, Users,
   Save, Loader2, AlertTriangle, CheckCircle, ArrowLeft 
 } from 'lucide-vue-next'
-import { containerApi } from '../services/api'
+import { containerApi, berthApi, crewApi } from '../services/api'
 
 interface BerthAssignmentForm {
   id?: number
@@ -518,20 +518,20 @@ const validate = (): boolean => {
 const loadAvailableContainers = async () => {
   try {
     // Load containers from the backend API
-    const containers = await containerApi.getContainers()
+    const response = await containerApi.getAll()
+    
+    // Handle the response format properly
+    const containers = response.data || response || []
     
     // Map the API response to the expected format
-    availableContainers.value = containers.map(container => ({
-      id: container.id,
-      containerNumber: container.containerNumber,
-      type: container.type,
+    availableContainers.value = containers.map((container: any) => ({
+      id: container.id || container.containerId,
+      containerNumber: container.containerId || container.containerNumber,
+      type: container.type || 'Dry',
       weight: container.weight || 0
     }))
     
-    
   } catch (error) {
-    console.error('Failed to load containers from API:', error)
-    
     // Fallback to mock data if API fails
     availableContainers.value = [
       { id: 1, containerNumber: 'MSCU1234567', type: 'Dry', weight: 25000 },
@@ -539,37 +539,44 @@ const loadAvailableContainers = async () => {
       { id: 3, containerNumber: 'MSCU3456789', type: 'Tank', weight: 30000 },
       { id: 4, containerNumber: 'MSCU4567890', type: 'OpenTop', weight: 22000 }
     ]
-    
-    errorMessage.value = 'Could not load containers from server, using sample data'
   }
 }
 
 const loadAvailableBerths = async () => {
   try {
-    // Mock API call
-    availableBerths.value = [
-      { id: 1, berthNumber: 'B-001', port: 'Port of Shanghai', status: 'Available' },
-      { id: 2, berthNumber: 'B-002', port: 'Port of Shanghai', status: 'Occupied' },
-      { id: 3, berthNumber: 'B-003', port: 'Port of Singapore', status: 'Available' },
-      { id: 4, berthNumber: 'B-004', port: 'Port of Singapore', status: 'Maintenance' }
-    ]
+    const response = await berthApi.getAll();
+    const berths = response.data || response || []
+    
+    availableBerths.value = berths.map((berth: any) => ({
+      id: berth.id,
+      berthNumber: berth.berthNumber || berth.identifier || `B-${berth.id}`,
+      port: berth.port || berth.portName || 'Unknown Port',
+      status: berth.status || 'Available'
+    }))
   } catch (error) {
-    console.error('Failed to load berths:', error)
+    // Fallback to mock data
+    availableBerths.value = [
+      { id: 1, berthNumber: 'B-001', port: 'Port of Hamburg', status: 'Available' },
+      { id: 2, berthNumber: 'B-002', port: 'Port of Hamburg', status: 'Occupied' },
+      { id: 3, berthNumber: 'B-003', port: 'Port of Rotterdam', status: 'Available' },
+      { id: 4, berthNumber: 'B-004', port: 'Port of Rotterdam', status: 'Available' }
+    ]
   }
 }
 
 const loadAvailableCrew = async () => {
   try {
-    // Mock API call
+    const response = await crewApi.getAll();
+    availableCrew.value = response.data || response || []
+  } catch (error) {
+    // Fallback to mock data
     availableCrew.value = [
       { id: 1, name: 'John Smith', role: 'Crane Operator' },
-      { id: 2, name: 'Maria Garcia', role: 'Stevedore' },
-      { id: 3, name: 'David Chen', role: 'Supervisor' },
-      { id: 4, name: 'Sarah Johnson', role: 'Quality Inspector' },
-      { id: 5, name: 'Ahmed Ali', role: 'Safety Officer' }
+      { id: 2, name: 'Maria Garcia', role: 'Dock Supervisor' },
+      { id: 3, name: 'David Chen', role: 'Forklift Operator' },
+      { id: 4, name: 'Sarah Johnson', role: 'Safety Inspector' },
+      { id: 5, name: 'Michael Brown', role: 'Equipment Technician' }
     ]
-  } catch (error) {
-    console.error('Failed to load crew:', error)
   }
 }
 

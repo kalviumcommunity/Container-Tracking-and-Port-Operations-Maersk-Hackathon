@@ -8,7 +8,17 @@
             <h1 class="text-3xl font-bold text-white">Administration Dashboard</h1>
             <p class="text-blue-100 mt-2">User Management & Role Administration</p>
           </div>
+          <!-- Add navigation to AdminPanel -->
           <div class="flex items-center space-x-4">
+            <router-link 
+              to="/admin/roles" 
+              class="bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Role Requests
+              <span v-if="pendingApplicationsCount > 0" class="ml-2 bg-orange-500 text-xs px-2 py-1 rounded-full">
+                {{ pendingApplicationsCount }}
+              </span>
+            </router-link>
             <div class="bg-blue-800 rounded-lg px-4 py-2">
               <div class="text-blue-100 text-sm">Total Users</div>
               <div class="text-white text-2xl font-bold">
@@ -109,7 +119,7 @@
             >
               <div class="flex items-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 012 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 01-2 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
                 <span>Analytics</span>
               </div>
@@ -532,6 +542,7 @@ const users = ref([])
 const systemStats = ref(null)
 const pendingRequests = ref([])
 const recentRequests = ref([])
+const pendingApplicationsCount = ref(0)
 
 // Backend roles (matching our actual backend constants)
 const backendRoles = ['Admin', 'PortManager', 'Operator', 'Viewer']
@@ -812,6 +823,8 @@ const loadRoleRequests = async () => {
     ])
     
     pendingRequests.value = pending
+    pendingApplicationsCount.value = pending.length
+    
     // Get recent approved/rejected requests (last 10)
     recentRequests.value = all
       .filter(request => request.status !== 'Pending')
@@ -819,7 +832,10 @@ const loadRoleRequests = async () => {
       .slice(0, 10)
   } catch (error) {
     console.error('Error loading role requests:', error)
-    errorMessage.value = 'Failed to load role requests: ' + error.message
+    // Use fallback data if API fails
+    pendingRequests.value = []
+    recentRequests.value = []
+    pendingApplicationsCount.value = 0
   }
 }
 

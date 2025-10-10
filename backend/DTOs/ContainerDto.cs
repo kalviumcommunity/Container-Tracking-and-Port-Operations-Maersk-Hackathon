@@ -22,11 +22,6 @@ namespace Backend.DTOs
         /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
-        public string Type { get; set; }
-        
-        /// <summary>
-        /// Current status of the container (e.g., Empty, Loaded, In Transit)
-        /// </summary>
         public string Status { get; set; }
         
         /// <summary>
@@ -219,7 +214,7 @@ namespace Backend.DTOs
         public string? Destination { get; set; }
         
         /// <summary>
-        /// Weight of the container in kilograms
+        /// Weight of the container in kilograms (nullable to allow setting to 0)
         /// </summary>
         public decimal? Weight { get; set; }
         
@@ -250,7 +245,7 @@ namespace Backend.DTOs
     }
     
     /// <summary>
-    /// Data Transfer Object for creating or updating a Container (legacy - use ContainerCreateDto or ContainerUpdateDto)
+    /// Data Transfer Object for creating or updating a Container (enhanced for full compatibility)
     /// </summary>
     public class ContainerCreateUpdateDto
     {
@@ -265,6 +260,11 @@ namespace Backend.DTOs
         public string CargoType { get; set; } = string.Empty;
         
         /// <summary>
+        /// Description of the cargo being transported
+        /// </summary>
+        public string CargoDescription { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Type of container (dry, refrigerated, liquid, hazardous, etc.)
         /// </summary>
         public string Type { get; set; }
@@ -275,9 +275,49 @@ namespace Backend.DTOs
         public string Status { get; set; }
         
         /// <summary>
+        /// Condition of the container (Good, Damaged, Needs Repair)
+        /// </summary>
+        public string Condition { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Current physical location of the container
         /// </summary>
         public string CurrentLocation { get; set; }
+        
+        /// <summary>
+        /// Final destination port or location
+        /// </summary>
+        public string Destination { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Weight of the container in kilograms (nullable to support 0 values explicitly)
+        /// </summary>
+        public decimal? Weight { get; set; }
+        
+        /// <summary>
+        /// Maximum weight capacity in kilograms
+        /// </summary>
+        public decimal? MaxWeight { get; set; }
+        
+        /// <summary>
+        /// Size of the container (20ft, 40ft, 45ft)
+        /// </summary>
+        public string Size { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Temperature setting for refrigerated containers (Celsius)
+        /// </summary>
+        public decimal? Temperature { get; set; }
+        
+        /// <summary>
+        /// Last known GPS coordinates (latitude,longitude)
+        /// </summary>
+        public string Coordinates { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Estimated time of arrival at destination
+        /// </summary>
+        public DateTime? EstimatedArrival { get; set; }
         
         /// <summary>
         /// Foreign key to the ship this container is currently on (nullable)

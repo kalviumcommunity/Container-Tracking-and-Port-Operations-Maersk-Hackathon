@@ -146,29 +146,6 @@ namespace Backend.Services
         }
 
         /// <summary>
-        /// Creates a new container
-        /// </summary>
-        /// <param name="createDto">Container data</param>
-        /// <returns>The created container</returns>
-        public async Task<ContainerDto> CreateAsync(ContainerCreateUpdateDto createDto)
-        {
-            var container = new Container
-            {
-                ContainerId = createDto.ContainerId,
-                CargoType = createDto.CargoType,
-                Type = createDto.Type,
-                Status = createDto.Status,
-                CurrentLocation = createDto.CurrentLocation,
-                ShipId = createDto.ShipId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            
-            var createdContainer = await _containerRepository.CreateAsync(container);
-            return MapToDto(createdContainer);
-        }
-
-        /// <summary>
         /// Updates an existing container
         /// </summary>
         /// <param name="id">The ID of the container to update</param>
@@ -182,16 +159,86 @@ namespace Backend.Services
                 throw new KeyNotFoundException($"Container with ID {id} not found");
             }
             
-            // Update fields
-            existingContainer.CargoType = updateDto.CargoType;
-            existingContainer.Type = updateDto.Type;
-            existingContainer.Status = updateDto.Status;
-            existingContainer.CurrentLocation = updateDto.CurrentLocation;
-            existingContainer.ShipId = updateDto.ShipId;
+            // Update ALL available fields - enhanced weight handling
+            if (!string.IsNullOrEmpty(updateDto.CargoType))
+                existingContainer.CargoType = updateDto.CargoType;
+            
+            if (!string.IsNullOrEmpty(updateDto.CargoDescription))
+                existingContainer.CargoDescription = updateDto.CargoDescription;
+            
+            if (!string.IsNullOrEmpty(updateDto.Type))
+                existingContainer.Type = updateDto.Type;
+            
+            if (!string.IsNullOrEmpty(updateDto.Status))
+                existingContainer.Status = updateDto.Status;
+            
+            if (!string.IsNullOrEmpty(updateDto.Condition))
+                existingContainer.Condition = updateDto.Condition;
+            
+            if (!string.IsNullOrEmpty(updateDto.CurrentLocation))
+                existingContainer.CurrentLocation = updateDto.CurrentLocation;
+            
+            if (!string.IsNullOrEmpty(updateDto.Destination))
+                existingContainer.Destination = updateDto.Destination;
+            
+            // Enhanced weight handling - allow setting to 0 explicitly
+            if (updateDto.Weight.HasValue)
+                existingContainer.Weight = updateDto.Weight.Value;
+            
+            if (updateDto.MaxWeight.HasValue)
+                existingContainer.MaxWeight = updateDto.MaxWeight;
+            
+            if (!string.IsNullOrEmpty(updateDto.Size))
+                existingContainer.Size = updateDto.Size;
+            
+            if (updateDto.Temperature.HasValue)
+                existingContainer.Temperature = updateDto.Temperature;
+            
+            if (!string.IsNullOrEmpty(updateDto.Coordinates))
+                existingContainer.Coordinates = updateDto.Coordinates;
+            
+            if (updateDto.EstimatedArrival.HasValue)
+                existingContainer.EstimatedArrival = updateDto.EstimatedArrival;
+            
+            if (updateDto.ShipId.HasValue)
+                existingContainer.ShipId = updateDto.ShipId;
+            
             existingContainer.UpdatedAt = DateTime.UtcNow;
             
             var updatedContainer = await _containerRepository.UpdateAsync(existingContainer);
             return MapToDto(updatedContainer);
+        }
+
+        /// <summary>
+        /// Creates a new container
+        /// </summary>
+        /// <param name="createDto">Container data</param>
+        /// <returns>The created container</returns>
+        public async Task<ContainerDto> CreateAsync(ContainerCreateUpdateDto createDto)
+        {
+            var container = new Container
+            {
+                ContainerId = createDto.ContainerId,
+                CargoType = createDto.CargoType,
+                CargoDescription = createDto.CargoDescription ?? string.Empty,
+                Type = createDto.Type,
+                Status = createDto.Status,
+                Condition = createDto.Condition ?? "Good",
+                CurrentLocation = createDto.CurrentLocation,
+                Destination = createDto.Destination ?? string.Empty,
+                Weight = createDto.Weight ?? 0, // Default to 0 if not provided
+                MaxWeight = createDto.MaxWeight,
+                Size = createDto.Size ?? string.Empty,
+                Temperature = createDto.Temperature,
+                Coordinates = createDto.Coordinates ?? string.Empty,
+                EstimatedArrival = createDto.EstimatedArrival,
+                ShipId = createDto.ShipId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            var createdContainer = await _containerRepository.CreateAsync(container);
+            return MapToDto(createdContainer);
         }
 
         /// <summary>
@@ -241,7 +288,7 @@ namespace Backend.Services
         {
             var query = _context.Containers.AsQueryable();
 
-            // Apply filters
+            // Apply filters - enhanced to support all fields
             if (!string.IsNullOrEmpty(filter.Status))
                 query = query.Where(c => c.Status == filter.Status);
 
@@ -300,19 +347,44 @@ namespace Backend.Services
                             ? query.OrderByDescending(c => c.Status)
                             : query.OrderBy(c => c.Status);
                         break;
+                    case "cargotype":
+                        query = filter.SortDirection?.ToLower() == "desc" 
+                            ? query.OrderByDescending(c => c.CargoType)
+                            : query.OrderBy(c => c.CargoType);
+                        break;
+                    case "currentlocation":
+                        query = filter.SortDirection?.ToLower() == "desc" 
+                            ? query.OrderByDescending(c => c.CurrentLocation)
+                            : query.OrderBy(c => c.CurrentLocation);
+                        break;
+                    case "destination":
+                        query = filter.SortDirection?.ToLower() == "desc" 
+                            ? query.OrderByDescending(c => c.Destination)
+                            : query.OrderBy(c => c.Destination);
+                        break;
+                    case "weight":
+                        query = filter.SortDirection?.ToLower() == "desc" 
+                            ? query.OrderByDescending(c => c.Weight)
+                            : query.OrderBy(c => c.Weight);
+                        break;
                     case "createdat":
                         query = filter.SortDirection?.ToLower() == "desc" 
                             ? query.OrderByDescending(c => c.CreatedAt)
                             : query.OrderBy(c => c.CreatedAt);
                         break;
+                    case "updatedat":
+                        query = filter.SortDirection?.ToLower() == "desc" 
+                            ? query.OrderByDescending(c => c.UpdatedAt)
+                            : query.OrderBy(c => c.UpdatedAt);
+                        break;
                     default:
-                        query = query.OrderByDescending(c => c.CreatedAt);
+                        query = query.OrderByDescending(c => c.UpdatedAt);
                         break;
                 }
             }
             else
             {
-                query = query.OrderByDescending(c => c.CreatedAt);
+                query = query.OrderByDescending(c => c.UpdatedAt);
             }
 
             // Apply pagination
@@ -324,16 +396,16 @@ namespace Backend.Services
                 {
                     ContainerId = c.ContainerId,
                     CargoType = c.CargoType,
+                    CargoDescription = c.CargoDescription,
                     Type = c.Type,
                     Status = c.Status,
+                    Condition = c.Condition,
                     CurrentLocation = c.CurrentLocation,
                     Destination = c.Destination,
                     Weight = c.Weight,
                     MaxWeight = c.MaxWeight,
-                    CargoDescription = c.CargoDescription,
                     Size = c.Size,
                     Temperature = c.Temperature,
-                    Condition = c.Condition,
                     Coordinates = c.Coordinates,
                     EstimatedArrival = c.EstimatedArrival,
                     CreatedAt = c.CreatedAt,

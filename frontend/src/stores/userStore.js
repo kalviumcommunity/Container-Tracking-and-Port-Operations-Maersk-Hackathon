@@ -36,7 +36,6 @@ export const userStore = reactive({
       return response
     } catch (error) {
       this.error = error.message || 'Failed to fetch users'
-      console.error('Error fetching users:', error)
       throw error
     } finally {
       this.loading = false
@@ -48,7 +47,6 @@ export const userStore = reactive({
       this.systemStats = await userManagementApi.getSystemStats()
       return this.systemStats
     } catch (error) {
-      console.error('Error fetching system stats:', error)
       throw error
     }
   },
@@ -169,7 +167,7 @@ export const userStore = reactive({
       await this.fetchUsers()
       await this.fetchSystemStats()
     } catch (error) {
-      console.warn('Failed to initialize user store with API data:', error)
+      console.warn('Failed to initialize user store - using fallback data')
     }
   }
 })

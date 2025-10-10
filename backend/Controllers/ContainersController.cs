@@ -138,21 +138,29 @@ namespace Backend.Controllers
         /// <param name="createDto">Container data</param>
         /// <returns>The created container</returns>
         [HttpPost]
-        [RequirePermission("ManageContainers")] // Re-enabled permission system
+        [RequirePermission("ManageContainers")]
         [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> CreateContainer([FromBody] ContainerCreateDto createDto)
         {
             try
             {
-                // Convert to the legacy DTO for the service
+                // Convert to the enhanced legacy DTO with all fields
                 var legacyDto = new ContainerCreateUpdateDto
                 {
                     ContainerId = createDto.ContainerId,
                     CargoType = createDto.CargoType,
+                    CargoDescription = createDto.CargoDescription,
                     Type = createDto.Type,
                     Status = createDto.Status,
+                    Condition = createDto.Condition,
                     CurrentLocation = createDto.CurrentLocation,
+                    Destination = createDto.Destination,
+                    Weight = createDto.Weight,
+                    MaxWeight = createDto.MaxWeight,
+                    Size = createDto.Size,
+                    Temperature = createDto.Temperature,
+                    Coordinates = createDto.Coordinates,
                     ShipId = createDto.ShipId
                 };
                 
@@ -173,7 +181,7 @@ namespace Backend.Controllers
         /// <param name="updateDto">Updated container data</param>
         /// <returns>The updated container</returns>
         [HttpPut("{id}")]
-        [RequirePermission("ManageContainers")] // Re-enabled permission system
+        [RequirePermission("ManageContainers")]
         [ProducesResponseType(typeof(ApiResponse<ContainerDto>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
@@ -181,14 +189,22 @@ namespace Backend.Controllers
         {
             try
             {
-                // Convert to the legacy DTO for the service
+                // Convert to the enhanced legacy DTO with all fields
                 var legacyDto = new ContainerCreateUpdateDto
                 {
                     ContainerId = id, // Use the ID from the URL
                     CargoType = updateDto.CargoType,
+                    CargoDescription = updateDto.CargoDescription,
                     Type = updateDto.Type,
                     Status = updateDto.Status,
+                    Condition = updateDto.Condition,
                     CurrentLocation = updateDto.CurrentLocation,
+                    Destination = updateDto.Destination,
+                    Weight = updateDto.Weight ?? 0,
+                    MaxWeight = updateDto.MaxWeight,
+                    Size = updateDto.Size,
+                    Temperature = updateDto.Temperature,
+                    Coordinates = updateDto.Coordinates,
                     ShipId = updateDto.ShipId
                 };
                 
