@@ -161,46 +161,42 @@ const validate = (): boolean => {
 
 const handleSubmit = async () => {
   if (!validate()) return
-  
+
   isLoading.value = true
-  
+
   try {
-    // Use JWT authentication API
     const loginRequest = {
       username: form.username,
       password: form.password
     }
-    
+
     const response = await authApi.login(loginRequest)
-    
-    // Successful authentication
+    const data = response.data ?? response
+
     success('Login successful! Welcome back! 🎉')
-    
-    // Save user session
+
     const currentUser = {
-      id: response.user.userId,
-      username: response.user.username,
-      email: response.user.email,
-      fullName: response.user.fullName,
-      roles: response.user.roles,
-      permissions: response.user.permissions,
+      id: data.user?.userId ?? data.user?.id,
+      username: data.user?.username,
+      email: data.user?.email,
+      fullName: data.user?.fullName,
+      roles: data.user?.roles,
+      permissions: data.user?.permissions,
       loginTime: new Date().toISOString(),
-      token: response.token
+      token: data.token ?? data.accessToken
     }
-    
+
     localStorage.setItem('current_user', JSON.stringify(currentUser))
-    localStorage.setItem('auth_token', response.token)
-    
+    localStorage.setItem('auth_token', currentUser.token)
+
     setTimeout(() => {
       emit('login-success', currentUser)
     }, 1000)
-    
-  } catch (error: any) {
-    console.error('Login error:', error)
-    if (error.response?.status === 401) {
+  } catch (err: any) {
+    if (err.response?.status === 401) {
       showError('Invalid username or password.')
-    } else if (error.response?.data?.message) {
-      showError(error.response.data.message)
+    } else if (err.response?.data?.message) {
+      showError('Login failed. Please check your credentials.')
     } else {
       showError('Login failed. Please try again.')
     }

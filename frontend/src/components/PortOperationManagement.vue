@@ -388,7 +388,6 @@ export default {
     async loadOperationData() {
       try {
         this.loading = true;
-        // Loading port operation data
 
         // Load all data in parallel
         const [portsResponse, berthsResponse, shipsResponse, containersResponse, assignmentsResponse] = await Promise.all([
@@ -399,21 +398,11 @@ export default {
           berthAssignmentApi.getAll()
         ]);
 
-        // API data loaded successfully
-
         this.ports = portsResponse.data || [];
         this.berths = berthsResponse.data || [];
         this.ships = shipsResponse.data || [];
         this.containers = containersResponse.data || [];
         this.berthAssignments = assignmentsResponse.data || [];
-
-        console.log('Loaded data counts:', {
-          ports: this.ports.length,
-          berths: this.berths.length,
-          ships: this.ships.length,
-          containers: this.containers.length,
-          berthAssignments: this.berthAssignments.length
-        });
 
         // Transform data for operations display
         this.updateOperations();
@@ -428,7 +417,6 @@ export default {
     },
 
     loadMockData() {
-      console.log('Loading mock data for testing...');
       // Mock data for testing when API is not available
       this.ports = [
         { id: 1, name: 'Port of Hamburg', location: 'Hamburg, Germany' },
@@ -462,7 +450,6 @@ export default {
       ];
 
       this.updateOperations();
-      console.log('Mock data loaded successfully');
     },
 
     updateOperations() {

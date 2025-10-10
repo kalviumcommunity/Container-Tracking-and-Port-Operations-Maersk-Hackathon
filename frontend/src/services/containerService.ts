@@ -1,4 +1,3 @@
-import { httpClient } from './http';
 import type {
   Container,
   ContainerFilters,
@@ -13,8 +12,14 @@ import type {
 export class ContainerService {
   private readonly endpoint = '/containers';
 
+  // Use shared API client consistently
+  private async getApiClient() {
+    const { api } = await import('./api');
+    return api;
+  }
+
   async getContainers(filters: ContainerFilters = {}): Promise<PaginatedResponse<Container>> {
-    console.log('ContainerService: Getting containers with filters:', filters);
+    const api = await this.getApiClient();
     
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
@@ -24,98 +29,85 @@ export class ContainerService {
     });
     
     const url = `${this.endpoint}?${params.toString()}`;
-    console.log('ContainerService: Request URL:', url);
     
     try {
-      const response = await httpClient.get(url);
-      console.log('ContainerService: Raw response:', response.data);
-      
+      const response = await api.get(url);
       return this.normalizeResponse(response.data, filters);
     } catch (error) {
-      console.error('ContainerService: Error fetching containers:', error);
-      
       if (error.response?.status === 404) {
         return this.emptyPaginatedResponse();
       }
-      
       throw error;
     }
   }
 
-  async getContainer(id: string): Promise<Container | null> {
+  async getById(id: string): Promise<Container | null> {
     try {
-      const response = await httpClient.get(`${this.endpoint}/${id}`);
+      const api = await this.getApiClient();
+      const response = await api.get(`${this.endpoint}/${id}`);
       return response.data.data || response.data;
     } catch (error) {
-      console.error(`ContainerService: Error fetching container ${id}:`, error);
       return null;
     }
   }
 
   async getStatistics(): Promise<ContainerStats> {
     try {
-      const response = await httpClient.get(`${this.endpoint}/statistics`);
+      const api = await this.getApiClient();
+      const response = await api.get(`${this.endpoint}/statistics`);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('ContainerService: Error fetching statistics:', error);
       throw error;
     }
   }
 
   async create(data: ContainerCreateRequest): Promise<Container> {
-    console.log('ContainerService: Creating container:', data);
-    
+    const api = await this.getApiClient();
     const payload = this.prepareCreatePayload(data);
-    console.log('ContainerService: Sending payload:', payload);
     
     try {
-      const response = await httpClient.post(this.endpoint, payload);
-      console.log('ContainerService: Create response:', response.data);
+      const response = await api.post(this.endpoint, payload);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('ContainerService: Error creating container:', error);
       throw error;
     }
   }
 
   async update(id: string, data: ContainerUpdateRequest): Promise<Container> {
-    console.log('ContainerService: Updating container:', id, data);
-    
+    const api = await this.getApiClient();
     const payload = this.prepareUpdatePayload(data);
-    console.log('ContainerService: Sending update payload:', payload);
     
     try {
-      const response = await httpClient.put(`${this.endpoint}/${id}`, payload);
-      console.log('ContainerService: Update response:', response.data);
+      const response = await api.put(`${this.endpoint}/${id}`, payload);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('ContainerService: Error updating container:', error);
       throw error;
     }
   }
 
   async delete(id: string): Promise<boolean> {
     try {
-      await httpClient.delete(`${this.endpoint}/${id}`);
+      const api = await this.getApiClient();
+      await api.delete(`${this.endpoint}/${id}`);
       return true;
     } catch (error) {
-      console.error(`ContainerService: Error deleting container ${id}:`, error);
       throw error;
     }
   }
 
   async bulkUpdateStatus(update: BulkStatusUpdate): Promise<BulkUpdateResult> {
     try {
-      const response = await httpClient.patch(`${this.endpoint}/bulk-status`, update);
+      const api = await this.getApiClient();
+      const response = await api.patch(`${this.endpoint}/bulk-status`, update);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('ContainerService: Error bulk updating containers:', error);
       throw error;
     }
   }
 
   async exportContainers(filters: ContainerFilters = {}): Promise<Blob> {
     try {
+      const api = await this.getApiClient();
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -123,12 +115,11 @@ export class ContainerService {
         }
       });
 
-      const response = await httpClient.get(`${this.endpoint}/export?${params.toString()}`, {
+      const response = await api.get(`${this.endpoint}/export?${params.toString()}`, {
         responseType: 'blob'
       });
       return response.data;
     } catch (error) {
-      console.error('ContainerService: Error exporting containers:', error);
       throw error;
     }
   }
@@ -136,12 +127,12 @@ export class ContainerService {
   // Legacy method for backward compatibility
   async getAll(): Promise<{ data: Container[] }> {
     try {
-      const response = await httpClient.get(`${this.endpoint}/all`);
+      const api = await this.getApiClient();
+      const response = await api.get(`${this.endpoint}/all`);
       const raw = response.data?.data ?? response.data ?? [];
       const data: Container[] = Array.isArray(raw) ? raw : [];
       return { data };
     } catch (error) {
-      console.error('ContainerService: Error fetching all containers:', error);
       return { data: [] };
     }
   }
@@ -157,7 +148,6 @@ export class ContainerService {
     } else if (responseData.data) {
       return responseData;
     } else {
-      console.error('ContainerService: Unexpected response format:', responseData);
       throw new Error('Unexpected response format from server');
     }
   }
@@ -200,8 +190,11 @@ export class ContainerService {
       currentLocation: data.currentLocation,
       destination: data.destination || '',
       weight: parseFloat(data.weight?.toString() || '0') || 0,
+      maxWeight: data.maxWeight ? parseFloat(data.maxWeight.toString()) : null,
       size: data.size || '',
       temperature: data.temperature ? parseFloat(data.temperature.toString()) : null,
+      coordinates: data.coordinates || '',
+      estimatedArrival: data.estimatedArrival || null,
       shipId: data.shipId ? parseInt(data.shipId.toString()) : null
     };
   }
@@ -215,12 +208,17 @@ export class ContainerService {
       condition: data.condition || 'Good',
       currentLocation: data.currentLocation,
       destination: data.destination || '',
-      weight: parseFloat(data.weight?.toString() || '0') || 0,
+      weight: data.weight ? parseFloat(data.weight.toString()) : 0,
+      maxWeight: data.maxWeight ? parseFloat(data.maxWeight.toString()) : null,
       size: data.size || '',
       temperature: data.temperature ? parseFloat(data.temperature.toString()) : null,
+      coordinates: data.coordinates || '',
+      estimatedArrival: data.estimatedArrival || null,
       shipId: data.shipId ? parseInt(data.shipId.toString()) : null
     };
   }
 }
 
 export const containerService = new ContainerService();
+
+

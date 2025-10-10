@@ -372,7 +372,6 @@ export default {
           const containersResponse = await containerApi.getAll();
           containersData = containersResponse.data || [];
         } catch (error) {
-          console.log('Using mock container data due to API error:', error.message);
           // Mock container data as fallback
           containersData = [
             { id: 1, containerNumber: 'MAEU1234567', type: 'Dry', weight: 25000, shipId: 1 },
@@ -386,7 +385,6 @@ export default {
           const shipsResponse = await shipApi.getAll();
           shipsData = shipsResponse.data || [];
         } catch (error) {
-          console.log('Using mock ship data due to API error:', error.message);
           // Mock ship data as fallback
           shipsData = [
             { id: 1, name: 'Maersk Edmonton', type: 'Container Ship', capacity: 13092 },
@@ -399,7 +397,6 @@ export default {
           const berthsResponse = await berthApi.getAll();
           berthsData = berthsResponse.data || [];
         } catch (error) {
-          console.log('Using mock berth data due to API error:', error.message);
           // Mock berth data as fallback
           berthsData = [
             { id: 1, identifier: 'B-001', port: 'Singapore', status: 'Available' },
@@ -413,11 +410,10 @@ export default {
           const berthAssignmentsResponse = await berthAssignmentApi.getAll();
           berthAssignmentsData = berthAssignmentsResponse.data || [];
         } catch (error) {
-          console.log('Using mock berth assignment data due to API error:', error.message);
           // Mock berth assignment data as fallback
           berthAssignmentsData = [
-            { id: 1, berthId: 2, shipId: 1, arrivalTime: '2023-11-05T10:30:00Z', departureTime: '2023-11-07T14:00:00Z' },
-            { id: 2, berthId: 4, shipId: 3, arrivalTime: '2023-11-08T08:00:00Z', departureTime: '2023-11-10T16:30:00Z' }
+            { id: 1, berthId: 2, shipId: 1, containerId: 'MAEU1234567', assignedAt: new Date().toISOString() },
+            { id: 2, berthId: 4, shipId: 3, containerId: 'MAEU3456789', assignedAt: new Date().toISOString() }
           ];
         }
 
@@ -425,7 +421,6 @@ export default {
           const portsResponse = await portApi.getAll();
           portsData = portsResponse.data || [];
         } catch (error) {
-          console.log('Using mock port data due to API error:', error.message);
           // Mock port data as fallback
           portsData = [
             { id: 1, name: 'Port of Singapore', country: 'Singapore', capacity: 37.2 },

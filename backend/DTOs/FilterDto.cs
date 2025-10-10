@@ -32,13 +32,15 @@ namespace Backend.DTOs
     }
 
     /// <summary>
-    /// Container filtering options
+    /// Container filtering options (enhanced for complete field support)
     /// </summary>
     public class ContainerFilterDto : PaginationRequest
     {
         public string? Status { get; set; }
         public string? Type { get; set; }
         public string? CargoType { get; set; }
+        public string? Condition { get; set; } // Added condition filter
+        public string? Size { get; set; } // Added size filter
         public string? CurrentLocation { get; set; }
         public string? Destination { get; set; }
         public int? ShipId { get; set; }
@@ -46,6 +48,9 @@ namespace Backend.DTOs
         public DateTime? CreatedBefore { get; set; }
         public decimal? MinWeight { get; set; }
         public decimal? MaxWeight { get; set; }
+        public decimal? MinTemperature { get; set; } // Added temperature filters
+        public decimal? MaxTemperature { get; set; }
+        public string? Coordinates { get; set; } // Added coordinates filter
         public string? SearchTerm { get; set; } // Global search across multiple fields
     }
 

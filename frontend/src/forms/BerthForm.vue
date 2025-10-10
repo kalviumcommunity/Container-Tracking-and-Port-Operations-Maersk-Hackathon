@@ -464,7 +464,12 @@ const validate = (): boolean => {
 
 const loadAvailablePorts = async () => {
   try {
-    // Mock API call to load ports
+    // Try to use the portApi from services
+    const { portApi } = await import('../services/api')
+    const response = await portApi.getAll()
+    availablePorts.value = response.data || []
+  } catch (error) {
+    // Fallback to mock data if API fails
     availablePorts.value = [
       { id: 1, name: 'Port of Shanghai', code: 'CNSHA' },
       { id: 2, name: 'Port of Singapore', code: 'SGSIN' },
@@ -475,8 +480,6 @@ const loadAvailablePorts = async () => {
       { id: 7, name: 'Port of Hong Kong', code: 'HKHKG' },
       { id: 8, name: 'Port of Qingdao', code: 'CNTAO' }
     ]
-  } catch (error) {
-    console.error('Failed to load ports:', error)
   }
 }
 

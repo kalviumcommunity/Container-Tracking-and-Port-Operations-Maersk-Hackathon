@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl mx-auto">
-    <div class="flex items-cent      // Roles loaded successfullyr gap-3 mb-6">
+    <div class="flex items-center gap-3 mb-6">
       <div class="p-2 bg-blue-600 rounded-lg">
         <UserPlus :size="20" class="text-white" />
       </div>
@@ -116,14 +116,11 @@ const isLoading = ref(false)
 
 const loadAvailableRoles = async () => {
   try {
-    // Load available roles
     const roles = await roleApplicationApi.getAvailableRoles()
-    console.log('Loaded roles:', roles)
-    availableRoles.value = roles
-  } catch (error: any) {
-    console.error('Failed to load available roles:', error)
-    console.error('Error details:', error.response?.data || error.message)
-    showError('Failed to load available roles. Please make sure you are logged in.')
+    availableRoles.value = Array.isArray(roles) ? roles : []
+  } catch (error) {
+    showError('Failed to load available roles')
+    availableRoles.value = []
   }
 }
 
@@ -132,13 +129,6 @@ const selectRole = (role: AvailableRole) => {
   
   selectedRole.value = role
   showRoleSelection.value = false
-  justification.value = `I am requesting the ${role.roleName} role to expand my operational capabilities. This role will allow me to contribute more effectively to our team's objectives.`
-}
-
-const cancelApplication = () => {
-  selectedRole.value = null
-  showRoleSelection.value = true
-  justification.value = ''
 }
 
 const submitApplication = async () => {
@@ -148,39 +138,31 @@ const submitApplication = async () => {
   }
 
   isLoading.value = true
-  
+
   try {
     await roleApplicationApi.submitApplication({
       requestedRole: selectedRole.value.roleName,
       justification: justification.value.trim()
     })
+
+    showSuccess('Role application submitted successfully! 🎉')
     
-    showSuccess(`Application for ${selectedRole.value.roleName} role submitted successfully! It will be reviewed by an administrator.`)
-    
-    // Reset form and emit success
     setTimeout(() => {
-      selectedRole.value = null
-      showRoleSelection.value = true
-      justification.value = ''
-      loadAvailableRoles()
       emit('application-submitted')
-    }, 2000)
-    
+      emit('close')
+    }, 1500)
+
   } catch (error: any) {
-    console.error('Failed to submit application:', error)
-    
-    if (error.response?.status === 409) {
-      showError('You already have a pending application for this role.')
-    } else if (error.response?.status === 403) {
-      showError('You are not authorized to apply for this role.')
-    } else if (error.response?.data?.message) {
-      showError(error.response.data.message)
-    } else {
-      showError('Failed to submit application. Please try again.')
-    }
+    showError('Failed to submit application. Please try again.')
   } finally {
     isLoading.value = false
   }
+}
+
+const cancelApplication = () => {
+  selectedRole.value = null
+  showRoleSelection.value = true
+  justification.value = ''
 }
 
 onMounted(() => {

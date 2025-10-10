@@ -117,7 +117,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Eye, EyeOff, X, AlertTriangle, CheckCircle, Loader2 } from 'lucide-vue-next'
+import { Eye, EyeOff, X, Loader2 } from 'lucide-vue-next'
 import { authApi } from '../services/api'
 import { useToast } from '../composables/useToast.js'
 
@@ -172,8 +172,6 @@ const changePassword = async () => {
     }, 1500)
 
   } catch (err: any) {
-    console.error('Change password error:', err)
-    
     if (err.response?.status === 401) {
       showError('Current password is incorrect. Please try again.')
     } else if (err.response?.status === 400) {

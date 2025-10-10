@@ -272,7 +272,10 @@ const loadData = async () => {
     }
   } catch (error) {
     console.error('Error loading admin data:', error)
-    showError('Failed to load admin data')
+    // Use fallback data if API fails
+    pendingApplications.value = []
+    allApplications.value = []
+    showError('Failed to load admin data - using fallback data')
   } finally {
     loading.value = false
   }
@@ -281,7 +284,7 @@ const loadData = async () => {
 const approveApplication = async (applicationId: number) => {
   processing.value = true
   try {
-    await roleApplicationApi.reviewApplication(applicationId, 'Approved', 'Application approved by admin')
+    await roleApplicationApi.reviewApplication(applicationId.toString(), 'Approved', 'Application approved by admin')
     await loadData() // Refresh
     showSuccess('Application approved successfully!')
   } catch (error) {
@@ -295,7 +298,7 @@ const approveApplication = async (applicationId: number) => {
 const rejectApplication = async (applicationId: number) => {
   processing.value = true
   try {
-    await roleApplicationApi.reviewApplication(applicationId, 'Rejected', 'Application rejected by admin')
+    await roleApplicationApi.reviewApplication(applicationId.toString(), 'Rejected', 'Application rejected by admin')
     await loadData() // Refresh
     showSuccess('Application rejected')
   } catch (error) {

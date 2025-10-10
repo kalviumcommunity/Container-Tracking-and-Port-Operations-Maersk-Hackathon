@@ -35,6 +35,9 @@ export interface ContainerFilters {
   minWeight?: number | string;
   maxWeight?: number | string;
   searchTerm?: string;
+  condition?: string;
+  size?: string;
+  coordinates?: string;
 }
 
 export interface ContainerCreateRequest {
@@ -47,8 +50,11 @@ export interface ContainerCreateRequest {
   currentLocation: string;
   destination?: string;
   weight?: number | string;
+  maxWeight?: number | string;
   size?: string;
   temperature?: number | string;
+  coordinates?: string;
+  estimatedArrival?: string;
   shipId?: number | string;
 }
 
@@ -61,8 +67,11 @@ export interface ContainerUpdateRequest {
   currentLocation?: string;
   destination?: string;
   weight?: number | string;
+  maxWeight?: number | string;
   size?: string;
   temperature?: number | string;
+  coordinates?: string;
+  estimatedArrival?: string;
   shipId?: number | string;
 }
 

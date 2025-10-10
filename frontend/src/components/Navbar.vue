@@ -450,7 +450,6 @@ export default {
         try {
           this.currentUser = JSON.parse(currentUser)
           this.isAuthenticated = true
-          console.log('User found in localStorage:', this.currentUser)
           return
         } catch (error) {
           console.error('Error parsing current user from localStorage:', error)
@@ -479,7 +478,6 @@ export default {
           try {
             this.currentUser = JSON.parse(adminUser)
             this.isAuthenticated = true
-            console.log('Legacy admin user found in localStorage:', this.currentUser)
             
             // Migrate to new format
             localStorage.setItem('current_user', JSON.stringify({
@@ -558,6 +556,8 @@ export default {
         this.pendingApplicationsCount = applications.filter(app => app.status === 'Pending').length
       } catch (error) {
         console.error('Error loading applications count:', error)
+        // Don't throw error - just set count to 0
+        this.pendingApplicationsCount = 0
       }
     },
 

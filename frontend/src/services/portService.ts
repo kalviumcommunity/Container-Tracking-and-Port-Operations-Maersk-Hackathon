@@ -12,21 +12,21 @@ export class PortService {
 
   async getAll(): Promise<{ data: Port[] }> {
     try {
-      const response = await httpClient.get(this.endpoint);
+      const { api } = await import('./api');
+      const response = await api.get(this.endpoint);
       const data = response.data.data || response.data || [];
       return { data };
     } catch (error) {
-      console.error('PortService: Error fetching ports:', error);
       return { data: [] };
     }
   }
 
   async getById(id: number): Promise<Port | null> {
     try {
-      const response = await httpClient.get(`${this.endpoint}/${id}`);
+      const { api } = await import('./api');
+      const response = await api.get(`${this.endpoint}/${id}`);
       return response.data.data || response.data;
     } catch (error) {
-      console.error(`PortService: Error fetching port ${id}:`, error);
       return null;
     }
   }
