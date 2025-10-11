@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-slate-50">
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-6 py-8">
+    <main class="mx-auto px-6 py-8" style="max-width: 1360px;">
       <!-- Page Header -->
       <div class="mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -100,8 +100,8 @@
       <!-- Main Dashboard Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Berth Management -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-          <div class="border-b border-slate-200 p-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm h-96 flex flex-col">
+          <div class="border-b border-slate-200 p-6 flex-shrink-0">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-blue-50 rounded-lg">
@@ -118,8 +118,8 @@
             </div>
           </div>
           
-          <div class="p-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-6 flex-1 overflow-y-auto">
+            <div class="grid grid-cols-2 md:grid-cols-2 gap-4">
               <div
                 v-for="(berth, index) in getBerthData()"
                 :key="berth.id"
@@ -158,8 +158,8 @@
         </div>
 
         <!-- Active Operations -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-          <div class="border-b border-slate-200 p-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm h-96 flex flex-col">
+          <div class="border-b border-slate-200 p-6 flex-shrink-0">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-purple-50 rounded-lg">
@@ -176,7 +176,7 @@
             </div>
           </div>
           
-          <div class="p-6">
+          <div class="p-6 flex-1 overflow-y-auto">
             <div class="space-y-4">
               <div
                 v-for="(operation, index) in operations"
@@ -234,51 +234,167 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h3 class="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
           <div class="flex flex-wrap gap-3">
+            <!-- Berth Management Actions -->
             <button 
-              @click="showBerthAssignmentForm = true"
-              class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+              @click="openCreateBerthModal"
+              class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
             >
               <Plus :size="16" />
-              Assign Container to Berth
+              Create New Berth
             </button>
+            
             <button 
-              @click="showBerthForm = true"
-              class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2"
+              @click="showBerthList = !showBerthList"
+              class="px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+            >
+              <Eye :size="16" />
+              {{ showBerthList ? 'Hide' : 'View' }} Berth List
+            </button>
+            
+            <button 
+              @click="showBerthFilters = !showBerthFilters"
+              class="px-5 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+            >
+              <Filter :size="16" />
+              {{ showBerthFilters ? 'Hide' : 'Show' }} Filters
+            </button>
+            
+            <button 
+              @click="showBerthAssignmentForm = true"
+              class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
             >
               <Settings :size="16" />
-              Add New Berth
+              Assign Container to Berth
             </button>
-            <button class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2">
+            
+            <!-- Other Actions -->
+            <button class="px-5 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2">
               <FileText :size="16" />
               Generate Report
             </button>
-            <button class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2">
+            <button class="px-5 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors flex items-center gap-2">
               <AlertTriangle :size="16" />
               Emergency Protocols
             </button>
           </div>
         </div>
       </section>
+
+      <!-- Berth Statistics Section -->
+      <section class="mt-8">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">Berth Analytics</h2>
+          <p class="text-slate-600">Comprehensive berth utilization and performance metrics</p>
+        </div>
+        <BerthStats :stats="berthStatistics" :loading="loading" />
+      </section>
+
+      <!-- Berth Filters Section -->
+      <section v-if="showBerthFilters" class="mt-8">
+        <BerthFilters
+          :status-options="berthStatusOptions"
+          :port-options="portOptions"
+          :initial-filters="berthFilters"
+          @filters-changed="updateBerthFilters"
+        />
+      </section>
+
+      <!-- Berth List Section -->
+      <section v-if="showBerthList" class="mt-8">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">Berth Management</h2>
+          <p class="text-slate-600">View and manage all berths in the port system</p>
+        </div>
+        <BerthList
+          :berths="filteredBerths"
+          :pagination="berthPagination"
+          :filters="berthFilters"
+          :selected-berths="selectedBerths"
+          :current-sort="berthSortConfig"
+          :can-manage-berths="canManageBerths"
+          @toggle-select-all="toggleSelectAllBerths"
+          @toggle-select="toggleSelectBerth"
+          @sort="sortBerths"
+          @view="viewBerth"
+          @edit="editBerth"
+          @assignments="manageBerthAssignments"
+          @delete="deleteBerth"
+          @update-page-size="updateBerthPageSize"
+          @next-page="nextBerthPage"
+          @previous-page="previousBerthPage"
+          @bulk-status-change="bulkBerthStatusChange"
+          @bulk-export="bulkExportBerths"
+          @clear-selection="clearBerthSelection"
+        />
+      </section>
+
+      <!-- Berth Cards Grid (Alternative view) -->
+      <section v-if="!showBerthList && berths.length > 0" class="mt-8">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">Berth Overview</h2>
+          <p class="text-slate-600">Quick overview of all berths with key information</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <BerthCard
+            v-for="berth in filteredBerths.slice(0, 12)"
+            :key="berth.berthId || berth.id"
+            :berth="berth"
+            :compact="false"
+            :show-actions="canManageBerths"
+            @view="viewBerth"
+            @edit="editBerth"
+            @assignments="manageBerthAssignments"
+            @delete="deleteBerth"
+          />
+        </div>
+        <div v-if="filteredBerths.length > 12" class="text-center mt-6">
+          <button
+            @click="showBerthList = true"
+            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            View All {{ filteredBerths.length }} Berths
+          </button>
+        </div>
+      </section>
     </main>
 
-    <!-- Berth Assignment Form Modal -->
+    <!-- Berth Modal (New/Edit) -->
+    <BerthModal
+      v-if="showBerthModal"
+      :is-editing="isEditingBerth"
+      :berth="selectedBerth"
+      :status-options="berthStatusOptions"
+      :port-options="portOptions"
+      :is-submitting="isSubmittingBerth"
+      @submit="handleBerthSubmit"
+      @cancel="closeBerthModal"
+    />
+
+    <!-- Legacy Berth Assignment Form Modal -->
     <div v-if="showBerthAssignmentForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
-        <BerthAssignmentForm 
-          :assignment="selectedAssignment"
-          :isEditing="isEditingAssignment"
+        <BerthForm 
+          :berth="selectedAssignment"
+          :is-editing="isEditingAssignment"
+          :status-options="berthStatusOptions"
+          :port-options="portOptions"
+          :is-submitting="isSubmittingBerth"
+          title="Assign Container to Berth"
           @submit="handleAssignmentSubmit"
           @cancel="closeBerthAssignmentForm"
         />
       </div>
     </div>
 
-    <!-- Berth Form Modal -->
+    <!-- Legacy Berth Form Modal -->
     <div v-if="showBerthForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
         <BerthForm 
           :berth="selectedBerth"
-          :isEditing="isEditingBerth"
+          :is-editing="isEditingBerth"
+          :status-options="berthStatusOptions"
+          :port-options="portOptions"
+          :is-submitting="isSubmittingBerth"
           @submit="handleBerthSubmit"
           @cancel="closeBerthForm"
         />
@@ -288,8 +404,14 @@
 </template>
 
 <script>
-import BerthForm from '../forms/BerthForm.vue';
-import BerthAssignmentForm from '../forms/BerthAssignmentForm.vue';
+// Import berth components from our new berths folder
+import BerthModal from './berths/BerthModal.vue';
+import BerthList from './berths/BerthList.vue';
+import BerthCard from './berths/BerthCard.vue';
+import BerthForm from './berths/BerthForm.vue';
+import BerthFilters from './berths/BerthFilters.vue';
+import BerthStats from './berths/BerthStats.vue';
+
 import { 
   Anchor, 
   Activity, 
@@ -301,15 +423,25 @@ import {
   Plus, 
   Settings, 
   FileText,
-  Ship
+  Ship,
+  Eye,
+  Edit,
+  Trash2,
+  Filter
 } from 'lucide-vue-next';
 import { portApi, shipApi, berthApi, berthAssignmentApi, containerApi } from '../services/api';
 
 export default {
   name: 'PortOperationManagement',
   components: {
+    // Berth management components
+    BerthModal,
+    BerthList,
+    BerthCard,
     BerthForm,
-    BerthAssignmentForm,
+    BerthFilters,
+    BerthStats,
+    // Icon components
     Anchor,
     Activity,
     MapPin,
@@ -320,7 +452,11 @@ export default {
     Plus,
     Settings,
     FileText,
-    Ship
+    Ship,
+    Eye,
+    Edit,
+    Trash2,
+    Filter
   },
   data() {
     return {
@@ -332,11 +468,43 @@ export default {
       ports: [],
       operations: [],
       
-      // Form state management
-      showBerthForm: false,
+      // Berth management state
+      showBerthModal: false,
+      showBerthList: false,
+      showBerthFilters: false,
       selectedBerth: null,
+      selectedBerths: [],
       isEditingBerth: false,
-
+      isSubmittingBerth: false,
+      
+      // Berth list configuration
+      berthFilters: {
+        status: '',
+        portId: '',
+        berthType: '',
+        minCapacity: null,
+        utilizationMin: 0,
+        utilizationMax: 100,
+        features: [],
+        search: '',
+        pageSize: 10,
+        page: 1
+      },
+      berthPagination: {
+        page: 1,
+        pageSize: 10,
+        totalCount: 0,
+        totalPages: 1,
+        hasPreviousPage: false,
+        hasNextPage: false
+      },
+      berthSortConfig: {
+        field: 'name',
+        direction: 'asc'
+      },
+      
+      // Legacy form state (for backward compatibility)
+      showBerthForm: false,
       showBerthAssignmentForm: false,
       selectedAssignment: null,
       isEditingAssignment: false
@@ -362,6 +530,114 @@ export default {
         dockedShips
       };
     },
+    
+    // Berth statistics for BerthStats component
+    berthStatistics() {
+      const totalBerths = this.berths.length;
+      const totalCapacity = this.berths.reduce((sum, berth) => sum + (berth.capacity || 0), 0);
+      const currentOccupancy = this.berths.reduce((sum, berth) => sum + (berth.currentOccupancy || 0), 0);
+      
+      // Status counts
+      const statusCounts = this.berths.reduce((counts, berth) => {
+        const status = berth.status || 'Unknown';
+        counts[status] = (counts[status] || 0) + 1;
+        return counts;
+      }, {});
+      
+      // Port counts
+      const portCounts = this.berths.reduce((counts, berth) => {
+        const portName = berth.portName || 'Unknown Port';
+        counts[portName] = (counts[portName] || 0) + 1;
+        return counts;
+      }, {});
+      
+      // Utilization ranges
+      const utilizationRanges = {
+        '0-25': 0,
+        '26-50': 0,
+        '51-75': 0,
+        '76-90': 0,
+        '91-100': 0
+      };
+      
+      this.berths.forEach(berth => {
+        if (berth.capacity > 0) {
+          const utilization = ((berth.currentOccupancy || 0) / berth.capacity) * 100;
+          if (utilization <= 25) utilizationRanges['0-25']++;
+          else if (utilization <= 50) utilizationRanges['26-50']++;
+          else if (utilization <= 75) utilizationRanges['51-75']++;
+          else if (utilization <= 90) utilizationRanges['76-90']++;
+          else utilizationRanges['91-100']++;
+        }
+      });
+      
+      // Feature counts
+      const featureCounts = {
+        refrigerated: 0,
+        dangerous: 0,
+        oversized: 0,
+        heavyLift: 0,
+        railConnection: 0,
+        roadAccess: 0
+      };
+      
+      this.berths.forEach(berth => {
+        if (berth.features) {
+          Object.keys(featureCounts).forEach(feature => {
+            if (berth.features[feature]) {
+              featureCounts[feature]++;
+            }
+          });
+        }
+      });
+      
+      return {
+        totalBerths,
+        activeBerths: this.berths.filter(b => b.status !== 'Inactive').length,
+        availableBerths: this.berths.filter(b => b.status === 'Available').length,
+        totalCapacity,
+        currentOccupancy,
+        statusCounts,
+        portCounts,
+        utilizationRanges,
+        featureCounts
+      };
+    },
+    
+    // Options for dropdowns
+    berthStatusOptions() {
+      return ['Available', 'Occupied', 'Under Maintenance', 'Reserved', 'Full', 'Partially Occupied', 'Inactive'];
+    },
+    
+    portOptions() {
+      return this.ports.map(port => ({
+        id: port.id,
+        name: port.name
+      }));
+    },
+    
+    // Filtered and paginated berths for BerthList
+    filteredBerths() {
+      return this.berths.filter(berth => {
+        const matchesStatus = !this.berthFilters.status || berth.status === this.berthFilters.status;
+        const matchesPort = !this.berthFilters.portId || berth.portId === this.berthFilters.portId;
+        const matchesType = !this.berthFilters.berthType || berth.berthType === this.berthFilters.berthType;
+        const matchesCapacity = !this.berthFilters.minCapacity || (berth.capacity || 0) >= this.berthFilters.minCapacity;
+        const matchesSearch = !this.berthFilters.search || 
+          berth.name?.toLowerCase().includes(this.berthFilters.search.toLowerCase()) ||
+          berth.notes?.toLowerCase().includes(this.berthFilters.search.toLowerCase());
+        
+        return matchesStatus && matchesPort && matchesType && matchesCapacity && matchesSearch;
+      });
+    },
+    
+    // Can user manage berths (based on permissions)
+    canManageBerths() {
+      // This should be connected to your actual permission system
+      return true; // For now, allow all users to manage berths
+    },
+    
+    // Legacy computed properties for backward compatibility
     totalBerths() {
       return this.berths.length;
     },
@@ -406,6 +682,9 @@ export default {
 
         // Transform data for operations display
         this.updateOperations();
+        
+        // Update berth pagination
+        this.updateBerthPagination();
 
       } catch (error) {
         console.error('Error loading operation data:', error);
@@ -424,12 +703,161 @@ export default {
       ];
 
       this.berths = [
-        { id: 1, identifier: 'B-001', status: 'Available', portId: 1 },
-        { id: 2, identifier: 'B-002', status: 'Occupied', portId: 1 },
-        { id: 3, identifier: 'B-003', status: 'Available', portId: 1 },
-        { id: 4, identifier: 'B-004', status: 'Maintenance', portId: 1 },
-        { id: 5, identifier: 'B-005', status: 'Available', portId: 2 },
-        { id: 6, identifier: 'B-006', status: 'Occupied', portId: 2 }
+        { 
+          berthId: 1, 
+          id: 1,
+          name: 'Berth A1', 
+          status: 'Available', 
+          portId: 1,
+          portName: 'Port of Hamburg',
+          capacity: 500,
+          currentOccupancy: 0,
+          berthType: 'Container',
+          length: 300,
+          waterDepth: 15.5,
+          maxDraft: 14.0,
+          craneCount: 4,
+          craneCapacity: 65,
+          features: {
+            refrigerated: true,
+            dangerous: false,
+            oversized: true,
+            heavyLift: true,
+            railConnection: true,
+            roadAccess: true
+          },
+          operatingHours: '24/7',
+          notes: 'Main container terminal with full facilities'
+        },
+        { 
+          berthId: 2, 
+          id: 2,
+          name: 'Berth A2', 
+          status: 'Occupied', 
+          portId: 1,
+          portName: 'Port of Hamburg',
+          capacity: 400,
+          currentOccupancy: 320,
+          berthType: 'Container',
+          length: 250,
+          waterDepth: 14.0,
+          maxDraft: 13.0,
+          craneCount: 3,
+          craneCapacity: 50,
+          features: {
+            refrigerated: false,
+            dangerous: true,
+            oversized: false,
+            heavyLift: false,
+            railConnection: true,
+            roadAccess: true
+          },
+          operatingHours: 'Extended',
+          notes: 'Specialized for dangerous goods handling'
+        },
+        { 
+          berthId: 3, 
+          id: 3,
+          name: 'Berth B1', 
+          status: 'Available', 
+          portId: 1,
+          portName: 'Port of Hamburg',
+          capacity: 300,
+          currentOccupancy: 0,
+          berthType: 'Bulk',
+          length: 200,
+          waterDepth: 12.0,
+          maxDraft: 11.0,
+          craneCount: 2,
+          craneCapacity: 40,
+          features: {
+            refrigerated: false,
+            dangerous: false,
+            oversized: true,
+            heavyLift: true,
+            railConnection: false,
+            roadAccess: true
+          },
+          operatingHours: 'Daytime'
+        },
+        { 
+          berthId: 4, 
+          id: 4,
+          name: 'Berth B2', 
+          status: 'Under Maintenance', 
+          portId: 1,
+          portName: 'Port of Hamburg',
+          capacity: 350,
+          currentOccupancy: 0,
+          berthType: 'Container',
+          length: 280,
+          waterDepth: 13.5,
+          maxDraft: 12.5,
+          craneCount: 3,
+          craneCapacity: 55,
+          features: {
+            refrigerated: true,
+            dangerous: false,
+            oversized: false,
+            heavyLift: false,
+            railConnection: true,
+            roadAccess: true
+          },
+          operatingHours: '24/7',
+          notes: 'Currently under scheduled maintenance until next week'
+        },
+        { 
+          berthId: 5, 
+          id: 5,
+          name: 'Berth C1', 
+          status: 'Available', 
+          portId: 2,
+          portName: 'Port of Rotterdam',
+          capacity: 600,
+          currentOccupancy: 0,
+          berthType: 'Container',
+          length: 350,
+          waterDepth: 18.0,
+          maxDraft: 16.0,
+          craneCount: 6,
+          craneCapacity: 80,
+          features: {
+            refrigerated: true,
+            dangerous: true,
+            oversized: true,
+            heavyLift: true,
+            railConnection: true,
+            roadAccess: true
+          },
+          operatingHours: '24/7',
+          notes: 'Premium berth with all facilities available'
+        },
+        { 
+          berthId: 6, 
+          id: 6,
+          name: 'Berth C2', 
+          status: 'Partially Occupied', 
+          portId: 2,
+          portName: 'Port of Rotterdam',
+          capacity: 450,
+          currentOccupancy: 200,
+          berthType: 'RoRo',
+          length: 300,
+          waterDepth: 16.0,
+          maxDraft: 15.0,
+          craneCount: 2,
+          craneCapacity: 30,
+          features: {
+            refrigerated: false,
+            dangerous: false,
+            oversized: true,
+            heavyLift: false,
+            railConnection: false,
+            roadAccess: true
+          },
+          operatingHours: 'Extended',
+          notes: 'Roll-on/Roll-off terminal for vehicle transport'
+        }
       ];
 
       this.ships = [
@@ -450,6 +878,7 @@ export default {
       ];
 
       this.updateOperations();
+      this.updateBerthPagination();
     },
 
     updateOperations() {
@@ -492,9 +921,11 @@ export default {
 
     async handleBerthSubmit(berthData) {
       try {
+        this.isSubmittingBerth = true;
+        
         if (this.isEditingBerth) {
           // Update existing berth
-          await berthApi.update(this.selectedBerth.id, berthData);
+          await berthApi.update(this.selectedBerth.berthId || this.selectedBerth.id, berthData);
         } else {
           // Add new berth
           await berthApi.create(berthData);
@@ -502,12 +933,142 @@ export default {
         
         // Reload data to reflect changes
         await this.loadOperationData();
-        this.closeBerthForm();
+        this.closeBerthModal();
       } catch (error) {
         console.error('Error saving berth:', error);
+      } finally {
+        this.isSubmittingBerth = false;
       }
     },
 
+    // New berth management methods
+    openCreateBerthModal() {
+      this.selectedBerth = null;
+      this.isEditingBerth = false;
+      this.showBerthModal = true;
+    },
+
+    editBerth(berth) {
+      this.selectedBerth = berth;
+      this.isEditingBerth = true;
+      this.showBerthModal = true;
+    },
+
+    viewBerth(berth) {
+      // For now, just open edit modal in view mode
+      // You could create a separate view modal if needed
+      this.selectedBerth = berth;
+      this.isEditingBerth = false;
+      this.showBerthModal = true;
+    },
+
+    manageBerthAssignments(berth) {
+      // Navigate to berth assignments page or open assignments modal
+      console.log('Managing assignments for berth:', berth);
+      // You can implement assignment management logic here
+    },
+
+    async deleteBerth(berth) {
+      if (confirm(`Are you sure you want to delete berth "${berth.name}"?`)) {
+        try {
+          await berthApi.delete(berth.berthId || berth.id);
+          await this.loadOperationData();
+        } catch (error) {
+          console.error('Error deleting berth:', error);
+        }
+      }
+    },
+
+    closeBerthModal() {
+      this.showBerthModal = false;
+      this.selectedBerth = null;
+      this.isEditingBerth = false;
+    },
+
+    // Berth list management methods
+    updateBerthFilters(filters) {
+      this.berthFilters = { ...this.berthFilters, ...filters };
+      this.updateBerthPagination();
+    },
+
+    sortBerths(field) {
+      if (this.berthSortConfig.field === field) {
+        this.berthSortConfig.direction = this.berthSortConfig.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.berthSortConfig.field = field;
+        this.berthSortConfig.direction = 'asc';
+      }
+      this.updateBerthPagination();
+    },
+
+    toggleSelectAllBerths() {
+      if (this.selectedBerths.length === this.filteredBerths.length) {
+        this.selectedBerths = [];
+      } else {
+        this.selectedBerths = this.filteredBerths.map(b => b.berthId || b.id);
+      }
+    },
+
+    toggleSelectBerth(berthId) {
+      const index = this.selectedBerths.indexOf(berthId);
+      if (index > -1) {
+        this.selectedBerths.splice(index, 1);
+      } else {
+        this.selectedBerths.push(berthId);
+      }
+    },
+
+    clearBerthSelection() {
+      this.selectedBerths = [];
+    },
+
+    updateBerthPageSize(size) {
+      this.berthFilters.pageSize = size;
+      this.berthFilters.page = 1;
+      this.updateBerthPagination();
+    },
+
+    nextBerthPage() {
+      if (this.berthPagination.hasNextPage) {
+        this.berthFilters.page++;
+        this.updateBerthPagination();
+      }
+    },
+
+    previousBerthPage() {
+      if (this.berthPagination.hasPreviousPage) {
+        this.berthFilters.page--;
+        this.updateBerthPagination();
+      }
+    },
+
+    updateBerthPagination() {
+      const filtered = this.filteredBerths;
+      const totalCount = filtered.length;
+      const totalPages = Math.ceil(totalCount / this.berthFilters.pageSize);
+      const page = Math.min(this.berthFilters.page, totalPages || 1);
+      
+      this.berthPagination = {
+        page,
+        pageSize: this.berthFilters.pageSize,
+        totalCount,
+        totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages
+      };
+    },
+
+    bulkBerthStatusChange() {
+      console.log('Bulk status change for berths:', this.selectedBerths);
+      // Implement bulk status change logic
+    },
+
+    bulkExportBerths() {
+      console.log('Exporting berths:', this.selectedBerths);
+      // Implement bulk export logic
+    },
+
+    // Legacy methods (updated to use new berth system)
     closeBerthForm() {
       this.showBerthForm = false;
       this.selectedBerth = null;
