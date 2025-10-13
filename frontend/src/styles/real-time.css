@@ -1,0 +1,481 @@
+/* ===========================
+   REAL-TIME UPDATE CSS CLASSES
+   ===========================
+   
+   These classes provide visual indicators for real-time data updates.
+   They can be connected to WebSocket events or API polling later.
+   
+   Usage:
+   - Add 'rt-updating' class when data is being fetched
+   - Add 'rt-updated' class briefly after data is updated
+   - Add 'rt-error' class when update fails
+   - Use 'rt-live-*' classes to indicate live data status
+*/
+
+/* ================================
+   PULSE AND ANIMATION INDICATORS
+   ================================ */
+
+/* Live data pulse animation */
+@keyframes rt-pulse {
+  0% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.05); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* Gentle breathing animation for active elements */
+@keyframes rt-breathe {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.02); 
+  }
+}
+
+/* Shimmer loading effect */
+@keyframes rt-shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Success flash animation */
+@keyframes rt-flash-success {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(34, 197, 94, 0.2); }
+  100% { background-color: transparent; }
+}
+
+/* Error flash animation */
+@keyframes rt-flash-error {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(239, 68, 68, 0.2); }
+  100% { background-color: transparent; }
+}
+
+/* Slide-in from right for new items */
+@keyframes rt-slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ================================
+   REAL-TIME STATUS INDICATORS
+   ================================ */
+
+/* Live data indicator */
+.rt-live {
+  position: relative;
+}
+
+.rt-live::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: rt-pulse 2s infinite;
+  z-index: 10;
+}
+
+/* Active/updating state */
+.rt-updating {
+  position: relative;
+  pointer-events: none;
+}
+
+.rt-updating::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  background-size: 200px 100%;
+  animation: rt-shimmer 1.5s infinite;
+  border-radius: inherit;
+  z-index: 5;
+}
+
+/* Successfully updated indicator */
+.rt-updated {
+  animation: rt-flash-success 0.6s ease-out;
+}
+
+/* Error state indicator */
+.rt-error {
+  animation: rt-flash-error 0.8s ease-out;
+  border-left: 3px solid #ef4444 !important;
+}
+
+/* ================================
+   SPECIFIC COMPONENT CLASSES
+   ================================ */
+
+/* Container tracking real-time updates */
+.rt-container-moving {
+  animation: rt-pulse 1.5s infinite;
+  border-left: 3px solid #f59e0b;
+}
+
+.rt-container-loaded {
+  animation: rt-flash-success 1s ease-out;
+}
+
+.rt-container-delayed {
+  animation: rt-pulse 2s infinite;
+  border-left: 3px solid #ef4444;
+}
+
+/* Ship status real-time indicators */
+.rt-ship-arriving {
+  animation: rt-breathe 3s infinite;
+  background: linear-gradient(135deg, transparent, rgba(34, 197, 94, 0.1));
+}
+
+.rt-ship-departing {
+  animation: rt-breathe 2s infinite;
+  background: linear-gradient(135deg, transparent, rgba(59, 130, 246, 0.1));
+}
+
+.rt-ship-docked {
+  background: linear-gradient(135deg, transparent, rgba(168, 85, 247, 0.1));
+}
+
+/* Berth occupancy real-time status */
+.rt-berth-available {
+  border-left: 4px solid #22c55e;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent);
+}
+
+.rt-berth-occupied {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.05), transparent);
+}
+
+.rt-berth-maintenance {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.05), transparent);
+  animation: rt-pulse 3s infinite;
+}
+
+/* Port operations real-time indicators */
+.rt-port-busy {
+  animation: rt-pulse 2.5s infinite;
+}
+
+.rt-port-normal {
+  animation: rt-breathe 4s infinite;
+}
+
+/* ================================
+   NOTIFICATION AND ALERT CLASSES
+   ================================ */
+
+/* New notification indicator */
+.rt-notification-new {
+  animation: rt-slide-in-right 0.5s ease-out;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);
+}
+
+/* Critical alert pulsing */
+.rt-alert-critical {
+  animation: rt-pulse 1s infinite;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), transparent);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Warning alert breathing */
+.rt-alert-warning {
+  animation: rt-breathe 2.5s infinite;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ================================
+   METRIC AND DATA UPDATE CLASSES
+   ================================ */
+
+/* Metrics being calculated */
+.rt-metric-calculating {
+  position: relative;
+  color: #6b7280;
+}
+
+.rt-metric-calculating::after {
+  content: '...';
+  animation: rt-pulse 1s infinite;
+}
+
+/* Metric value increased */
+.rt-metric-increased {
+  color: #22c55e !important;
+  font-weight: 600;
+  animation: rt-flash-success 1s ease-out;
+}
+
+/* Metric value decreased */
+.rt-metric-decreased {
+  color: #ef4444 !important;
+  font-weight: 600;
+  animation: rt-flash-error 1s ease-out;
+}
+
+/* Live chart/graph updates */
+.rt-chart-updating {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+/* ================================
+   CONNECTION STATUS INDICATORS
+   ================================ */
+
+/* WebSocket connected indicator */
+.rt-connected {
+  position: relative;
+}
+
+.rt-connected::before {
+  content: '●';
+  color: #22c55e;
+  margin-right: 4px;
+  animation: rt-pulse 2s infinite;
+}
+
+/* WebSocket disconnected indicator */
+.rt-disconnected {
+  position: relative;
+}
+
+.rt-disconnected::before {
+  content: '●';
+  color: #ef4444;
+  margin-right: 4px;
+  animation: rt-pulse 1s infinite;
+}
+
+/* Reconnecting indicator */
+.rt-reconnecting {
+  position: relative;
+}
+
+.rt-reconnecting::before {
+  content: '●';
+  color: #f59e0b;
+  margin-right: 4px;
+  animation: rt-pulse 1.5s infinite;
+}
+
+/* ================================
+   UTILITY CLASSES FOR REAL-TIME
+   ================================ */
+
+/* Disable pointer events during updates */
+.rt-disabled {
+  pointer-events: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Highlight recent changes */
+.rt-recent-change {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+/* Fade out old data */
+.rt-stale-data {
+  opacity: 0.7;
+  filter: grayscale(20%);
+  transition: opacity 0.5s ease, filter 0.5s ease;
+}
+
+/* Timestamp indicator for last update */
+.rt-timestamp {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.rt-timestamp::before {
+  content: 'Updated: ';
+}
+
+/* ================================
+   RESPONSIVE REAL-TIME INDICATORS
+   ================================ */
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .rt-live::before {
+    width: 6px;
+    height: 6px;
+    top: -1px;
+    right: -1px;
+  }
+  
+  .rt-updating::after {
+    background-size: 150px 100%;
+  }
+  
+  .rt-notification-new {
+    animation: rt-slide-in-right 0.3s ease-out;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .rt-pulse,
+  .rt-breathe,
+  .rt-shimmer,
+  .rt-flash-success,
+  .rt-flash-error,
+  .rt-slide-in-right {
+    animation: none;
+  }
+  
+  .rt-live::before,
+  .rt-updating,
+  .rt-container-moving,
+  .rt-ship-arriving,
+  .rt-berth-maintenance {
+    animation: none;
+  }
+  
+  /* Static indicators for accessibility */
+  .rt-live::before {
+    background: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+  }
+  
+  .rt-updating {
+    background: rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* ================================
+   DARK MODE SUPPORT
+   ================================ */
+
+.dark .rt-live::before {
+  background: #10b981;
+}
+
+.dark .rt-updating::after {
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.15), transparent);
+}
+
+.dark .rt-recent-change {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), transparent);
+}
+
+.dark .rt-stale-data {
+  opacity: 0.5;
+  filter: grayscale(30%);
+}
+
+.dark .rt-timestamp {
+  color: #9ca3af;
+}
+
+/* ================================
+   INTEGRATION HELPER CLASSES
+   ================================ */
+
+/* Classes to be toggled by JavaScript when connecting real-time features */
+.rt-websocket-enabled .rt-live {
+  display: inline-block;
+}
+
+.rt-websocket-disabled .rt-live {
+  display: none;
+}
+
+/* Data attribute selectors for dynamic status updates */
+[data-rt-status="online"] {
+  position: relative;
+}
+
+[data-rt-status="online"]::before {
+  content: '●';
+  color: #22c55e;
+  margin-right: 4px;
+  animation: rt-pulse 2s infinite;
+}
+
+[data-rt-status="offline"] {
+  position: relative;
+}
+
+[data-rt-status="offline"]::before {
+  content: '●';
+  color: #ef4444;
+  margin-right: 4px;
+  animation: rt-pulse 1s infinite;
+}
+
+[data-rt-status="updating"] {
+  position: relative;
+  pointer-events: none;
+}
+
+[data-rt-status="updating"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  background-size: 200px 100%;
+  animation: rt-shimmer 1.5s infinite;
+  border-radius: inherit;
+  z-index: 5;
+}
+
+[data-rt-container-status="moving"] {
+  animation: rt-pulse 1.5s infinite;
+  border-left: 3px solid #f59e0b;
+}
+
+[data-rt-ship-status="arriving"] {
+  animation: rt-breathe 3s infinite;
+  background: linear-gradient(135deg, transparent, rgba(34, 197, 94, 0.1));
+}
+
+[data-rt-berth-status="available"] {
+  border-left: 4px solid #22c55e;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent);
+}
+
+[data-rt-berth-status="occupied"] {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.05), transparent);
+}
+
+[data-rt-berth-status="maintenance"] {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.05), transparent);
+  animation: rt-pulse 3s infinite;
+}

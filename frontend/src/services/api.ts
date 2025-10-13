@@ -402,6 +402,9 @@ export const shipApi = {
 // User management - re-export existing service
 export { userManagementApi };
 
+// Analytics service - re-export analytics functionality
+export { analyticsService } from './analyticsService';
+
 // ===== TYPE EXPORTS =====
 export type { Container, ContainerFilters, ContainerStats, PaginatedResponse } from '../types/container';
 export type { Ship } from './shipService';
