@@ -91,6 +91,28 @@ namespace Backend.Data
         /// </summary>
         public DbSet<RoleApplication> RoleApplications { get; set; }
 
+        // Enhanced Database Entities
+
+        /// <summary>
+        /// Container movement history for detailed tracking
+        /// </summary>
+        public DbSet<ContainerMovementHistory> ContainerMovementHistory { get; set; }
+
+        /// <summary>
+        /// Ship routes and schedules for optimization
+        /// </summary>
+        public DbSet<ShipRoute> ShipRoutes { get; set; }
+
+        /// <summary>
+        /// Berth usage charges and financial tracking
+        /// </summary>
+        public DbSet<BerthUsageCharge> BerthUsageCharges { get; set; }
+
+        /// <summary>
+        /// Container storage fees and duration tracking
+        /// </summary>
+        public DbSet<ContainerStorageFee> ContainerStorageFees { get; set; }
+
         /// <summary>
         /// Configure entity relationships and constraints
         /// </summary>
