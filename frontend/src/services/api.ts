@@ -494,8 +494,6 @@ export interface RoleApplicationDto {
   reviewComments?: string
 }
 
-// Re-export user management API
-export { userManagementApi };
 
 // Export the base API client for direct access when needed
 export { api as apiClient };
