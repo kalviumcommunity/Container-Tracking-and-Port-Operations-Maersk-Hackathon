@@ -4,6 +4,7 @@ using Backend.DTOs;
 using Backend.Services;
 using Backend.Attributes;
 using Backend.Constants;
+using System.Security.Claims;
 
 namespace Backend.Controllers
 {
@@ -16,10 +17,12 @@ namespace Backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
             _authService = authService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -131,26 +134,27 @@ namespace Backend.Controllers
         /// <summary>
         /// Get current user profile
         /// </summary>
-        /// <returns>Current user information</returns>
         [HttpGet("profile")]
         [Authorize]
-        public async Task<ActionResult<UserDto>> GetProfile()
+        [ProducesResponseType(typeof(ApiResponse<UserDto>), 200)]
+        public async Task<IActionResult> GetProfile()
         {
             try
             {
-                var userId = User.GetUserId();
+                var userId = GetCurrentUserId();
                 var user = await _authService.GetUserByIdAsync(userId);
-
+                
                 if (user == null)
                 {
-                    return NotFound(new { message = "User not found" });
+                    return NotFound(ApiResponse<object>.Fail("User not found"));
                 }
-
-                return Ok(user);
+                
+                return Ok(ApiResponse<UserDto>.Ok(user));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving profile", error = ex.Message });
+                _logger.LogError(ex, "Error getting user profile");
+                return BadRequest(ApiResponse<object>.Fail("Error retrieving profile"));
             }
         }
 
@@ -160,7 +164,7 @@ namespace Backend.Controllers
         /// <returns>Current user information</returns>
         [HttpGet("user")]
         [Authorize]
-        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUser()
         {
             return await GetProfile();
         }
@@ -197,32 +201,29 @@ namespace Backend.Controllers
         /// <returns>Updated user information</returns>
         [HttpPut("profile")]
         [Authorize]
-        public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateUserDto updateDto)
+        [ProducesResponseType(typeof(ApiResponse<UserDto>), 200)]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserDto updateDto)
         {
             try
             {
-                if (!ModelState.IsValid)
+                var userId = GetCurrentUserId();
+                var updatedUser = await _authService.UpdateUserAsync(userId, updateDto);
+                
+                if (updatedUser == null)
                 {
-                    return BadRequest(ModelState);
+                    return NotFound(ApiResponse<object>.Fail("User not found"));
                 }
-
-                var userId = User.GetUserId();
-                var user = await _authService.UpdateUserAsync(userId, updateDto);
-
-                if (user == null)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                return Ok(user);
+                
+                return Ok(ApiResponse<UserDto>.Ok(updatedUser));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while updating profile", error = ex.Message });
+                _logger.LogError(ex, "Error updating user profile");
+                return BadRequest(ApiResponse<object>.Fail("Error updating profile"));
             }
         }
 
@@ -266,30 +267,27 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="changePasswordDto">Password change data</param>
         /// <returns>Success status</returns>
-        [HttpPost("change-password")]
+        [HttpPut("change-password")]
         [Authorize]
-        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var userId = User.GetUserId();
+                var userId = GetCurrentUserId();
                 var success = await _authService.ChangePasswordAsync(userId, changePasswordDto);
-
+                
                 if (!success)
                 {
-                    return BadRequest(new { message = "Invalid current password" });
+                    return BadRequest(ApiResponse<object>.Fail("Current password is incorrect"));
                 }
-
-                return Ok(new { message = "Password changed successfully" });
+                
+                return Ok(ApiResponse<object>.OkWithMessage("Password changed successfully"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while changing password", error = ex.Message });
+                _logger.LogError(ex, "Error changing password");
+                return BadRequest(ApiResponse<object>.Fail("Error changing password"));
             }
         }
 
@@ -454,6 +452,16 @@ namespace Backend.Controllers
         {
             // JWT tokens are stateless, so logout is handled client-side by removing the token
             return Ok(new { message = "Logged out successfully. Please remove the token from client storage." });
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                throw new UnauthorizedAccessException("Invalid user token");
+            }
+            return userId;
         }
     }
 }

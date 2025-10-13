@@ -108,6 +108,23 @@ interface AvailableRole {
   reasonCannotApply?: string
 }
 
+interface RoleApplicationDto {
+  applicationId: number
+  userId: number
+  username: string
+  fullName: string
+  email: string
+  requestedRole: string
+  justification: string
+  status: 'Pending' | 'Approved' | 'Rejected'
+  requestedAt: string
+  reviewedBy?: number
+  reviewedByUsername?: string
+  reviewedByFullName?: string
+  reviewedAt?: string
+  reviewNotes?: string
+}
+
 const availableRoles = ref<AvailableRole[]>([])
 const selectedRole = ref<AvailableRole | null>(null)
 const showRoleSelection = ref(true)

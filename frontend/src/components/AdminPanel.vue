@@ -34,7 +34,7 @@
           
           <div v-else class="space-y-4">
             <div v-for="application in pendingApplications" :key="application.applicationId"
-                 class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+               class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
               <div class="flex justify-between items-start">
                 <div class="flex-1">
                   <div class="flex items-center space-x-3 mb-2">
@@ -42,7 +42,7 @@
                       <User class="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h3 class="font-medium text-slate-900">{{ application.applicantName }}</h3>
+                      <h3 class="font-medium text-slate-900">{{ application.fullName || application.username }}</h3>
                       <p class="text-sm text-slate-600">Requesting: <span class="font-semibold text-blue-600">{{ application.requestedRole }}</span></p>
                     </div>
                   </div>
@@ -50,7 +50,7 @@
                   <div class="flex items-center space-x-4 text-xs text-slate-500 ml-11">
                     <span class="flex items-center">
                       <Calendar class="w-3 h-3 mr-1" />
-                      {{ formatDate(application.submittedAt) }}
+                      {{ formatDate(application.requestedAt) }}
                     </span>
                   </div>
                 </div>
@@ -284,7 +284,10 @@ const loadData = async () => {
 const approveApplication = async (applicationId: number) => {
   processing.value = true
   try {
-    await roleApplicationApi.reviewApplication(applicationId.toString(), 'Approved', 'Application approved by admin')
+    await roleApplicationApi.reviewApplication(applicationId, {
+      status: 'Approved',
+      reviewNotes: 'Application approved by admin'
+    })
     await loadData() // Refresh
     showSuccess('Application approved successfully!')
   } catch (error) {
@@ -298,7 +301,10 @@ const approveApplication = async (applicationId: number) => {
 const rejectApplication = async (applicationId: number) => {
   processing.value = true
   try {
-    await roleApplicationApi.reviewApplication(applicationId.toString(), 'Rejected', 'Application rejected by admin')
+    await roleApplicationApi.reviewApplication(applicationId, {
+      status: 'Rejected',
+      reviewNotes: 'Application rejected by admin'
+    })
     await loadData() // Refresh
     showSuccess('Application rejected')
   } catch (error) {

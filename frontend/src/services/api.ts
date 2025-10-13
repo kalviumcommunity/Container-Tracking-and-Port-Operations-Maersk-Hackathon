@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AxiosInstance } from 'axios';
+import type { AxiosInstance, AxiosResponse } from 'axios';
 
 // Import all specialized services
 import { containerService } from './containerService';
@@ -99,10 +99,15 @@ api.interceptors.response.use(
   }
 );
 
-// ===== ORCHESTRATION LAYER =====
-// Re-export specialized services for clean API access
+// ===== API RESPONSE TYPE =====
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success?: boolean;
+  timestamp?: string;
+}
 
-// Authentication API (minimal, focused)
+// ===== AUTHENTICATION API =====
 export const authApi = {
   async login(credentials: { username: string; password: string }) {
     try {
@@ -116,6 +121,22 @@ export const authApi = {
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    }
+  },
+
+  async register(userData: { username: string; email: string; password: string; fullName: string; phoneNumber?: string; department?: string }) {
+    try {
+      const response = await api.post('/auth/register', userData);
+      
+      // Store the JWT token in local storage
+      if (response.data.token) {
+        setToken(response.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
       throw error;
     }
   },
@@ -142,14 +163,41 @@ export const authApi = {
     }
   },
   
+  async updateProfile(updateData: {
+    fullName?: string
+    email?: string
+    phoneNumber?: string
+    department?: string
+  }): Promise<ApiResponse<any>> {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = await api.put('/auth/profile', updateData)
+      return response.data
+    } catch (error) {
+      console.error('Update profile error:', error)
+      throw error
+    }
+  },
+
+  async changePassword(passwordData: {
+    currentPassword: string
+    newPassword: string
+    confirmNewPassword: string
+  }): Promise<ApiResponse<any>> {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = await api.put('/auth/change-password', passwordData)
+      return response.data
+    } catch (error) {
+      console.error('Change password error:', error)
+      throw error
+    }
+  },
+
   async getCurrentUser() {
     try {
       // Try to get user from API first
       const response = await api.get('/auth/current-user');
       return response.data;
     } catch (error) {
-      // Remove console.error - don't expose API implementation details
-      
       // Fallback to localStorage if API fails
       const currentUser = localStorage.getItem('current_user');
       if (currentUser) {
@@ -162,43 +210,33 @@ export const authApi = {
   
   isAuthenticated() {
     return getToken() !== null;
-  },
-  
-  async changePassword(changePasswordData: {
-    currentPassword: string;
-    newPassword: string;
-  }) {
-    try {
-      const response = await api.post('/auth/change-password', changePasswordData);
-      return response.data;
-    } catch (error) {
-      // Return mock success for development
-      return { success: true, message: 'Password changed successfully' };
-    }
   }
 };
 
-// Role Application API (lightweight)
+// ===== ROLE APPLICATION API =====
 export const roleApplicationApi = {
   async submitApplication(applicationData: {
     requestedRole: string;
     justification: string;
   }) {
     try {
-      const response = await api.post('/role-applications', applicationData);
+      const response = await api.post('/role-applications', {
+        RequestedRole: applicationData.requestedRole,  // Match backend DTO
+        Justification: applicationData.justification
+      });
       return response.data;
     } catch (error) {
-      // Return mock response for development
-      return { success: true, message: 'Application submitted successfully' };
+      console.error('Submit role application error:', error);
+      throw error;
     }
   },
 
   async getMyApplications() {
     try {
       const response = await api.get('/role-applications/my-applications');
-      return response.data;
+      return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
-      // Return mock data for development
+      console.error('Get my applications error:', error);
       return [];
     }
   },
@@ -206,13 +244,14 @@ export const roleApplicationApi = {
   async getAvailableRoles() {
     try {
       const response = await api.get('/role-applications/available-roles');
-      return response.data;
+      return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
+      console.error('Get available roles error:', error);
       // Return mock roles for development
       return [
         { roleName: 'PortManager', description: 'Manage port operations', canApply: true },
         { roleName: 'Operator', description: 'Container and ship operations', canApply: true },
-        { roleName: 'Admin', description: 'Full system access', canApply: false, reasonCannotApply: 'Admin approval required' }
+        { roleName: 'Viewer', description: 'Read-only access', canApply: true }
       ];
     }
   },
@@ -220,64 +259,51 @@ export const roleApplicationApi = {
   async getPendingApplications() {
     try {
       const response = await api.get('/role-applications/pending');
-      return response.data;
+      return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
+      console.error('Get pending applications error:', error);
       return [];
     }
   },
 
   async getAllApplications() {
     try {
-      const response = await api.get('/role-applications/all');
-      return response.data;
+      const response = await api.get('/role-applications');
+      return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
+      console.error('Get all applications error:', error);
       return [];
     }
   },
 
-  async reviewApplication(applicationId: string, status: string, reviewNotes?: string) {
+  async reviewApplication(applicationId: number, reviewData: {
+    status: 'Approved' | 'Rejected';
+    reviewNotes?: string;
+  }) {
     try {
-      const response = await api.post(`/role-applications/${applicationId}/review`, {
-        status, reviewNotes
+      const response = await api.put(`/role-applications/${applicationId}/review`, {
+        Status: reviewData.status,        // Match backend DTO
+        ReviewNotes: reviewData.reviewNotes
       });
       return response.data;
     } catch (error) {
-      return { success: true, message: 'Review completed' };
+      console.error('Review application error:', error);
+      throw error;
     }
   },
 
-  async cancelApplication(applicationId: string) {
+  async cancelApplication(applicationId: number) {
     try {
-      const response = await api.post(`/role-applications/${applicationId}/cancel`);
+      const response = await api.delete(`/role-applications/${applicationId}`);
       return response.data;
     } catch (error) {
-      return { success: true, message: 'Application cancelled' };
+      console.error('Cancel application error:', error);
+      throw error;
     }
   }
 };
 
-// Crew API (minimal - since backend doesn't exist yet)
-export const crewApi = {
-  async getAll() {
-    try {
-      const response = await api.get('/crew');
-      return response.data;
-    } catch (error) {
-      // Fallback mock data
-      return {
-        data: [
-          { id: 1, name: 'John Smith', role: 'Crane Operator' },
-          { id: 2, name: 'Maria Garcia', role: 'Dock Supervisor' },
-          { id: 3, name: 'David Chen', role: 'Forklift Operator' },
-          { id: 4, name: 'Sarah Johnson', role: 'Safety Inspector' },
-          { id: 5, name: 'Michael Brown', role: 'Equipment Technician' }
-        ]
-      };
-    }
-  }
-};
-
-// Berth API (minimal - delegate to dedicated service when created)
+// ===== BERTH API =====
 export const berthApi = {
   async getAll() {
     const response = await api.get('/berths');
@@ -290,7 +316,7 @@ export const berthApi = {
   }
 };
 
-// Add Berth Assignment API (missing export)
+// ===== BERTH ASSIGNMENT API =====
 export const berthAssignmentApi = {
   async getAll() {
     try {
@@ -353,10 +379,28 @@ export const berthAssignmentApi = {
   }
 };
 
-// ===== DELEGATE TO SPECIALIZED SERVICES =====
-// These are the main orchestration exports
+// ===== CREW API =====
+export const crewApi = {
+  async getAll() {
+    try {
+      const response = await api.get('/crew');
+      return response.data;
+    } catch (error) {
+      // Fallback mock data
+      return {
+        data: [
+          { id: 1, name: 'John Smith', role: 'Crane Operator' },
+          { id: 2, name: 'Maria Garcia', role: 'Dock Supervisor' },
+          { id: 3, name: 'David Chen', role: 'Forklift Operator' },
+          { id: 4, name: 'Sarah Johnson', role: 'Safety Inspector' },
+          { id: 5, name: 'Michael Brown', role: 'Equipment Technician' }
+        ]
+      };
+    }
+  }
+};
 
-// Container operations - delegate to containerService
+// ===== CONTAINER API =====
 export const containerApi = {
   getContainers: (filters = {}) => containerService.getContainers(filters),
   getAll: () => containerService.getAll(),
@@ -369,13 +413,13 @@ export const containerApi = {
   exportContainers: (filters: any) => containerService.exportContainers(filters)
 };
 
-// Port operations - delegate to portService
+// ===== PORT API =====
 export const portApi = {
   getAll: () => portService.getAll(),
   getById: (id: any) => portService.getById(id)
 };
 
-// Ship operations - delegate to shipService
+// ===== SHIP API =====
 export const shipApi = {
   getAll: async () => {
     try {
@@ -399,9 +443,6 @@ export const shipApi = {
   update: (id: any, shipData: any) => shipService.update(id, shipData)
 };
 
-// User management - re-export existing service
-export { userManagementApi };
-
 // ===== TYPE EXPORTS =====
 export type { Container, ContainerFilters, ContainerStats, PaginatedResponse } from '../types/container';
 export type { Ship } from './shipService';
@@ -414,6 +455,7 @@ export type {
   UsersPagedResponse 
 } from './userManagementApi';
 
+// ===== INTERFACE DEFINITIONS =====
 export interface RoleApplication {
   id: string;
   userId: string;
@@ -430,6 +472,24 @@ export interface RoleApplication {
   reviewedBy?: string;
   reviewNotes?: string;
 }
+
+export interface RoleApplicationDto {
+  id: number
+  userId: number
+  userName: string
+  userEmail: string
+  requestedRole: string
+  justification: string
+  status: 'Pending' | 'Approved' | 'Rejected'
+  requestedAt: string
+  reviewedAt?: string
+  reviewedBy?: number
+  reviewerName?: string
+  reviewComments?: string
+}
+
+// Re-export user management API
+export { userManagementApi };
 
 // Export the base API client for direct access when needed
 export { api as apiClient };

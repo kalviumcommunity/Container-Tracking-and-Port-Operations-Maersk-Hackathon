@@ -3,6 +3,7 @@ using Backend.Services;
 using Backend.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,12 +23,12 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Gets events with filtering and pagination
+        /// Get events with filtering
         /// </summary>
-        /// <param name="filter">Filter and pagination parameters</param>
-        /// <returns>Paginated events</returns>
+        /// <param name="filter">Filter parameters</param>
+        /// <returns>Filtered events</returns>
         [HttpGet]
-        [RequirePermission("ViewEvents")]
+        [RequirePermission("ViewDashboard")]
         [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<EventDto>>), 200)]
         public async Task<IActionResult> GetEvents([FromQuery] EventFilterDto filter)
         {
@@ -36,67 +37,20 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Gets recent events for dashboard
-        /// </summary>
-        /// <param name="count">Number of recent events to retrieve</param>
-        /// <returns>Recent events</returns>
-        [HttpGet("recent")]
-        [RequirePermission("ViewEvents")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<EventDto>>), 200)]
-        public async Task<IActionResult> GetRecentEvents([FromQuery] int count = 10)
-        {
-            var events = await _eventService.GetRecentEventsAsync(count);
-            return Ok(ApiResponse<IEnumerable<EventDto>>.Ok(events));
-        }
-
-        /// <summary>
-        /// Gets unread events for a user
-        /// </summary>
-        /// <returns>Unread events</returns>
-        [HttpGet("unread")]
-        [RequirePermission("ViewEvents")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<EventDto>>), 200)]
-        public async Task<IActionResult> GetUnreadEvents()
-        {
-            var userId = int.Parse(User.FindFirst("sub")?.Value ?? "0");
-            var events = await _eventService.GetUnreadEventsAsync(userId);
-            return Ok(ApiResponse<IEnumerable<EventDto>>.Ok(events));
-        }
-
-        /// <summary>
-        /// Marks events as read
-        /// </summary>
-        /// <param name="eventIds">List of event IDs to mark as read</param>
-        /// <returns>Success message</returns>
-        [HttpPatch("mark-read")]
-        [RequirePermission("ViewEvents")]
-        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
-        public async Task<IActionResult> MarkEventsAsRead([FromBody] List<int> eventIds)
-        {
-            var userId = int.Parse(User.FindFirst("sub")?.Value ?? "0");
-            await _eventService.MarkEventsAsReadAsync(eventIds, userId);
-            return Ok(ApiResponse<object>.OkWithMessage($"Marked {eventIds.Count} events as read"));
-        }
-
-        /// <summary>
-        /// Creates a new event (for system notifications)
+        /// Create a new event
         /// </summary>
         /// <param name="createDto">Event data</param>
         /// <returns>Created event</returns>
         [HttpPost]
-        [RequirePermission("ManageEvents")]
+        [RequirePermission("ManageContainers")]
         [ProducesResponseType(typeof(ApiResponse<EventDto>), 201)]
-        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
         public async Task<IActionResult> CreateEvent([FromBody] EventCreateDto createDto)
         {
             try
             {
-                var userId = int.Parse(User.FindFirst("sub")?.Value ?? "0");
-                createDto.UserId = userId;
-                
-                var eventDto = await _eventService.CreateEventAsync(createDto);
-                return CreatedAtAction(nameof(GetEvents), new { id = eventDto.Id }, 
-                    ApiResponse<EventDto>.Ok(eventDto));
+                var eventObj = await _eventService.CreateAsync(createDto);
+                return CreatedAtAction(nameof(GetEvent), new { id = eventObj.EventId }, 
+                    ApiResponse<EventDto>.Ok(eventObj));
             }
             catch (Exception ex)
             {
@@ -105,16 +59,103 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Gets event statistics
+        /// Get event by ID
         /// </summary>
-        /// <returns>Event statistics</returns>
-        [HttpGet("statistics")]
-        [RequirePermission("ViewEvents")]
-        [ProducesResponseType(typeof(ApiResponse<EventStatsDto>), 200)]
-        public async Task<IActionResult> GetEventStatistics()
+        /// <param name="id">Event ID</param>
+        /// <returns>Event details</returns>
+        [HttpGet("{id}")]
+        [RequirePermission("ViewDashboard")]
+        [ProducesResponseType(typeof(ApiResponse<EventDto>), 200)]
+        public async Task<IActionResult> GetEvent(int id)
         {
-            var stats = await _eventService.GetEventStatisticsAsync();
-            return Ok(ApiResponse<EventStatsDto>.Ok(stats));
+            var eventObj = await _eventService.GetByIdAsync(id);
+            if (eventObj == null)
+            {
+                return NotFound(ApiResponse<object>.Fail($"Event with ID {id} not found"));
+            }
+            return Ok(ApiResponse<EventDto>.Ok(eventObj));
         }
+
+        /// <summary>
+        /// Acknowledge an event
+        /// </summary>
+        /// <param name="id">Event ID</param>
+        /// <returns>Updated event</returns>
+        [HttpPost("{id}/acknowledge")]
+        [RequirePermission("ViewDashboard")]
+        [ProducesResponseType(typeof(ApiResponse<EventDto>), 200)]
+        public async Task<IActionResult> AcknowledgeEvent(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var eventObj = await _eventService.AcknowledgeAsync(id, userId);
+                return Ok(ApiResponse<EventDto>.Ok(eventObj));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Resolve an event
+        /// </summary>
+        /// <param name="id">Event ID</param>
+        /// <param name="resolution">Resolution notes</param>
+        /// <returns>Updated event</returns>
+        [HttpPost("{id}/resolve")]
+        [RequirePermission("ManageContainers")]
+        [ProducesResponseType(typeof(ApiResponse<EventDto>), 200)]
+        public async Task<IActionResult> ResolveEvent(int id, [FromBody] EventResolutionDto resolution)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var eventObj = await _eventService.ResolveAsync(id, userId, resolution.Resolution);
+                return Ok(ApiResponse<EventDto>.Ok(eventObj));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Get user's assigned events
+        /// </summary>
+        /// <returns>Assigned events</returns>
+        [HttpGet("my-assignments")]
+        [RequirePermission("ViewDashboard")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<EventDto>>), 200)]
+        public async Task<IActionResult> GetMyAssignments()
+        {
+            var userId = GetCurrentUserId();
+            var events = await _eventService.GetUserAssignedEventsAsync(userId);
+            return Ok(ApiResponse<IEnumerable<EventDto>>.Ok(events));
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                throw new UnauthorizedAccessException("Invalid user token");
+            }
+            return userId;
+        }
+    }
+
+    public class EventResolutionDto
+    {
+        public string Resolution { get; set; }
     }
 }

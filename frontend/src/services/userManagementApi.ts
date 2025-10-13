@@ -62,12 +62,11 @@ export interface SystemStatsDto {
 
 export interface UsersPagedResponse {
   users: UserListDto[]
-  totalCount: number
-  pageNumber: number
+  total: number  // Changed from totalCount to match backend
+  page: number   // Changed from pageNumber to match backend
   pageSize: number
   totalPages: number
-  hasPreviousPage: boolean
-  hasNextPage: boolean
+  // Removed hasPreviousPage and hasNextPage as they're not in backend DTO
 }
 
 export interface ApiResponse<T> {
@@ -81,16 +80,26 @@ export class UserManagementApiService {
   
   // Get all users with pagination and filtering
   async getUsers(params?: {
-    pageNumber?: number
+    page?: number      // Changed from pageNumber to match backend
     pageSize?: number
     searchTerm?: string
     role?: string
-    isActive?: boolean
-    isBlocked?: boolean
+    status?: string    // Changed from isActive/isBlocked to single status
   }): Promise<UsersPagedResponse> {
     try {
-      const response: AxiosResponse<UsersPagedResponse> = await apiClient.get('/usermanagement', { params })
-      return response.data
+      // Convert frontend filter to backend UserFilterDto format
+      const backendFilter = {
+        Page: params?.page || 1,
+        PageSize: params?.pageSize || 20,
+        SearchTerm: params?.searchTerm,
+        Role: params?.role,
+        Status: params?.status
+      };
+      
+      const response: AxiosResponse<ApiResponse<UsersPagedResponse>> = await apiClient.get('/user-management/users', { 
+        params: backendFilter 
+      });
+      return response.data.data; // Extract data from ApiResponse wrapper
     } catch (error) {
       console.error('Error fetching users:', error)
       throw error
@@ -165,8 +174,8 @@ export class UserManagementApiService {
   // Get system statistics
   async getSystemStats(): Promise<SystemStatsDto> {
     try {
-      const response: AxiosResponse<SystemStatsDto> = await apiClient.get('/usermanagement/stats')
-      return response.data
+      const response: AxiosResponse<ApiResponse<SystemStatsDto>> = await apiClient.get('/user-management/statistics')
+      return response.data.data; // Extract data from ApiResponse wrapper
     } catch (error) {
       console.error('Error fetching system stats:', error)
       throw error
@@ -174,25 +183,25 @@ export class UserManagementApiService {
   }
 
   // Search users by term
-  async searchUsers(searchTerm: string, pageNumber = 1, pageSize = 10): Promise<UsersPagedResponse> {
+  async searchUsers(searchTerm: string, page = 1, pageSize = 10): Promise<UsersPagedResponse> {
     try {
-      const response: AxiosResponse<UsersPagedResponse> = await apiClient.get('/usermanagement', {
-        params: { searchTerm, pageNumber, pageSize }
+      const response: AxiosResponse<ApiResponse<UsersPagedResponse>> = await apiClient.get('/user-management/users', {
+        params: { SearchTerm: searchTerm, Page: page, PageSize: pageSize }
       })
-      return response.data
+      return response.data.data; // Extract data from ApiResponse wrapper
     } catch (error) {
       console.error('Error searching users:', error)
       throw error
     }
   }
 
-  // Get users by role
-  async getUsersByRole(role: string, pageNumber = 1, pageSize = 10): Promise<UsersPagedResponse> {
+  // Get users by role  
+  async getUsersByRole(role: string, page = 1, pageSize = 10): Promise<UsersPagedResponse> {
     try {
-      const response: AxiosResponse<UsersPagedResponse> = await apiClient.get('/usermanagement', {
-        params: { role, pageNumber, pageSize }
+      const response: AxiosResponse<ApiResponse<UsersPagedResponse>> = await apiClient.get('/user-management/users', {
+        params: { Role: role, Page: page, PageSize: pageSize }
       })
-      return response.data
+      return response.data.data; // Extract data from ApiResponse wrapper
     } catch (error) {
       console.error('Error fetching users by role:', error)
       throw error
@@ -200,27 +209,27 @@ export class UserManagementApiService {
   }
 
   // Get blocked users
-  async getBlockedUsers(pageNumber = 1, pageSize = 10): Promise<UsersPagedResponse> {
+  async getBlockedUsers(page = 1, pageSize = 10): Promise<UsersPagedResponse> {
     try {
-      const response: AxiosResponse<UsersPagedResponse> = await apiClient.get('/usermanagement', {
-        params: { isBlocked: true, pageNumber, pageSize }
+      const response: AxiosResponse<ApiResponse<UsersPagedResponse>> = await apiClient.get('/user-management/users', {
+        params: { Status: 'blocked', Page: page, PageSize: pageSize }
       })
-      return response.data
+      return response.data.data; // Extract data from ApiResponse wrapper
     } catch (error) {
       console.error('Error fetching blocked users:', error)
       throw error
     }
   }
 
-  // Get deleted users
-  async getDeletedUsers(pageNumber = 1, pageSize = 10): Promise<UsersPagedResponse> {
+  // Get inactive users
+  async getInactiveUsers(page = 1, pageSize = 10): Promise<UsersPagedResponse> {
     try {
-      const response: AxiosResponse<UsersPagedResponse> = await apiClient.get('/usermanagement', {
-        params: { isActive: false, pageNumber, pageSize }
+      const response: AxiosResponse<ApiResponse<UsersPagedResponse>> = await apiClient.get('/user-management/users', {
+        params: { Status: 'inactive', Page: page, PageSize: pageSize }
       })
-      return response.data
+      return response.data.data; // Extract data from ApiResponse wrapper
     } catch (error) {
-      console.error('Error fetching deleted users:', error)
+      console.error('Error fetching inactive users:', error)
       throw error
     }
   }
