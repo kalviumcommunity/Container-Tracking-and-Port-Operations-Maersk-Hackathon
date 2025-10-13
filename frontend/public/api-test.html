@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard API Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .result { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+    .error { background: #ffeeee; color: #cc0000; }
+    .success { background: #eeffee; color: #006600; }
+    button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Dashboard API Test</h1>
+  <p>Testing the analytics and backend API connectivity:</p>
+  
+  <button onclick="testAnalyticsAPI()">Test Analytics API</button>
+  <button onclick="testContainerAPI()">Test Container API</button>
+  <button onclick="testBerthAPI()">Test Berth API</button>
+  <button onclick="testShipAPI()">Test Ship API</button>
+  
+  <div id="results"></div>
+
+  <script>
+    const API_BASE = 'http://localhost:5221/api';
+    
+    function addResult(test, success, data) {
+      const results = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `result ${success ? 'success' : 'error'}`;
+      div.innerHTML = `
+        <h3>${test}</h3>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      `;
+      results.appendChild(div);
+    }
+    
+    async function testAnalyticsAPI() {
+      try {
+        const response = await fetch(`${API_BASE}/analytics/dashboard-stats`);
+        if (response.ok) {
+          const data = await response.json();
+          addResult('Analytics API', true, data);
+        } else {
+          addResult('Analytics API', false, { error: `HTTP ${response.status}`, message: await response.text() });
+        }
+      } catch (error) {
+        addResult('Analytics API', false, { error: error.message });
+      }
+    }
+    
+    async function testContainerAPI() {
+      try {
+        const response = await fetch(`${API_BASE}/containers`);
+        if (response.ok) {
+          const data = await response.json();
+          addResult('Container API', true, { count: data.data?.length || 0, sample: data.data?.slice(0, 2) });
+        } else {
+          addResult('Container API', false, { error: `HTTP ${response.status}` });
+        }
+      } catch (error) {
+        addResult('Container API', false, { error: error.message });
+      }
+    }
+    
+    async function testBerthAPI() {
+      try {
+        const response = await fetch(`${API_BASE}/berths`);
+        if (response.ok) {
+          const data = await response.json();
+          addResult('Berth API', true, { count: data.data?.length || 0, sample: data.data?.slice(0, 2) });
+        } else {
+          addResult('Berth API', false, { error: `HTTP ${response.status}` });
+        }
+      } catch (error) {
+        addResult('Berth API', false, { error: error.message });
+      }
+    }
+    
+    async function testShipAPI() {
+      try {
+        const response = await fetch(`${API_BASE}/ships`);
+        if (response.ok) {
+          const data = await response.json();
+          addResult('Ship API', true, { count: data.data?.length || 0, sample: data.data?.slice(0, 2) });
+        } else {
+          addResult('Ship API', false, { error: `HTTP ${response.status}` });
+        }
+      } catch (error) {
+        addResult('Ship API', false, { error: error.message });
+      }
+    }
+  </script>
+</body>
+</html>
