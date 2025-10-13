@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Backend.DTOs
 {
     /// <summary>
@@ -150,55 +152,42 @@ namespace Backend.DTOs
     }
 
     /// <summary>
-    /// DTO for updating user information
+    /// DTO for updating user profile
     /// </summary>
     public class UpdateUserDto
     {
-        /// <summary>
-        /// Email address
-        /// </summary>
-        public string? Email { get; set; }
-
-        /// <summary>
-        /// Full name
-        /// </summary>
         public string? FullName { get; set; }
-
-        /// <summary>
-        /// Phone number
-        /// </summary>
+        
+        [EmailAddress]
+        public string? Email { get; set; }
+        
+        [Phone]
         public string? PhoneNumber { get; set; }
-
-        /// <summary>
-        /// Department
-        /// </summary>
+        
         public string? Department { get; set; }
-
-        /// <summary>
-        /// Assigned port ID
-        /// </summary>
+        
         public int? PortId { get; set; }
-
-        /// <summary>
-        /// Account status
-        /// </summary>
+        
         public bool? IsActive { get; set; }
     }
 
     /// <summary>
-    /// DTO for changing password
+    /// DTO for changing password   
     /// </summary>
     public class ChangePasswordDto
     {
-        /// <summary>
-        /// Current password
-        /// </summary>
+        [Required]
         public string CurrentPassword { get; set; } = string.Empty;
 
-        /// <summary>
-        /// New password
-        /// </summary>
+        [Required]
+        [MinLength(8, ErrorMessage = "Password must be at least 8 characters long")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]", 
+            ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")]
         public string NewPassword { get; set; } = string.Empty;
+
+        [Required]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
     }
 
     /// <summary>

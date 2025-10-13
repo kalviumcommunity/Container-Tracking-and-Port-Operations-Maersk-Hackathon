@@ -21,31 +21,67 @@ namespace Backend.Services
             _logger = logger;
         }
 
-        public async Task<UsersPagedResponse> GetUsersAsync(int page = 1, int pageSize = 20, string? searchTerm = null, bool includeDeleted = false)
+        public async Task<UsersPagedResponse> GetUsersAsync(UserFilterDto filter)
         {
             try
             {
+                // Set defaults for filter parameters
+                filter ??= new UserFilterDto();
+                var page = Math.Max(1, filter.Page);
+                var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+
                 var query = _context.Users
                     .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
                     .AsQueryable();
 
                 // Filter out deleted users unless specifically requested
-                if (!includeDeleted)
-                {
-                    query = query.Where(u => !u.IsDeleted);
-                }
+                query = query.Where(u => !u.IsDeleted);
 
                 // Apply search filter
-                if (!string.IsNullOrWhiteSpace(searchTerm))
+                if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
                 {
-                    searchTerm = searchTerm.ToLower();
+                    var searchTerm = filter.SearchTerm.ToLower();
                     query = query.Where(u => 
                         u.Username.ToLower().Contains(searchTerm) ||
                         u.Email.ToLower().Contains(searchTerm) ||
                         u.FullName.ToLower().Contains(searchTerm) ||
                         (u.Department != null && u.Department.ToLower().Contains(searchTerm))
                     );
+                }
+
+                // Apply status filter
+                if (!string.IsNullOrWhiteSpace(filter.Status))
+                {
+                    switch (filter.Status.ToLower())
+                    {
+                        case "active":
+                            query = query.Where(u => u.IsActive && !u.IsBlocked);
+                            break;
+                        case "inactive":
+                            query = query.Where(u => !u.IsActive);
+                            break;
+                        case "blocked":
+                            query = query.Where(u => u.IsBlocked);
+                            break;
+                    }
+                }
+
+                // Apply role filter
+                if (!string.IsNullOrWhiteSpace(filter.Role))
+                {
+                    query = query.Where(u => u.UserRoles.Any(ur => ur.Role.Name == filter.Role));
+                }
+
+                // Apply date filters
+                if (filter.RegisteredAfter.HasValue)
+                {
+                    query = query.Where(u => u.CreatedAt >= filter.RegisteredAfter.Value);
+                }
+
+                if (filter.RegisteredBefore.HasValue)
+                {
+                    query = query.Where(u => u.CreatedAt <= filter.RegisteredBefore.Value);
                 }
 
                 var total = await query.CountAsync();
@@ -254,30 +290,27 @@ namespace Backend.Services
             }
         }
 
-        public async Task<bool> DeleteUserAsync(int userId, bool isDeleted)
+        public async Task<bool> DeleteUserAsync(int userId, string reason = "")
         {
             try
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
                 if (user == null) return false;
 
-                user.IsDeleted = isDeleted;
+                user.IsDeleted = true;
                 user.UpdatedAt = DateTime.UtcNow;
                 
-                // If restoring, make sure user is not blocked
-                if (!isDeleted)
-                {
-                    user.IsBlocked = false;
-                }
+                // If deleting, make sure user is also blocked
+                user.IsBlocked = true;
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("User {UserId} {Action}", userId, isDeleted ? "deleted" : "restored");
+                _logger.LogInformation("User {UserId} deleted with reason: {Reason}", userId, reason);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating delete status for user {UserId}", userId);
+                _logger.LogError(ex, "Error deleting user {UserId}", userId);
                 return false;
             }
         }

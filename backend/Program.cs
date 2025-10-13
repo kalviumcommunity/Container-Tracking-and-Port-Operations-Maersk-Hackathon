@@ -175,15 +175,10 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<SimpleDataSeedingService>();
 builder.Services.AddScoped<ComprehensiveDataSeedingService>();
 
-// Register business services (single registration only)
-builder.Services.AddScoped<IContainerService, ContainerService>();
-builder.Services.AddScoped<IShipService, ShipService>();
-builder.Services.AddScoped<IPortService, PortService>();
-builder.Services.AddScoped<IBerthService, BerthService>();
-builder.Services.AddScoped<IBerthAssignmentService, BerthAssignmentService>();
-builder.Services.AddScoped<IShipContainerService, ShipContainerService>();
+// Register business services not covered by RegisterServices()
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-builder.Services.AddScoped<IEventService, EventService>(); // Add EventService
+builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IContainerMovementService, ContainerMovementService>();
 
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
@@ -297,5 +292,5 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
 app.Run();
+

@@ -23,22 +23,22 @@ namespace Backend.Services
         /// <summary>
         /// Get event by ID
         /// </summary>
-        Task<EventDto?> GetEventByIdAsync(int eventId);
+        Task<EventDto?> GetByIdAsync(int eventId);
 
         /// <summary>
         /// Create a new event
         /// </summary>
-        Task<EventDto> CreateEventAsync(EventCreateDto createDto);
+        Task<EventDto> CreateAsync(EventCreateDto createDto);
 
         /// <summary>
         /// Update an existing event
         /// </summary>
-        Task<EventDto> UpdateEventAsync(int eventId, EventUpdateDto updateDto);
+        Task<EventDto> UpdateAsync(int eventId, EventUpdateDto updateDto);
 
         /// <summary>
         /// Delete an event
         /// </summary>
-        Task<bool> DeleteEventAsync(int eventId);
+        Task<bool> DeleteAsync(int eventId);
 
         /// <summary>
         /// Get events by type
@@ -68,12 +68,17 @@ namespace Backend.Services
         /// <summary>
         /// Acknowledge an event
         /// </summary>
-        Task<EventDto> AcknowledgeEventAsync(int eventId, int userId);
+        Task<EventDto> AcknowledgeAsync(int eventId, int userId);
 
         /// <summary>
         /// Resolve an event
         /// </summary>
-        Task<EventDto> ResolveEventAsync(int eventId, int userId);
+        Task<EventDto> ResolveAsync(int eventId, int userId, string resolution);
+
+        /// <summary>
+        /// Get user's assigned events
+        /// </summary>
+        Task<IEnumerable<EventDto>> GetUserAssignedEventsAsync(int userId);
 
         /// <summary>
         /// Mark multiple events as read
@@ -170,7 +175,7 @@ namespace Backend.Services
         /// <summary>
         /// Get event by ID
         /// </summary>
-        public async Task<EventDto?> GetEventByIdAsync(int eventId)
+        public async Task<EventDto?> GetByIdAsync(int eventId)
         {
             try
             {
@@ -199,7 +204,7 @@ namespace Backend.Services
         /// <summary>
         /// Create a new event
         /// </summary>
-        public async Task<EventDto> CreateEventAsync(EventCreateDto createDto)
+        public async Task<EventDto> CreateAsync(EventCreateDto createDto)
         {
             try
             {
@@ -248,7 +253,7 @@ namespace Backend.Services
         /// <summary>
         /// Update an existing event
         /// </summary>
-        public async Task<EventDto> UpdateEventAsync(int eventId, EventUpdateDto updateDto)
+        public async Task<EventDto> UpdateAsync(int eventId, EventUpdateDto updateDto)
         {
             try
             {
@@ -293,7 +298,7 @@ namespace Backend.Services
         /// <summary>
         /// Delete an event
         /// </summary>
-        public async Task<bool> DeleteEventAsync(int eventId)
+        public async Task<bool> DeleteAsync(int eventId)
         {
             try
             {
@@ -450,7 +455,7 @@ namespace Backend.Services
         /// <summary>
         /// Acknowledge an event
         /// </summary>
-        public async Task<EventDto> AcknowledgeEventAsync(int eventId, int userId)
+        public async Task<EventDto> AcknowledgeAsync(int eventId, int userId)
         {
             try
             {
@@ -480,7 +485,7 @@ namespace Backend.Services
         /// <summary>
         /// Resolve an event
         /// </summary>
-        public async Task<EventDto> ResolveEventAsync(int eventId, int userId)
+        public async Task<EventDto> ResolveAsync(int eventId, int userId, string resolution)
         {
             try
             {
@@ -509,6 +514,32 @@ namespace Backend.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error resolving event {EventId}", eventId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Get user's assigned events
+        /// </summary>
+        public async Task<IEnumerable<EventDto>> GetUserAssignedEventsAsync(int userId)
+        {
+            try
+            {
+                var events = await _context.Events
+                    .Include(e => e.Ship)
+                    .Include(e => e.Berth)
+                    .Include(e => e.Port)
+                    .Include(e => e.AssignedToUser)
+                    .Where(e => e.AssignedToUserId == userId)
+                    .OrderByDescending(e => e.EventTimestamp)
+                    .Select(ProjectToDto())
+                    .ToListAsync();
+
+                return events;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving assigned events for user {UserId}", userId);
                 throw;
             }
         }
@@ -763,6 +794,7 @@ namespace Backend.Services
             return new EventDto
             {
                 Id = eventEntity.EventId,
+                EventId = eventEntity.EventId, // Add for compatibility
                 EventType = eventEntity.EventType,
                 Title = eventEntity.Title,
                 Description = eventEntity.Description,
@@ -778,7 +810,7 @@ namespace Backend.Services
                 UserId = eventEntity.AssignedToUserId,
                 UserName = eventEntity.AssignedToUser?.FullName,
                 Source = eventEntity.Source,
-                    IsRead = eventEntity.AcknowledgedAt.HasValue,
+                IsRead = eventEntity.AcknowledgedAt.HasValue,
                 CreatedAt = eventEntity.CreatedAt
             };
         }
@@ -788,6 +820,7 @@ namespace Backend.Services
             return e => new EventDto
             {
                 Id = e.EventId,
+                EventId = e.EventId, // Add for compatibility
                 EventType = e.EventType,
                 Title = e.Title,
                 Description = e.Description,

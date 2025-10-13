@@ -429,7 +429,9 @@ import {
   Trash2,
   Filter
 } from 'lucide-vue-next';
-import { portApi, shipApi, berthApi, berthAssignmentApi, containerApi } from '../services/api';
+import { portApi, shipApi, containerApi } from '../services/api';
+import { berthApi } from '../services/berthApi'
+import { berthAssignmentApi } from '../services/berthAssignmentApi'
 
 export default {
   name: 'PortOperationManagement',
@@ -665,30 +667,27 @@ export default {
       try {
         this.loading = true;
 
-        // Load all data in parallel
+        // Replace mock data with real API calls
         const [portsResponse, berthsResponse, shipsResponse, containersResponse, assignmentsResponse] = await Promise.all([
           portApi.getAll(),
-          berthApi.getAll(),
+          berthApi.getAll(),           // ✅ NEW - Real API
           shipApi.getAll(),
           containerApi.getAll(),
-          berthAssignmentApi.getAll()
+          berthAssignmentApi.getAll()  // ✅ NEW - Real API
         ]);
 
         this.ports = portsResponse.data || [];
-        this.berths = berthsResponse.data || [];
+        this.berths = berthsResponse.data || [];     // ✅ Real backend data
         this.ships = shipsResponse.data || [];
         this.containers = containersResponse.data || [];
-        this.berthAssignments = assignmentsResponse.data || [];
+        this.berthAssignments = assignmentsResponse.data || []; // ✅ Real backend data
 
-        // Transform data for operations display
         this.updateOperations();
-        
-        // Update berth pagination
         this.updateBerthPagination();
 
       } catch (error) {
         console.error('Error loading operation data:', error);
-        // Show some mock data if API fails for testing
+        // Keep fallback but prefer real data
         this.loadMockData();
       } finally {
         this.loading = false;

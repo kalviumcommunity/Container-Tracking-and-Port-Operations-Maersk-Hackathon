@@ -16,10 +16,14 @@ namespace Backend.Controllers
     public class RoleApplicationController : ControllerBase
     {
         private readonly IRoleApplicationService _roleApplicationService;
+        private readonly ILogger<RoleApplicationController> _logger;
 
-        public RoleApplicationController(IRoleApplicationService roleApplicationService)
+        public RoleApplicationController(
+            IRoleApplicationService roleApplicationService,
+            ILogger<RoleApplicationController> logger)
         {
             _roleApplicationService = roleApplicationService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -28,146 +32,158 @@ namespace Backend.Controllers
         /// <param name="request">Role application request</param>
         /// <returns>Created application</returns>
         [HttpPost]
-        public async Task<ActionResult<RoleApplicationDto>> SubmitApplication([FromBody] RoleApplicationRequestDto request)
+        [ProducesResponseType(typeof(ApiResponse<RoleApplicationDto>), 201)]
+        public async Task<IActionResult> SubmitApplication([FromBody] RoleApplicationRequestDto requestDto)
         {
             try
             {
                 var userId = GetCurrentUserId();
-                var application = await _roleApplicationService.SubmitApplicationAsync(userId, request);
-                return CreatedAtAction(nameof(GetApplication), new { id = application.ApplicationId }, application);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
+                var application = await _roleApplicationService.SubmitApplicationAsync(userId, requestDto);
+                
+                return CreatedAtAction(nameof(GetApplication), 
+                    new { id = application.ApplicationId }, 
+                    ApiResponse<RoleApplicationDto>.Ok(application));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting role application");
+                return BadRequest(ApiResponse<object>.Fail("Error submitting application"));
             }
         }
 
         /// <summary>
-        /// Get current user's role applications
+        /// Get user's own role applications
         /// </summary>
         /// <returns>List of user's applications</returns>
         [HttpGet("my-applications")]
-        public async Task<ActionResult<List<RoleApplicationDto>>> GetMyApplications()
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<RoleApplicationDto>>), 200)]
+        public async Task<IActionResult> GetMyApplications()
         {
-            var userId = GetCurrentUserId();
-            var applications = await _roleApplicationService.GetUserApplicationsAsync(userId);
-            return Ok(applications);
-        }
-
-        /// <summary>
-        /// Get available roles that current user can apply for
-        /// </summary>
-        /// <returns>List of available roles</returns>
-        [HttpGet("available-roles")]
-        public async Task<ActionResult<List<AvailableRoleDto>>> GetAvailableRoles()
-        {
-            var userId = GetCurrentUserId();
-            var availableRoles = await _roleApplicationService.GetAvailableRolesAsync(userId);
-            return Ok(availableRoles);
-        }
-
-        /// <summary>
-        /// Get a specific application by ID
-        /// </summary>
-        /// <param name="id">Application ID</param>
-        /// <returns>Role application details</returns>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<RoleApplicationDto>> GetApplication(int id)
-        {
-            var userId = GetCurrentUserId();
-            var application = await _roleApplicationService.GetApplicationAsync(id);
-
-            if (application == null)
+            try
             {
-                return NotFound(new { message = "Application not found" });
+                var userId = GetCurrentUserId();
+                var applications = await _roleApplicationService.GetUserApplicationsAsync(userId);
+                return Ok(ApiResponse<IEnumerable<RoleApplicationDto>>.Ok(applications));
             }
-
-            // Users can only see their own applications unless they're admin
-            if (application.UserId != userId && !User.IsInRole("Admin"))
+            catch (Exception ex)
             {
-                return Forbid();
+                _logger.LogError(ex, "Error retrieving user applications");
+                return BadRequest(ApiResponse<object>.Fail("Error retrieving applications"));
             }
-
-            return Ok(application);
         }
 
         /// <summary>
-        /// Cancel a pending application
-        /// </summary>
-        /// <param name="id">Application ID</param>
-        /// <returns>Success result</returns>
-        [HttpPost("{id}/cancel")]
-        public async Task<ActionResult> CancelApplication(int id)
-        {
-            var userId = GetCurrentUserId();
-            var success = await _roleApplicationService.CancelApplicationAsync(id, userId);
-
-            if (!success)
-            {
-                return BadRequest(new { message = "Unable to cancel application. It may not exist or is not in pending status." });
-            }
-
-            return Ok(new { message = "Application cancelled successfully" });
-        }
-
-        /// <summary>
-        /// Get all pending applications (Admin only)
+        /// Get all pending role applications (Admin only)
         /// </summary>
         /// <returns>List of pending applications</returns>
         [HttpGet("pending")]
         [RequirePermission("ManageUsers")]
-        public async Task<ActionResult<List<RoleApplicationDto>>> GetPendingApplications()
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<RoleApplicationDto>>), 200)]
+        public async Task<IActionResult> GetPendingApplications()
         {
-            var applications = await _roleApplicationService.GetPendingApplicationsAsync();
-            return Ok(applications);
+            try
+            {
+                var applications = await _roleApplicationService.GetPendingApplicationsAsync();
+                return Ok(ApiResponse<IEnumerable<RoleApplicationDto>>.Ok(applications));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pending applications");
+                return BadRequest(ApiResponse<object>.Fail("Error retrieving applications"));
+            }
         }
 
         /// <summary>
-        /// Get all applications with any status (Admin only)
+        /// Get application by ID
         /// </summary>
-        /// <returns>List of all applications</returns>
-        [HttpGet("all")]
-        [RequirePermission("ManageUsers")]
-        public async Task<ActionResult<List<RoleApplicationDto>>> GetAllApplications()
+        /// <param name="id">Application ID</param>
+        /// <returns>Role application details</returns>
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<RoleApplicationDto>), 200)]
+        public async Task<IActionResult> GetApplication(int id)
         {
-            var applications = await _roleApplicationService.GetAllApplicationsAsync();
-            return Ok(applications);
+            try
+            {
+                var userId = GetCurrentUserId();
+                var application = await _roleApplicationService.GetApplicationAsync(id);
+                
+                if (application == null)
+                {
+                    return NotFound(ApiResponse<object>.Fail("Application not found"));
+                }
+
+                // Users can only see their own applications unless they're admin
+                if (application.UserId != userId && !User.IsInRole("Admin"))
+                {
+                    return Forbid();
+                }
+
+                return Ok(ApiResponse<RoleApplicationDto>.Ok(application));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving application {ApplicationId}", id);
+                return BadRequest(ApiResponse<object>.Fail("Error retrieving application"));
+            }
         }
 
         /// <summary>
-        /// Review and approve/reject a role application (Admin only)
+        /// Review a role application (Admin only)
         /// </summary>
         /// <param name="id">Application ID</param>
         /// <param name="review">Review decision and notes</param>
         /// <returns>Success result</returns>
-        [HttpPost("{id}/review")]
+        [HttpPut("{id}/review")]
         [RequirePermission("ManageUsers")]
-        public async Task<ActionResult> ReviewApplication(int id, [FromBody] ReviewApplicationDto review)
+        [ProducesResponseType(typeof(ApiResponse<RoleApplicationDto>), 200)]
+        public async Task<IActionResult> ReviewApplication(int id, [FromBody] ReviewApplicationDto reviewDto)
         {
             try
             {
                 var reviewerId = GetCurrentUserId();
-                var success = await _roleApplicationService.ReviewApplicationAsync(id, reviewerId, review);
-
+                var success = await _roleApplicationService.ReviewApplicationAsync(id, reviewerId, reviewDto);
+                
                 if (!success)
                 {
-                    return BadRequest(new { message = "Failed to review application" });
+                    return NotFound(ApiResponse<object>.Fail("Application not found"));
                 }
 
-                var statusMessage = review.Status == "Approved" ? "approved" : "rejected";
-                return Ok(new { message = $"Application {statusMessage} successfully" });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
+                var application = await _roleApplicationService.GetApplicationAsync(id);
+                return Ok(ApiResponse<RoleApplicationDto>.Ok(application));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reviewing application {ApplicationId}", id);
+                return BadRequest(ApiResponse<object>.Fail("Error reviewing application"));
+            }
+        }
+
+        /// <summary>
+        /// Get available roles for application
+        /// </summary>
+        /// <returns>List of available roles</returns>
+        [HttpGet("available-roles")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<AvailableRoleDto>>), 200)]
+        public async Task<IActionResult> GetAvailableRoles()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var roles = await _roleApplicationService.GetAvailableRolesAsync(userId);
+                return Ok(ApiResponse<IEnumerable<AvailableRoleDto>>.Ok(roles));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving available roles");
+                return BadRequest(ApiResponse<object>.Fail("Error retrieving roles"));
             }
         }
 

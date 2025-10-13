@@ -1,287 +1,113 @@
 using Backend.DTOs;
 using Backend.Services;
+using Backend.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
 {
-    /// <summary>
-    /// Controller for user management operations (Admin only)
-    /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/user-management")]
     [Authorize]
     public class UserManagementController : ControllerBase
     {
         private readonly IUserManagementService _userManagementService;
-        private readonly ILogger<UserManagementController> _logger;
 
-        public UserManagementController(
-            IUserManagementService userManagementService,
-            ILogger<UserManagementController> logger)
+        public UserManagementController(IUserManagementService userManagementService)
         {
             _userManagementService = userManagementService;
-            _logger = logger;
         }
 
         /// <summary>
-        /// Get paginated list of users (Admin only)
+        /// Get users with pagination and filtering
         /// </summary>
-    [HttpGet]
-    [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<UsersPagedResponse>> GetUsers(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20,
-            [FromQuery] string? search = null,
-            [FromQuery] bool includeDeleted = false)
+        [HttpGet("users")]
+        [RequirePermission("ManageUsers")]
+        [ProducesResponseType(typeof(ApiResponse<UsersPagedResponse>), 200)]
+        public async Task<IActionResult> GetUsers([FromQuery] UserFilterDto filter)
         {
-            try
-            {
-                if (page < 1) page = 1;
-                if (pageSize < 1 || pageSize > 100) pageSize = 20;
-
-                var result = await _userManagementService.GetUsersAsync(page, pageSize, search, includeDeleted);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving users list");
-                return StatusCode(500, new { message = "An error occurred while retrieving users" });
-            }
+            var users = await _userManagementService.GetUsersAsync(filter);
+            return Ok(ApiResponse<UsersPagedResponse>.Ok(users));
         }
 
         /// <summary>
-        /// Get user details by ID (Admin only)
+        /// Update user roles
         /// </summary>
-    [HttpGet("{id}")]
-    [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<UserListDto>> GetUser(int id)
+        [HttpPut("users/{userId}/roles")]
+        [RequirePermission("ManageUsers")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<IActionResult> UpdateUserRoles(int userId, [FromBody] UpdateUserRolesDto updateDto)
         {
             try
             {
-                var user = await _userManagementService.GetUserByIdAsync(id);
-                if (user == null)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                return Ok(user);
+                await _userManagementService.UpdateUserRolesAsync(userId, updateDto);
+                return Ok(ApiResponse<object>.OkWithMessage("User roles updated successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving user {UserId}", id);
-                return StatusCode(500, new { message = "An error occurred while retrieving the user" });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         /// <summary>
-        /// Update user information (Admin only)
+        /// Update user status (block/unblock)
         /// </summary>
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateDto)
+        [HttpPut("users/{userId}/status")]
+        [RequirePermission("ManageUsers")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<IActionResult> UpdateUserStatus(int userId, [FromBody] UpdateUserStatusDto updateDto)
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var userExists = await _userManagementService.UserExistsAsync(id);
-                if (!userExists)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                var success = await _userManagementService.UpdateUserAsync(id, updateDto);
-                if (!success)
-                {
-                    return BadRequest(new { message = "Failed to update user. Email might already be in use." });
-                }
-
-                return Ok(new { message = "User updated successfully" });
+                await _userManagementService.UpdateUserStatusAsync(userId, updateDto);
+                return Ok(ApiResponse<object>.OkWithMessage("User status updated successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user {UserId}", id);
-                return StatusCode(500, new { message = "An error occurred while updating the user" });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         /// <summary>
-        /// Update user roles (Admin only)
+        /// Get system statistics
         /// </summary>
-    [HttpPut("{id}/roles")]
-    [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUserRoles(int id, [FromBody] UpdateUserRolesDto rolesDto)
+        [HttpGet("statistics")]
+        [RequirePermission("ManageUsers")]
+        [ProducesResponseType(typeof(ApiResponse<SystemStatsDto>), 200)]
+        public async Task<IActionResult> GetSystemStatistics()
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var userExists = await _userManagementService.UserExistsAsync(id);
-                if (!userExists)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                var success = await _userManagementService.UpdateUserRolesAsync(id, rolesDto);
-                if (!success)
-                {
-                    return BadRequest(new { message = "Failed to update user roles. Some roles might not exist." });
-                }
-
-                return Ok(new { message = "User roles updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating roles for user {UserId}", id);
-                return StatusCode(500, new { message = "An error occurred while updating user roles" });
-            }
+            var stats = await _userManagementService.GetSystemStatsAsync();
+            return Ok(ApiResponse<SystemStatsDto>.Ok(stats));
         }
 
         /// <summary>
-        /// Block or unblock a user (Admin only)
+        /// Delete user
         /// </summary>
-    [HttpPost("{id}/block")]
-    [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ToggleUserBlock(int id, [FromBody] BlockUserDto blockDto)
+        [HttpDelete("users/{userId}")]
+        [RequirePermission("ManageUsers")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<IActionResult> DeleteUser(int userId, [FromQuery] string reason = "")
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var userExists = await _userManagementService.UserExistsAsync(id);
-                if (!userExists)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                var success = await _userManagementService.BlockUserAsync(id, blockDto.IsBlocked);
-                if (!success)
-                {
-                    return BadRequest(new { message = "Failed to update user block status" });
-                }
-
-                var action = blockDto.IsBlocked ? "blocked" : "unblocked";
-                var logMessage = !string.IsNullOrWhiteSpace(blockDto.Reason) 
-                    ? $"User {action} successfully. Reason: {blockDto.Reason}" 
-                    : $"User {action} successfully";
-                    
-                _logger.LogInformation("User {UserId} {Action}. Reason: {Reason}", 
-                    id, action, blockDto.Reason ?? "No reason provided");
-                    
-                return Ok(new { message = logMessage });
+                await _userManagementService.DeleteUserAsync(userId, reason);
+                return Ok(ApiResponse<object>.OkWithMessage("User deleted successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating block status for user {UserId}", id);
-                return StatusCode(500, new { message = "An error occurred while updating user block status" });
-            }
-        }
-
-        /// <summary>
-        /// Soft delete or restore a user (Admin only)
-        /// </summary>
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ToggleUserDelete(int id, [FromQuery] bool restore = false)
-        {
-            try
-            {
-                var success = await _userManagementService.DeleteUserAsync(id, !restore);
-                if (!success)
-                {
-                    return BadRequest(new { message = "Failed to update user delete status" });
-                }
-
-                var action = restore ? "restored" : "deleted";
-                return Ok(new { message = $"User {action} successfully" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating delete status for user {UserId}", id);
-                return StatusCode(500, new { message = "An error occurred while updating user delete status" });
-            }
-        }
-
-        /// <summary>
-        /// Update user status (Admin only)
-        /// </summary>
-    [HttpPut("{id}/status")]
-    [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] UpdateUserStatusDto statusDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var userExists = await _userManagementService.UserExistsAsync(id);
-                if (!userExists)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
-
-                var success = await _userManagementService.UpdateUserStatusAsync(id, statusDto);
-                if (!success)
-                {
-                    return BadRequest(new { message = "Failed to update user status" });
-                }
-
-                return Ok(new { message = "User status updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating status for user {UserId}", id);
-                return StatusCode(500, new { message = "An error occurred while updating user status" });
-            }
-        }
-
-        /// <summary>
-        /// Get system statistics (Admin only)
-        /// </summary>
-    [HttpGet("stats")]
-    [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<SystemStatsDto>> GetSystemStats()
-        {
-            try
-            {
-                var stats = await _userManagementService.GetSystemStatsAsync();
-                return Ok(stats);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving system statistics");
-                return StatusCode(500, new { message = "An error occurred while retrieving system statistics" });
-            }
-        }
-
-        /// <summary>
-        /// Get available roles in the system (Admin only)
-        /// </summary>
-    [HttpGet("roles")]
-    [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<List<string>>> GetAvailableRoles()
-        {
-            try
-            {
-                var roles = await _userManagementService.GetAvailableRolesAsync();
-                return Ok(roles);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving available roles");
-                return StatusCode(500, new { message = "An error occurred while retrieving available roles" });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

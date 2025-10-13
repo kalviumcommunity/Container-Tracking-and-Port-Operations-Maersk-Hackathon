@@ -10,7 +10,7 @@ namespace Backend.Services
         /// <summary>
         /// Get paginated list of users with filtering options
         /// </summary>
-        Task<UsersPagedResponse> GetUsersAsync(int page = 1, int pageSize = 20, string? searchTerm = null, bool includeDeleted = false);
+        Task<UsersPagedResponse> GetUsersAsync(UserFilterDto filter);
 
         /// <summary>
         /// Get detailed user information by ID
@@ -35,7 +35,7 @@ namespace Backend.Services
         /// <summary>
         /// Soft delete or restore a user
         /// </summary>
-        Task<bool> DeleteUserAsync(int userId, bool isDeleted);
+        Task<bool> DeleteUserAsync(int userId, string reason = "");
 
         /// <summary>
         /// Update user status (active/inactive)
