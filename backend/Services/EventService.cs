@@ -1,6 +1,8 @@
 using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
+using Backend.Services.Kafka;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -113,11 +115,13 @@ namespace Backend.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<EventService> _logger;
+        private readonly IKafkaProducer _kafkaProducer;
 
-        public EventService(ApplicationDbContext context, ILogger<EventService> logger)
+        public EventService(ApplicationDbContext context, ILogger<EventService> logger, IKafkaProducer kafkaProducer)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _kafkaProducer = kafkaProducer ?? throw new ArgumentNullException(nameof(kafkaProducer));
         }
 
         /// <summary>
@@ -241,7 +245,37 @@ namespace Backend.Services
                 // Load navigation properties for response
                 await LoadNavigationProperties(eventEntity);
 
-                return MapToDto(eventEntity);
+                var dto = MapToDto(eventEntity);
+
+                // Publish to Kafka (best-effort; log failures without failing API)
+                try
+                {
+                    var settings = new Backend.Services.Kafka.KafkaSettings(); // topic names are bound elsewhere; pick by category/type
+                    var topic = (eventEntity.ContainerId != null) ? "container-events" : "port-events";
+                    var key = eventEntity.ContainerId?.ToString() ?? eventEntity.PortId?.ToString() ?? eventEntity.EventId.ToString();
+                    var payload = new
+                    {
+                        id = eventEntity.EventId,
+                        type = eventEntity.EventType,
+                        status = eventEntity.Status,
+                        timestamp = eventEntity.EventTimestamp,
+                        source = eventEntity.Source,
+                        portId = eventEntity.PortId,
+                        shipId = eventEntity.ShipId,
+                        containerId = eventEntity.ContainerId,
+                        berthId = eventEntity.BerthId,
+                        priority = eventEntity.Priority,
+                        requiresAction = eventEntity.RequiresAction
+                    };
+                    var json = JsonSerializer.Serialize(payload);
+                    await _kafkaProducer.PublishAsync(topic, key ?? eventEntity.EventId.ToString(), json);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to publish event {EventId} to Kafka", eventEntity.EventId);
+                }
+
+                return dto;
             }
             catch (Exception ex)
             {
