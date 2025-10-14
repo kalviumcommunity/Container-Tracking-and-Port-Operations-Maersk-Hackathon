@@ -2,6 +2,7 @@ using Backend.Data;
 using Backend.Extensions;
 using Backend.Services;
 using Backend.Middleware;
+using Backend.Services.Kafka;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -179,6 +180,10 @@ builder.Services.AddScoped<ComprehensiveDataSeedingService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IContainerMovementService, ContainerMovementService>();
+
+// Kafka configuration & producer registration
+builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
+builder.Services.AddSingleton<IKafkaProducer, KafkaProducerService>();
 
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
