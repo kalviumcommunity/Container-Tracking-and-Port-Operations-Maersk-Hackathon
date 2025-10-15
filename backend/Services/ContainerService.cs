@@ -258,6 +258,12 @@ namespace Backend.Services
         /// <returns>A container DTO</returns>
         private static ContainerDto MapToDto(Container container)
         {
+            // Get the most recent active berth assignment to determine port
+            var currentBerthAssignment = container.BerthAssignments?
+                .Where(ba => ba.ReleasedAt == null)
+                .OrderByDescending(ba => ba.AssignedAt)
+                .FirstOrDefault();
+
             return new ContainerDto
             {
                 ContainerId = container.ContainerId,
@@ -277,7 +283,9 @@ namespace Backend.Services
                 CreatedAt = container.CreatedAt,
                 UpdatedAt = container.UpdatedAt,
                 ShipId = container.ShipId,
-                ShipName = container.Ship?.Name ?? string.Empty
+                ShipName = container.Ship?.Name,
+                PortId = currentBerthAssignment?.Berth?.PortId,
+                PortName = currentBerthAssignment?.Berth?.Port?.Name
             };
         }
 

@@ -78,6 +78,15 @@
       @submit="handleFormSubmit"
       @cancel="closeModal"
     />
+
+    <!-- Container Details Modal -->
+    <ContainerDetailsModal
+      v-if="selectedContainer"
+      :is-open="showDetailsModal"
+      :container="selectedContainer"
+      @close="closeDetailsModal"
+      @edit="editContainerFromDetails"
+    />
   </div>
 </template>
 
@@ -93,6 +102,7 @@ import ContainerBulkActions from '../containers/ContainerBulkActions.vue';
 import ContainerError from '../containers/ContainerError.vue';
 import ContainerTable from '../containers/ContainerTable.vue';
 import ContainerModal from '../containers/ContainerModal.vue';
+import ContainerDetailsModal from '../modals/ContainerDetailsModal.vue';
 
 // Import services and types
 import { containerService } from '../../services/containerService';
@@ -160,7 +170,9 @@ const error = ref<string | null>(null);
 const isSubmitting = ref(false);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDetailsModal = ref(false);
 const selectedContainers = ref<string[]>([]);
+const selectedContainer = ref<Container | null>(null);
 const containerForm = ref<Partial<Container & ContainerCreateRequest>>({});
 
 // Current sort state
@@ -496,13 +508,23 @@ const exportContainers = async () => {
 };
 
 const viewContainer = (container: Container) => {
-  // TODO: Implement detailed view modal
-  alert(`Viewing container: ${container.containerId}`);
+  selectedContainer.value = container;
+  showDetailsModal.value = true;
 };
 
 const editContainer = (container: Container) => {
   containerForm.value = { ...container };
   showEditModal.value = true;
+};
+
+const editContainerFromDetails = (container: Container) => {
+  closeDetailsModal();
+  editContainer(container);
+};
+
+const closeDetailsModal = () => {
+  showDetailsModal.value = false;
+  selectedContainer.value = null;
 };
 
 const deleteContainer = async (container: Container) => {

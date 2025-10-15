@@ -4,6 +4,11 @@ using System.Text.Json;
 
 namespace Backend.Services.Kafka
 {
+    public interface IKafkaProducer
+    {
+        Task PublishAsync(string topic, string key, string value, CancellationToken cancellationToken = default);
+    }
+
     public class KafkaSettings
     {
         public string BootstrapServers { get; set; } = string.Empty;

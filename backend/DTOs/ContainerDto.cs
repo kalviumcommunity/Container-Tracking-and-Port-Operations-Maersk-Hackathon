@@ -98,6 +98,16 @@ namespace Backend.DTOs
         /// Name of the ship this container is on (if any)
         /// </summary>
         public string ShipName { get; set; }
+        
+        /// <summary>
+        /// Port ID where container is currently located (if at port)
+        /// </summary>
+        public int? PortId { get; set; }
+        
+        /// <summary>
+        /// Name of the port where container is currently located
+        /// </summary>
+        public string PortName { get; set; }
     }
     
     /// <summary>

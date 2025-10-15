@@ -63,10 +63,10 @@ export const berthApi = {
    */
   async getByStatus(status: string): Promise<{ data: Berth[] }> {
     try {
-      const response = await apiClient.get<ApiResponse<Berth[]>>(`/berths/status/${encodeURIComponent(status)}`)
+      const response = await apiClient.get<ApiResponse<Berth[]>>(`/berths/status/${status}`)
       return { data: response.data.data || [] }
     } catch (error) {
-      console.error(`Error fetching berths with status ${status}:`, error)
+      console.error(`Error fetching berths by status ${status}:`, error)
       return { data: [] }
     }
   },
@@ -85,11 +85,11 @@ export const berthApi = {
   },
 
   /**
-   * Update existing berth
+   * Update berth
    */
-  async update(id: number, berthData: BerthCreateUpdate): Promise<{ data: Berth }> {
+  async update(id: number, updateData: BerthCreateUpdate): Promise<{ data: Berth }> {
     try {
-      const response = await apiClient.put<ApiResponse<Berth>>(`/berths/${id}`, berthData)
+      const response = await apiClient.put<ApiResponse<Berth>>(`/berths/${id}`, updateData)
       return { data: response.data.data }
     } catch (error) {
       console.error(`Error updating berth ${id}:`, error)
@@ -100,13 +100,9 @@ export const berthApi = {
   /**
    * Delete berth
    */
-  async delete(id: number): Promise<{ success: boolean; message?: string }> {
+  async delete(id: number): Promise<void> {
     try {
-      const response = await apiClient.delete<ApiResponse<any>>(`/berths/${id}`)
-      return { 
-        success: true, 
-        message: response.data.message || 'Berth deleted successfully' 
-      }
+      await apiClient.delete(`/berths/${id}`)
     } catch (error) {
       console.error(`Error deleting berth ${id}:`, error)
       throw error

@@ -16,15 +16,14 @@ namespace Backend.Services
             _logger = logger;
         }
 
-        // Change method signature to accept isProduction parameter
         public async Task SeedAllDataAsync(bool isProduction = false)
         {
             _logger.LogInformation("Starting simple data seeding...");
             
-            // Just ensure database is created - no complex seeding for now
+            // Ensure database and tables are created
             await _context.Database.EnsureCreatedAsync();
             
-            _logger.LogInformation("Simple data seeding completed");
+            _logger.LogInformation("Simple data seeding completed - database and tables ensured");
         }
     }
 }

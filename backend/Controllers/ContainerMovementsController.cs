@@ -45,7 +45,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = User.GetUserId();
                 var movement = await _containerMovementService.CreateAsync(createDto, userId);
                 return CreatedAtAction(nameof(GetMovement), new { id = movement.Id }, 
                     ApiResponse<ContainerMovementDto>.Ok(movement));
@@ -118,14 +118,6 @@ namespace Backend.Controllers
             }
         }
 
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                throw new UnauthorizedAccessException("Invalid user token");
-            }
-            return userId;
-        }
+
     }
 }

@@ -168,7 +168,22 @@ namespace Backend.Services
             {
                 ShipId = ship.ShipId,
                 Name = ship.Name,
+                ImoNumber = ship.ImoNumber,
+                Flag = ship.Flag,
+                Type = ship.Type,
+                Capacity = ship.Capacity,
                 Status = ship.Status,
+                Length = ship.Length,
+                Beam = ship.Beam,
+                Draft = ship.Draft,
+                GrossTonnage = ship.GrossTonnage,
+                YearBuilt = ship.YearBuilt,
+                Coordinates = ship.Coordinates,
+                Speed = ship.Speed,
+                Heading = ship.Heading,
+                NextPort = ship.NextPort,
+                EstimatedArrival = ship.EstimatedArrival,
+                CurrentPortId = ship.CurrentPortId,
                 ContainerCount = ship.Containers?.Count ?? 0
             };
         }

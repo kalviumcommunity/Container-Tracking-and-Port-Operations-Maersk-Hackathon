@@ -1,3 +1,5 @@
+import type { Berth } from './berth';
+
 /**
  * Port interface matching the backend PortDto
  */
@@ -5,7 +7,7 @@ export interface Port {
   portId: number;
   name: string;
   code?: string; // International port code (e.g., USNYC, USLA)
-  country: string;
+  country?: string;
   location: string;
   coordinates?: string; // GPS coordinates (latitude,longitude)
   totalContainerCapacity: number;
@@ -28,7 +30,7 @@ export interface Port {
 export interface PortCreateUpdate {
   name: string;
   code?: string;
-  country: string;
+  country?: string;
   location: string;
   coordinates?: string;
   totalContainerCapacity: number;
@@ -44,7 +46,7 @@ export interface PortCreateUpdate {
  * Port with detailed information including berths
  */
 export interface PortDetail extends Port {
-  berths: import('./berth').Berth[];
+  berths: Berth[];
 }
 
 /**

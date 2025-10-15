@@ -14,7 +14,7 @@ export interface ContainerMovement {
 export const containerMovementApi = {
   async getByContainer(containerId: string): Promise<{ data: ContainerMovement[] }> {
     try {
-      const response = await apiClient.get(`/containers/${containerId}/movements`)
+      const response = await apiClient.get(`/container-movements/container/${containerId}`)
       return { data: response.data.data || response.data || [] }
     } catch (error) {
       console.error('Error fetching container movements:', error)

@@ -28,10 +28,10 @@ export interface Berth {
   
   // Port relationship
   portId: number;
-  portName: string;
+  portName?: string;
   
   // Metrics
-  activeAssignmentCount: number;
+  activeAssignmentCount?: number;
   
   // Additional information
   notes?: string;
@@ -45,15 +45,14 @@ export interface BerthCreateUpdate {
   identifier?: string;
   type?: string;
   capacity: number;
-  currentLoad?: number;
+  status: string;
+  portId: number;
   maxShipLength?: number;
   maxDraft?: number;
-  status: string;
-  priority?: string;
   availableServices?: string;
   craneCount?: number;
   hourlyRate?: number;
-  portId: number;
+  priority?: string;
   notes?: string;
 }
 
@@ -77,26 +76,23 @@ export interface BerthWithAnalytics extends Berth {
  */
 export interface BerthAssignment {
   id: number;
-  containerId?: string;
-  containerName?: string;
-  shipId?: number;
   berthId: number;
-  berthName: string;
-  assignmentType?: string;
+  berthName?: string;
+  shipId?: number;
+  containerId?: string;
+  assignmentType: string;
   priority?: string;
-  status?: string;
-  
-  // Scheduling
+  status: string;
   scheduledArrival?: string;
   scheduledDeparture?: string;
   actualArrival?: string;
   actualDeparture?: string;
-  
-  // Timestamps
   assignedAt: string;
   releasedAt?: string;
-  
-  // Additional info
+  containerCount?: number;
+  estimatedProcessingTime?: number;
+  actualProcessingTime?: number;
+  cost?: number;
   notes?: string;
 }
 

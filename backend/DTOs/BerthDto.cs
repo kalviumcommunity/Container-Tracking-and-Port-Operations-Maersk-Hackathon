@@ -104,6 +104,16 @@ namespace Backend.DTOs
         public required string Name { get; set; }
         
         /// <summary>
+        /// Unique identifier code for the berth (e.g., "B001", "WHARF-A1")
+        /// </summary>
+        public string? Identifier { get; set; }
+        
+        /// <summary>
+        /// Type of berth (e.g., Container, Bulk, RoRo, Cruise)
+        /// </summary>
+        public string? Type { get; set; }
+        
+        /// <summary>
         /// Maximum capacity of containers the berth can handle
         /// </summary>
         public int Capacity { get; set; }
@@ -117,6 +127,41 @@ namespace Backend.DTOs
         /// Foreign key to the port this berth belongs to
         /// </summary>
         public int PortId { get; set; }
+        
+        /// <summary>
+        /// Maximum ship length that can dock at this berth (in meters)
+        /// </summary>
+        public decimal? MaxShipLength { get; set; }
+        
+        /// <summary>
+        /// Maximum ship draft that can dock at this berth (in meters)
+        /// </summary>
+        public decimal? MaxDraft { get; set; }
+        
+        /// <summary>
+        /// Available services at this berth (comma-separated)
+        /// </summary>
+        public string? AvailableServices { get; set; }
+        
+        /// <summary>
+        /// Number of cranes available at this berth
+        /// </summary>
+        public int? CraneCount { get; set; }
+        
+        /// <summary>
+        /// Hourly rate for using this berth (in local currency)
+        /// </summary>
+        public decimal? HourlyRate { get; set; }
+        
+        /// <summary>
+        /// Priority level of this berth (High, Medium, Low)
+        /// </summary>
+        public string? Priority { get; set; }
+        
+        /// <summary>
+        /// Additional notes about the berth
+        /// </summary>
+        public string? Notes { get; set; }
     }
     
     /// <summary>
