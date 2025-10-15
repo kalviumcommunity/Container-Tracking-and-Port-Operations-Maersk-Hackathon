@@ -17,6 +17,20 @@ namespace Backend.Repositories
         }
 
         /// <summary>
+        /// Overrides the base GetAllAsync to include navigation properties
+        /// </summary>
+        /// <returns>All containers with navigation properties</returns>
+        public new async Task<IEnumerable<Container>> GetAllAsync()
+        {
+            return await _dbSet
+                .Include(c => c.Ship)
+                .Include(c => c.BerthAssignments)
+                    .ThenInclude(ba => ba.Berth)
+                    .ThenInclude(b => b.Port)
+                .ToListAsync();
+        }
+
+        /// <summary>
         /// Gets containers by their current location
         /// </summary>
         /// <param name="location">The location to filter by</param>
@@ -62,9 +76,10 @@ namespace Backend.Repositories
             return await _dbSet
                 .Include(c => c.Ship)
                 .Include(c => c.BerthAssignments)
-                .ThenInclude(ba => ba.Berth)
+                    .ThenInclude(ba => ba.Berth)
+                    .ThenInclude(b => b.Port)
                 .Include(c => c.ShipContainers)
-                .ThenInclude(sc => sc.Ship)
+                    .ThenInclude(sc => sc.Ship)
                 .FirstOrDefaultAsync(c => c.ContainerId == id);
         }
     }

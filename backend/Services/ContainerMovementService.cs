@@ -78,6 +78,19 @@ namespace Backend.Services
             _context.ContainerMovements.Add(movement);
             await _context.SaveChangesAsync();
 
+            var history = new ContainerMovementHistory
+            {
+                ContainerId = movement.ContainerId,
+                FromLocation = movement.FromLocation,
+                ToLocation = movement.ToLocation,
+                MovementType = movement.MovementType,
+                MovedAt = movement.MovementTimestamp,
+                MovedBy = (await _context.Users.FindAsync(userId))?.FullName,
+                Notes = $"Created: {movement.Notes}",
+            };
+            _context.ContainerMovementHistory.Add(history);
+            await _context.SaveChangesAsync();
+
             return await GetByIdAsync(movement.MovementId); // Fixed: Use MovementId instead of Id
         }
 
@@ -108,6 +121,20 @@ namespace Backend.Services
                 movement.Notes = updateDto.Notes;
 
             movement.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            var user = await _context.Users.FindAsync(movement.RecordedByUserId);
+            var history = new ContainerMovementHistory
+            {
+                ContainerId = movement.ContainerId,
+                FromLocation = movement.FromLocation,
+                ToLocation = movement.ToLocation,
+                MovementType = movement.MovementType,
+                MovedAt = movement.MovementTimestamp,
+                MovedBy = user?.FullName,
+                Notes = $"Updated: Status to {updateDto.Status}, Notes: {updateDto.Notes}",
+            };
+            _context.ContainerMovementHistory.Add(history);
             await _context.SaveChangesAsync();
             
             return await GetByIdAsync(movement.MovementId); // Fixed: Use MovementId instead of Id

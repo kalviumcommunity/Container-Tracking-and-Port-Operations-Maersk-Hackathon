@@ -6,9 +6,11 @@ export interface Container {
   status: string;
   condition?: string;
   currentLocation: string;
+  origin?: string;
   destination?: string;
   weight?: number;
   maxWeight?: number;
+  declaredValue?: number;
   size?: string;
   temperature?: number;
   coordinates?: string;
@@ -17,6 +19,8 @@ export interface Container {
   updatedAt: string;
   shipId?: number;
   shipName?: string;
+  portId?: number;
+  portName?: string;
 }
 
 export interface ContainerFilters {

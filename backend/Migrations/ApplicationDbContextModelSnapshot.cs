@@ -271,6 +271,53 @@ namespace backend.Migrations
                     b.ToTable("BerthAssignments");
                 });
 
+            modelBuilder.Entity("Backend.Models.BerthUsageCharge", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BaseCharges")
+                        .HasColumnType("decimal(15,2)");
+
+                    b.Property<int>("BerthAssignmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ChargedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("ServiceCharges")
+                        .HasColumnType("decimal(15,2)");
+
+                    b.Property<decimal>("TotalCharges")
+                        .HasColumnType("decimal(15,2)");
+
+                    b.Property<decimal>("TotalHours")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BerthAssignmentId");
+
+                    b.ToTable("BerthUsageCharges");
+                });
+
             modelBuilder.Entity("Backend.Models.Container", b =>
                 {
                     b.Property<string>("ContainerId")
@@ -287,6 +334,10 @@ namespace backend.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Coordinates")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -358,6 +409,10 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(11)");
 
+                    b.Property<string>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -428,6 +483,110 @@ namespace backend.Migrations
                     b.HasIndex("ContainerId", "MovementTimestamp");
 
                     b.ToTable("ContainerMovements");
+                });
+
+            modelBuilder.Entity("Backend.Models.ContainerMovementHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContainerId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("Duration")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Equipment")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("FromLocation")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("MovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MovedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ToLocation")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContainerId");
+
+                    b.ToTable("ContainerMovementHistory");
+                });
+
+            modelBuilder.Entity("Backend.Models.ContainerStorageFee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContainerId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DailyStorageRate")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("FeeStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("PortId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StorageEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StorageStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalFees")
+                        .HasColumnType("decimal(15,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContainerId");
+
+                    b.HasIndex("PortId");
+
+                    b.ToTable("ContainerStorageFees");
                 });
 
             modelBuilder.Entity("Backend.Models.Event", b =>
@@ -882,6 +1041,70 @@ namespace backend.Migrations
                     b.ToTable("ShipContainers");
                 });
 
+            modelBuilder.Entity("Backend.Models.ShipRoute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualArrival")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActualDeparture")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DestinationPortId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("FuelConsumption")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("OriginPortId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("PortDelay")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("RouteNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RouteStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("ScheduledArrival")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ScheduledDeparture")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ShipId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("WeatherDelay")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationPortId");
+
+                    b.HasIndex("OriginPortId");
+
+                    b.HasIndex("ShipId");
+
+                    b.ToTable("ShipRoutes");
+                });
+
             modelBuilder.Entity("Backend.Models.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -1044,6 +1267,17 @@ namespace backend.Migrations
                     b.Navigation("Ship");
                 });
 
+            modelBuilder.Entity("Backend.Models.BerthUsageCharge", b =>
+                {
+                    b.HasOne("Backend.Models.BerthAssignment", "BerthAssignment")
+                        .WithMany()
+                        .HasForeignKey("BerthAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BerthAssignment");
+                });
+
             modelBuilder.Entity("Backend.Models.Container", b =>
                 {
                     b.HasOne("Backend.Models.Ship", "Ship")
@@ -1090,6 +1324,36 @@ namespace backend.Migrations
                     b.Navigation("RecordedByUser");
 
                     b.Navigation("Ship");
+                });
+
+            modelBuilder.Entity("Backend.Models.ContainerMovementHistory", b =>
+                {
+                    b.HasOne("Backend.Models.Container", "Container")
+                        .WithMany()
+                        .HasForeignKey("ContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Container");
+                });
+
+            modelBuilder.Entity("Backend.Models.ContainerStorageFee", b =>
+                {
+                    b.HasOne("Backend.Models.Container", "Container")
+                        .WithMany()
+                        .HasForeignKey("ContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Models.Port", "Port")
+                        .WithMany()
+                        .HasForeignKey("PortId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Container");
+
+                    b.Navigation("Port");
                 });
 
             modelBuilder.Entity("Backend.Models.Event", b =>
@@ -1206,6 +1470,33 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Container");
+
+                    b.Navigation("Ship");
+                });
+
+            modelBuilder.Entity("Backend.Models.ShipRoute", b =>
+                {
+                    b.HasOne("Backend.Models.Port", "DestinationPort")
+                        .WithMany()
+                        .HasForeignKey("DestinationPortId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Models.Port", "OriginPort")
+                        .WithMany()
+                        .HasForeignKey("OriginPortId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Models.Ship", "Ship")
+                        .WithMany()
+                        .HasForeignKey("ShipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DestinationPort");
+
+                    b.Navigation("OriginPort");
 
                     b.Navigation("Ship");
                 });

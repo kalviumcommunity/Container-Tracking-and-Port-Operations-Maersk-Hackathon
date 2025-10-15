@@ -121,9 +121,21 @@ namespace Backend.Services
             var berth = new Berth
             {
                 Name = createDto.Name,
+                Identifier = createDto.Identifier ?? string.Empty,
+                Type = createDto.Type ?? "Container",
                 Capacity = createDto.Capacity,
+                CurrentLoad = 0, // New berths start empty
                 Status = createDto.Status,
-                PortId = createDto.PortId
+                PortId = createDto.PortId,
+                MaxShipLength = createDto.MaxShipLength,
+                MaxDraft = createDto.MaxDraft,
+                AvailableServices = createDto.AvailableServices,
+                CraneCount = createDto.CraneCount,
+                HourlyRate = createDto.HourlyRate,
+                Priority = createDto.Priority ?? "Medium",
+                Notes = createDto.Notes,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             
             var createdBerth = await _berthRepository.CreateAsync(berth);
@@ -144,11 +156,21 @@ namespace Backend.Services
                 throw new KeyNotFoundException($"Berth with ID {id} not found");
             }
             
-            // Update fields
+            // Update all fields
             existingBerth.Name = updateDto.Name;
+            existingBerth.Identifier = updateDto.Identifier ?? existingBerth.Identifier;
+            existingBerth.Type = updateDto.Type ?? existingBerth.Type;
             existingBerth.Capacity = updateDto.Capacity;
             existingBerth.Status = updateDto.Status;
             existingBerth.PortId = updateDto.PortId;
+            existingBerth.MaxShipLength = updateDto.MaxShipLength;
+            existingBerth.MaxDraft = updateDto.MaxDraft;
+            existingBerth.AvailableServices = updateDto.AvailableServices;
+            existingBerth.CraneCount = updateDto.CraneCount;
+            existingBerth.HourlyRate = updateDto.HourlyRate;
+            existingBerth.Priority = updateDto.Priority ?? existingBerth.Priority;
+            existingBerth.Notes = updateDto.Notes;
+            existingBerth.UpdatedAt = DateTime.UtcNow;
             
             var updatedBerth = await _berthRepository.UpdateAsync(existingBerth);
             return MapToDto(updatedBerth);
@@ -175,10 +197,20 @@ namespace Backend.Services
             {
                 BerthId = berth.BerthId,
                 Name = berth.Name,
+                Identifier = berth.Identifier,
+                Type = berth.Type,
                 Capacity = berth.Capacity,
+                CurrentLoad = berth.CurrentLoad,
+                MaxShipLength = berth.MaxShipLength,
+                MaxDraft = berth.MaxDraft,
                 Status = berth.Status,
+                AvailableServices = berth.AvailableServices,
+                CraneCount = berth.CraneCount,
+                HourlyRate = berth.HourlyRate,
+                Priority = berth.Priority,
+                Notes = berth.Notes,
                 PortId = berth.PortId,
-                PortName = berth.Port?.Name,
+                PortName = berth.Port?.Name ?? "Unknown",
                 ActiveAssignmentCount = berth.BerthAssignments?.Count(ba => ba.ReleasedAt == null) ?? 0
             };
         }

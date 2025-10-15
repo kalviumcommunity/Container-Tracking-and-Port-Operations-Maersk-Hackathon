@@ -2,7 +2,6 @@ using Backend.Data;
 using Backend.Extensions;
 using Backend.Services;
 using Backend.Middleware;
-using Backend.Services.Kafka;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -181,9 +180,12 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IContainerMovementService, ContainerMovementService>();
 
-// Kafka configuration & producer registration
-builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
-builder.Services.AddSingleton<IKafkaProducer, KafkaProducerService>();
+// Add Kafka configuration and services
+builder.Services.Configure<Backend.Services.Kafka.KafkaSettings>(
+    builder.Configuration.GetSection("Kafka"));
+
+// Register Kafka producer service
+builder.Services.AddScoped<Backend.Services.Kafka.IKafkaProducer, Backend.Services.Kafka.KafkaProducerService>();
 
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
@@ -266,33 +268,18 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // Ensure database exists
-        await simpleSeedingService.SeedAllDataAsync(isProduction: true);
+        // IMPORTANT: Apply any pending migrations first
+        logger.LogInformation("Applying pending EF Core migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Migrations applied successfully");
 
         // Bootstrap comprehensive data (roles, permissions, default admin, sample data)
-        var hasUsers = await context.Users.AnyAsync();
-        var hasPorts = await context.Ports.AnyAsync();
-        var hasContainers = await context.Containers.AnyAsync();
-        var hasShips = await context.Ships.AnyAsync();
-        var hasBerths = await context.Berths.AnyAsync();
-
-        var businessDataMissing = !hasPorts || !hasContainers || !hasShips || !hasBerths;
-
-        if (!hasUsers || businessDataMissing)
-        {
-            await comprehensiveSeedingService.SeedAllAsync(forceReseed: false);
-            logger.LogInformation("Comprehensive seeding executed (users: {HasUsers}, business missing: {BusinessMissing})", hasUsers, businessDataMissing);
-        }
-        else
-        {
-            logger.LogInformation("Comprehensive seeding skipped (users and business data already present).");
-        }
-
+        await comprehensiveSeedingService.SeedAllAsync(forceReseed: false);
         logger.LogInformation("Database initialization completed successfully");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while initializing the database");
+        logger.LogError(ex, "An error occurred while initializing the database. Check connection string and database accessibility.");
         throw;
     }
 }

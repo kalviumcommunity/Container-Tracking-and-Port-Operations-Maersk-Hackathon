@@ -60,8 +60,19 @@ namespace Backend.Services
             {
                 PortId = port.PortId,
                 Name = port.Name,
+                Code = port.Code,
+                Country = port.Country,
                 Location = port.Location,
+                Coordinates = port.Coordinates,
                 TotalContainerCapacity = port.TotalContainerCapacity,
+                CurrentContainerCount = port.CurrentContainerCount,
+                MaxShipCapacity = port.MaxShipCapacity,
+                CurrentShipCount = port.CurrentShipCount,
+                OperatingHours = port.OperatingHours,
+                TimeZone = port.TimeZone,
+                ContactInfo = port.ContactInfo,
+                Services = port.Services,
+                Status = port.Status,
                 BerthCount = port.Berths?.Count ?? 0,
                 Berths = port.Berths?.Select(b => new BerthDto
                 {
@@ -108,8 +119,19 @@ namespace Backend.Services
             var port = new Port
             {
                 Name = createDto.Name,
+                Code = createDto.Code,
+                Country = createDto.Country,
                 Location = createDto.Location,
-                TotalContainerCapacity = createDto.TotalContainerCapacity
+                Coordinates = createDto.Coordinates,
+                TotalContainerCapacity = createDto.TotalContainerCapacity,
+                CurrentContainerCount = 0, // Initialize to 0 for new port
+                MaxShipCapacity = createDto.MaxShipCapacity,
+                CurrentShipCount = 0, // Initialize to 0 for new port
+                OperatingHours = createDto.OperatingHours,
+                TimeZone = createDto.TimeZone,
+                ContactInfo = createDto.ContactInfo,
+                Services = createDto.Services,
+                Status = createDto.Status ?? "Active" // Default to Active if not specified
             };
             
             var createdPort = await _portRepository.CreateAsync(port);
@@ -132,8 +154,17 @@ namespace Backend.Services
             
             // Update fields
             existingPort.Name = updateDto.Name;
+            existingPort.Code = updateDto.Code;
+            existingPort.Country = updateDto.Country;
             existingPort.Location = updateDto.Location;
+            existingPort.Coordinates = updateDto.Coordinates;
             existingPort.TotalContainerCapacity = updateDto.TotalContainerCapacity;
+            existingPort.MaxShipCapacity = updateDto.MaxShipCapacity;
+            existingPort.OperatingHours = updateDto.OperatingHours;
+            existingPort.TimeZone = updateDto.TimeZone;
+            existingPort.ContactInfo = updateDto.ContactInfo;
+            existingPort.Services = updateDto.Services;
+            existingPort.Status = updateDto.Status;
             
             var updatedPort = await _portRepository.UpdateAsync(existingPort);
             return MapToDto(updatedPort);
@@ -160,8 +191,19 @@ namespace Backend.Services
             {
                 PortId = port.PortId,
                 Name = port.Name,
+                Code = port.Code,
+                Country = port.Country,
                 Location = port.Location,
+                Coordinates = port.Coordinates,
                 TotalContainerCapacity = port.TotalContainerCapacity,
+                CurrentContainerCount = port.CurrentContainerCount,
+                MaxShipCapacity = port.MaxShipCapacity,
+                CurrentShipCount = port.CurrentShipCount,
+                OperatingHours = port.OperatingHours,
+                TimeZone = port.TimeZone,
+                ContactInfo = port.ContactInfo,
+                Services = port.Services,
+                Status = port.Status,
                 BerthCount = port.Berths?.Count ?? 0
             };
         }

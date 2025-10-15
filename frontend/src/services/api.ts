@@ -99,6 +99,26 @@ api.interceptors.response.use(
   }
 );
 
+// Add debug logging to see what URLs are being called
+api.interceptors.request.use((config) => {
+  console.log(`🔗 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+// Enhanced error logging
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 404) {
+      console.error(`❌ API endpoint not found: ${error.config?.url}`);
+      console.error(`🔍 Full URL attempted: ${error.config?.baseURL}${error.config?.url}`);
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ===== API RESPONSE TYPE =====
 export interface ApiResponse<T> {
   data: T;
@@ -303,137 +323,23 @@ export const roleApplicationApi = {
   }
 };
 
+// ===== CONTAINER API =====
+export { containerApi } from './containerApi';
+
+// ===== SHIP API =====
+export { shipApi } from './shipApi';
+
 // ===== BERTH API ===== 
 export { berthApi } from './berthApi';
 
 // ===== BERTH ASSIGNMENT API =====
-export const berthAssignmentApi = {
-  async getAll() {
-    try {
-      const response = await api.get('/berth-assignments');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching berth assignments:', error);
-      // Return mock data if API endpoint doesn't exist yet
-      return {
-        data: [
-          { id: 1, berthId: 1, shipId: 1, containerId: 'MAEU1234567', assignedAt: new Date().toISOString() },
-          { id: 2, berthId: 2, shipId: 2, containerId: 'MAEU2345678', assignedAt: new Date().toISOString() }
-        ]
-      };
-    }
-  },
-
-  async getById(id: number | string) {
-    try {
-      const response = await api.get(`/berth-assignments/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async create(assignmentData: {
-    shipId?: number;
-    berthId: number;
-    containerId?: string;
-    assignmentType?: string;
-    priority?: string;
-    status?: string;
-    scheduledArrival?: string;
-    scheduledDeparture?: string;
-    notes?: string;
-  }) {
-    try {
-      const response = await api.post('/berth-assignments', assignmentData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async update(id: number | string, updateData: any) {
-    try {
-      const response = await api.put(`/berth-assignments/${id}`, updateData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async delete(id: number | string) {
-    try {
-      const response = await api.delete(`/berth-assignments/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-};
-
-// ===== CREW API =====
-export const crewApi = {
-  async getAll() {
-    try {
-      const response = await api.get('/crew');
-      return response.data;
-    } catch (error) {
-      // Fallback mock data
-      return {
-        data: [
-          { id: 1, name: 'John Smith', role: 'Crane Operator' },
-          { id: 2, name: 'Maria Garcia', role: 'Dock Supervisor' },
-          { id: 3, name: 'David Chen', role: 'Forklift Operator' },
-          { id: 4, name: 'Sarah Johnson', role: 'Safety Inspector' },
-          { id: 5, name: 'Michael Brown', role: 'Equipment Technician' }
-        ]
-      };
-    }
-  }
-};
-
-// ===== CONTAINER API =====
-export const containerApi = {
-  getContainers: (filters = {}) => containerService.getContainers(filters),
-  getAll: () => containerService.getAll(),
-  getById: (id: string) => containerService.getById(id),
-  getStatistics: () => containerService.getStatistics(),
-  create: (containerData: any) => containerService.create(containerData),
-  update: (containerId: string, containerData: any) => containerService.update(containerId, containerData),
-  delete: (id: string) => containerService.delete(id),
-  bulkUpdateStatus: (bulkUpdate: any) => containerService.bulkUpdateStatus(bulkUpdate),
-  exportContainers: (filters: any) => containerService.exportContainers(filters)
-};
+export { berthAssignmentApi } from './berthAssignmentApi';
 
 // ===== PORT API =====
-export const portApi = {
-  getAll: () => portService.getAll(),
-  getById: (id: any) => portService.getById(id)
-};
+export { portApi } from './portApi';
 
-// ===== SHIP API =====
-export const shipApi = {
-  getAll: async () => {
-    try {
-      const response = await shipService.getAll();
-      return response;
-    } catch (error) {
-      console.error('shipApi.getAll error:', error);
-      // Return mock data as fallback
-      return {
-        data: [
-          { id: 1, shipId: 1, name: 'Maersk Edinburgh', status: 'Docked', capacity: 13092 },
-          { id: 2, shipId: 2, name: 'MSC Oscar', status: 'At Sea', capacity: 19224 },
-          { id: 3, shipId: 3, name: 'CMA CGM Bougainville', status: 'Loading', capacity: 18000 },
-          { id: 4, shipId: 4, name: 'Ever Given', status: 'Docked', capacity: 20124 }
-        ]
-      };
-    }
-  },
-  getById: (id: any) => shipService.getById(id),
-  create: (shipData: any) => shipService.create(shipData),
-  update: (id: any, shipData: any) => shipService.update(id, shipData)
-};
+// ===== CREW API =====
+export { crewApi } from './crewApi';
 
 // User management - re-export existing service
 export { userManagementApi };

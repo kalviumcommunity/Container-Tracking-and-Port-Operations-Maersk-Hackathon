@@ -88,7 +88,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = User.GetUserId();
                 var eventObj = await _eventService.AcknowledgeAsync(id, userId);
                 return Ok(ApiResponse<EventDto>.Ok(eventObj));
             }
@@ -115,7 +115,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = User.GetUserId();
                 var eventObj = await _eventService.ResolveAsync(id, userId, resolution.Resolution);
                 return Ok(ApiResponse<EventDto>.Ok(eventObj));
             }
@@ -138,20 +138,12 @@ namespace Backend.Controllers
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EventDto>>), 200)]
         public async Task<IActionResult> GetMyAssignments()
         {
-            var userId = GetCurrentUserId();
+            var userId = User.GetUserId();
             var events = await _eventService.GetUserAssignedEventsAsync(userId);
             return Ok(ApiResponse<IEnumerable<EventDto>>.Ok(events));
         }
 
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                throw new UnauthorizedAccessException("Invalid user token");
-            }
-            return userId;
-        }
+
     }
 
     public class EventResolutionDto

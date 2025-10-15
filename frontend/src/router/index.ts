@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/components/main/Home.vue'
 import Dashboard from '@/components/main/Dashboard.vue'
 import ContainerManagement from '@/components/main/ContainerManagement.vue'
-import BerthOperationManagement from '@/components/main/BerthOperationsMain.vue'
+import PortOperationManagement from '@/components/main/PortOperationManagement.vue'
 import EventStreaming from '@/components/main/EventStreaming.vue'
 import AdminDashboard from '@/components/AdminDashboard.vue'
 import TestForms from '@/test-forms.vue'
@@ -35,7 +35,7 @@ const router = createRouter({
     {
       path: '/berth-operation-management',
       name: 'berth-operation-management',
-      component: BerthOperationManagement,
+      component: PortOperationManagement,
       meta: { requiresAuth: true }
     },
     {

@@ -25,14 +25,24 @@ namespace Backend.Services
 
             try
             {
+                // Ensure database and tables exist first
+                await _context.Database.EnsureCreatedAsync();
+
                 // Check if we need to seed: only skip when ALL key business tables already have data
                 if (!forceReseed)
                 {
-                    var hasUsers = await _context.Users.AnyAsync();
-                    var hasPorts = await _context.Ports.AnyAsync();
-                    var hasShips = await _context.Ships.AnyAsync();
-                    var hasBerths = await _context.Berths.AnyAsync();
-                    var hasContainers = await _context.Containers.AnyAsync();
+                    // Use try-catch for each table check to handle missing tables gracefully
+                    bool hasUsers = false;
+                    bool hasPorts = false;
+                    bool hasShips = false;
+                    bool hasBerths = false;
+                    bool hasContainers = false;
+
+                    try { hasUsers = await _context.Users.AnyAsync(); } catch { }
+                    try { hasPorts = await _context.Ports.AnyAsync(); } catch { }
+                    try { hasShips = await _context.Ships.AnyAsync(); } catch { }
+                    try { hasBerths = await _context.Berths.AnyAsync(); } catch { }
+                    try { hasContainers = await _context.Containers.AnyAsync(); } catch { }
 
                     if (hasUsers && hasPorts && hasShips && hasBerths && hasContainers)
                     {
@@ -74,28 +84,52 @@ namespace Backend.Services
 
         private async Task ClearAllDataAsync()
         {
-            // Clear in reverse dependency order
-            _context.Analytics.RemoveRange(_context.Analytics);
-            _context.Events.RemoveRange(_context.Events);
-            _context.ContainerMovements.RemoveRange(_context.ContainerMovements);
-            _context.ShipContainers.RemoveRange(_context.ShipContainers);
-            _context.BerthAssignments.RemoveRange(_context.BerthAssignments);
-            _context.Containers.RemoveRange(_context.Containers);
-            _context.Berths.RemoveRange(_context.Berths);
-            _context.Ships.RemoveRange(_context.Ships);
-            _context.Ports.RemoveRange(_context.Ports);
-            _context.UserRoles.RemoveRange(_context.UserRoles);
-            _context.RolePermissions.RemoveRange(_context.RolePermissions);
-            _context.Users.RemoveRange(_context.Users);
-            _context.Roles.RemoveRange(_context.Roles);
-            _context.Permissions.RemoveRange(_context.Permissions);
+            try
+            {
+                // Clear in reverse dependency order - with existence checks
+                if (_context.Analytics.Any()) _context.Analytics.RemoveRange(_context.Analytics);
+                if (_context.Events.Any()) _context.Events.RemoveRange(_context.Events);
+                if (_context.ContainerMovements.Any()) _context.ContainerMovements.RemoveRange(_context.ContainerMovements);
+                if (_context.ShipContainers.Any()) _context.ShipContainers.RemoveRange(_context.ShipContainers);
+                if (_context.BerthAssignments.Any()) _context.BerthAssignments.RemoveRange(_context.BerthAssignments);
+                if (_context.Containers.Any()) _context.Containers.RemoveRange(_context.Containers);
+                if (_context.Berths.Any()) _context.Berths.RemoveRange(_context.Berths);
+                if (_context.Ships.Any()) _context.Ships.RemoveRange(_context.Ships);
+                if (_context.Ports.Any()) _context.Ports.RemoveRange(_context.Ports);
+                if (_context.UserRoles.Any()) _context.UserRoles.RemoveRange(_context.UserRoles);
+                if (_context.RolePermissions.Any()) _context.RolePermissions.RemoveRange(_context.RolePermissions);
+                if (_context.Users.Any()) _context.Users.RemoveRange(_context.Users);
+                if (_context.Roles.Any()) _context.Roles.RemoveRange(_context.Roles);
+                if (_context.Permissions.Any()) _context.Permissions.RemoveRange(_context.Permissions);
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Some errors occurred during data clearing - may be expected if tables don't exist");
+            }
         }
 
         private async Task SeedRolesAndPermissionsAsync()
         {
             _logger.LogInformation("Seeding roles and permissions...");
+
+            // Ensure tables exist and check safely
+            try
+            {
+                var existingPermissionCount = await _context.Permissions.CountAsync();
+                var existingRoleCount = await _context.Roles.CountAsync();
+                
+                if (existingPermissionCount > 0 && existingRoleCount > 0)
+                {
+                    _logger.LogInformation("Roles and permissions already exist. Skipping.");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation("Tables may not exist yet, will create during seeding. Error: {Error}", ex.Message);
+            }
 
             // Define the full set of permissions we expect in the system
             var permissions = new List<Permission>
@@ -315,6 +349,21 @@ namespace Backend.Services
         private async Task SeedPortsAsync()
         {
             _logger.LogInformation("Seeding lean world ports...");
+
+            // Check if ports already exist
+            try
+            {
+                var existingPortCount = await _context.Ports.CountAsync();
+                if (existingPortCount > 0)
+                {
+                    _logger.LogInformation("Ports already exist. Skipping port seeding.");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation("Ports table may not exist yet, will create. Error: {Error}", ex.Message);
+            }
 
             var ports = new List<Port>
             {

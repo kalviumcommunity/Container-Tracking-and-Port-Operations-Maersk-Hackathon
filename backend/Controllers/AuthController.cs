@@ -141,7 +141,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = User.GetUserId();
                 var user = await _authService.GetUserByIdAsync(userId);
                 
                 if (user == null)
@@ -206,7 +206,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = User.GetUserId();
                 var updatedUser = await _authService.UpdateUserAsync(userId, updateDto);
                 
                 if (updatedUser == null)
@@ -274,7 +274,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = User.GetUserId();
                 var success = await _authService.ChangePasswordAsync(userId, changePasswordDto);
                 
                 if (!success)
@@ -454,14 +454,6 @@ namespace Backend.Controllers
             return Ok(new { message = "Logged out successfully. Please remove the token from client storage." });
         }
 
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                throw new UnauthorizedAccessException("Invalid user token");
-            }
-            return userId;
-        }
+
     }
 }

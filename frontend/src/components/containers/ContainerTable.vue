@@ -118,24 +118,29 @@
               {{ formatDate(container.updatedAt) }}
             </td>
             <td v-if="canManage" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
-              <button
-                @click="$emit('view', container)"
-                class="text-blue-600 hover:text-blue-900 mr-2"
-              >
-                View
-              </button>
-              <button
-                @click="$emit('edit', container)"
-                class="text-indigo-600 hover:text-indigo-900 mr-2"
-              >
-                Edit
-              </button>
-              <button
-                @click="$emit('delete', container)"
-                class="text-red-600 hover:text-red-900"
-              >
-                Delete
-              </button>
+              <div class="flex justify-end gap-2">
+                <button
+                  @click="$emit('view', container)"
+                  class="action-btn view-btn"
+                  title="View Details"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button
+                  @click="$emit('edit', container)"
+                  class="action-btn edit-btn"
+                  title="Edit Container"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button
+                  @click="$emit('delete', container)"
+                  class="action-btn delete-btn"
+                  title="Delete Container"
+                >
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
             </td>
           </tr>
           <!-- Empty State -->
@@ -253,3 +258,51 @@ const formatDate = (dateString: string): string => {
   }
 };
 </script>
+
+<style scoped>
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.view-btn {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.view-btn:hover {
+  background: #bae6fd;
+  color: #0369a1;
+  transform: translateY(-1px);
+}
+
+.edit-btn {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.edit-btn:hover {
+  background: #bfdbfe;
+  color: #1e40af;
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.delete-btn:hover {
+  background: #fecaca;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+</style>

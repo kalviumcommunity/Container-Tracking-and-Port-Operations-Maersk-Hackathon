@@ -23,6 +23,9 @@ namespace Backend.Extensions
             services.AddScoped<IBerthRepository, BerthRepository>();
             services.AddScoped<IBerthAssignmentRepository, BerthAssignmentRepository>();
             services.AddScoped<IShipContainerRepository, ShipContainerRepository>();
+            services.AddScoped<IShipRouteRepository, ShipRouteRepository>();
+            services.AddScoped<IBerthUsageChargeRepository, BerthUsageChargeRepository>();
+            services.AddScoped<IContainerStorageFeeRepository, ContainerStorageFeeRepository>();
             
             return services;
         }
@@ -41,6 +44,9 @@ namespace Backend.Extensions
             services.AddScoped<IBerthService, BerthService>();
             services.AddScoped<IBerthAssignmentService, BerthAssignmentService>();
             services.AddScoped<IShipContainerService, ShipContainerService>();
+            services.AddScoped<IShipRouteService, ShipRouteService>();
+            services.AddScoped<IBerthUsageChargeService, BerthUsageChargeService>();
+            services.AddScoped<IContainerStorageFeeService, ContainerStorageFeeService>();
             
             return services;
         }

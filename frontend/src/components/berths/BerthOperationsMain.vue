@@ -469,25 +469,28 @@
     </main>
 
     <!-- Modals -->
-    <BerthModal
-      v-if="showBerthModal"
-      :is-editing="isEditingBerth"
-      :berth="selectedBerth"
-      :status-options="berthStatusOptions"
-      :port-options="portOptions"
-      :is-submitting="isSubmittingBerth"
+    <BerthFormModal
+      :isOpen="showBerthModal"
+      :berth="isEditingBerth ? selectedBerth : null"
+      :ports="ports"
+      @close="closeBerthModal"
       @submit="handleBerthSubmit"
-      @cancel="closeBerthModal"
     />
 
-    <AssignmentModal
-      v-if="showAssignmentModal"
+    <BerthDetailsModal
+      :isOpen="showDetailsModal"
       :berth="selectedBerth"
-      :available-ships="ships"
-      :available-containers="containers"
-      :is-submitting="isSubmittingAssignment"
+      :ports="ports"
+      @close="closeDetailsModal"
+      @edit="handleEditFromDetails"
+      @assign="handleAssignFromDetails"
+    />
+
+    <BerthAssignmentModal
+      :isOpen="showAssignmentModal"
+      :berth="selectedBerth"
+      @close="closeAssignmentModal"
       @submit="handleAssignmentSubmit"
-      @cancel="closeAssignmentModal"
     />
 
     <!-- Loading Overlay -->
@@ -526,8 +529,9 @@ import DashboardOverview from './DashboardOverview.vue';
 import BerthManagement from './BerthManagement.vue';
 import OperationsManagement from './OperationsManagement.vue';
 import AnalyticsDashboard from './AnalyticsDashboard.vue';
-import BerthModal from '../berths/BerthModal.vue';
-import AssignmentModal from './AssignmentModal.vue';
+import BerthFormModal from '../modals/BerthFormModal.vue';
+import BerthDetailsModal from '../modals/BerthDetailsModal.vue';
+import BerthAssignmentModal from '../modals/BerthAssignmentModal.vue';
 import LoadingOverlay from './LoadingOverlay.vue';
 import NotificationCenter from './NotificationCenter.vue';
 
@@ -552,6 +556,7 @@ const currentNotification = ref<{type: 'success' | 'error' | 'info' | null, mess
 
 // Modal state
 const showBerthModal = ref(false);
+const showDetailsModal = ref(false);
 const showAssignmentModal = ref(false);
 const selectedBerth = ref<Berth | null>(null);
 const isEditingBerth = ref(false);
@@ -886,6 +891,22 @@ const closeBerthModal = () => {
 const closeAssignmentModal = () => {
   showAssignmentModal.value = false;
   selectedBerth.value = null;
+};
+
+const closeDetailsModal = () => {
+  showDetailsModal.value = false;
+  selectedBerth.value = null;
+};
+
+const handleEditFromDetails = () => {
+  showDetailsModal.value = false;
+  isEditingBerth.value = true;
+  showBerthModal.value = true;
+};
+
+const handleAssignFromDetails = () => {
+  showDetailsModal.value = false;
+  showAssignmentModal.value = true;
 };
 
 const handleBerthSubmit = async (berthData: BerthCreateUpdate) => {
