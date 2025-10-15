@@ -295,12 +295,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import DashboardHeader from './dashboard/DashboardHeader.vue';
-import MetricsGrid from './dashboard/MetricsGrid.vue';
-import ContainerActivity from './dashboard/ContainerActivity.vue';
-import PortStatus from './dashboard/PortStatus.vue';
-import { containerApi, portApi, shipApi, berthApi, berthAssignmentApi } from '../services/api';
-import { analyticsService } from '../services/analyticsService';
+import DashboardHeader from '../dashboard/DashboardHeader.vue';
+import MetricsGrid from '../dashboard/MetricsGrid.vue';
+import ContainerActivity from '../dashboard/ContainerActivity.vue';
+import PortStatus from '../dashboard/PortStatus.vue';
+import { containerApi, portApi, shipApi, berthApi, berthAssignmentApi } from '../../services/api';
+import { analyticsService } from '../../services/analyticsService';
 import { Container as ContainerIcon, Ship as ShipIcon, Anchor, Activity, ArrowUpCircle, ArrowDownCircle, RefreshCw, Package } from 'lucide-vue-next';
 
 // Types for our data structures
@@ -367,7 +367,7 @@ const financialMetrics = ref<any>({
 });
 
 // Time interval ref
-let timeInterval: NodeJS.Timeout | null = null;
+let timeInterval: number | null = null;
 
 // Port configuration
 const portName = ref('Chennai Port');

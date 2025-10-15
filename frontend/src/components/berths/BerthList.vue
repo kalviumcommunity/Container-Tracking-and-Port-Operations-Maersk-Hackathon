@@ -1,21 +1,21 @@
 <template>
   <div class="berth-list">
     <!-- Berth Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200">
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
+      <div class="px-8 py-6 border-b border-slate-200">
         <div class="flex justify-between items-center">
-          <div class="flex items-center space-x-4">
-            <h2 class="text-lg font-semibold text-gray-800">Berths</h2>
-            <span class="text-sm text-gray-500">
+          <div class="flex items-center space-x-5">
+            <h2 class="text-2xl font-bold text-slate-900">Berths</h2>
+            <span class="text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
               {{ paginationInfo.start }}-{{ paginationInfo.end }} of {{ paginationInfo.total }}
             </span>
           </div>
-          <div class="flex items-center space-x-2">
-            <label class="text-sm text-gray-700">Show:</label>
+          <div class="flex items-center space-x-3">
+            <label class="text-sm font-medium text-slate-700">Show:</label>
             <select
               :value="filters.pageSize"
               @change="$emit('update-page-size', Number(($event.target as HTMLSelectElement).value))"
-              class="px-2 py-1 border border-gray-300 rounded text-sm"
+              class="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white hover:border-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             >
               <option :value="10">10</option>
               <option :value="25">25</option>
@@ -27,28 +27,28 @@
       </div>
       
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
             <tr>
-              <th class="px-6 py-3 text-left">
+              <th class="px-6 py-4 text-left">
                 <input
                   type="checkbox"
                   :checked="allSelected"
                   :indeterminate="someSelected"
                   @change="$emit('toggle-select-all')"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                 >
               </th>
               <th 
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors"
                 @click="$emit('sort', 'name')"
               >
                 Berth Name
-                <span v-if="currentSort.field === 'name'">
+                <span v-if="currentSort.field === 'name'" class="ml-1">
                   {{ currentSort.direction === 'asc' ? '↑' : '↓' }}
                 </span>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Port
               </th>
               <th 

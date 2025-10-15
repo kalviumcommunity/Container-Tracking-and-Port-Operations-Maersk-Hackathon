@@ -1,95 +1,103 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
     <!-- Main Content -->
-    <main class="mx-auto px-6 py-8" style="max-width: 1360px;">
+    <main class="mx-auto px-6 py-8" style="max-width: 1400px;">
       <!-- Page Header -->
-      <div class="mb-8">
+      <div class="mb-10">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-blue-600 rounded-xl shadow-lg">
-              <Anchor :size="28" class="text-white" />
+          <div class="flex items-center gap-5">
+            <div class="p-4 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-xl">
+              <Anchor :size="32" class="text-white" />
             </div>
             <div>
-              <h1 class="text-3xl font-bold text-slate-900">Port Operations Management</h1>
-              <p class="text-slate-600 mt-1">Monitor berth capacity and ongoing operations</p>
+              <h1 class="text-4xl font-bold text-slate-900 mb-2">Port Operations Management</h1>
+              <p class="text-slate-600 text-lg">Monitor berth capacity and ongoing operations</p>
             </div>
           </div>
           <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
-              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span class="text-green-700 font-medium">{{ stats.availableBerths }} Available Berths</span>
+            <div class="flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-3 rounded-xl border border-green-200 shadow-sm">
+              <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span class="text-green-700 font-semibold">{{ stats.availableBerths }} Available Berths</span>
             </div>
+            <button 
+              @click="loadOperationData"
+              :disabled="loading"
+              class="p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-colors hover:shadow-md"
+              title="Refresh Data"
+            >
+              <RefreshCw :size="20" :class="{ 'animate-spin': loading }" class="text-slate-600" />
+            </button>
           </div>
         </div>
       </div>
       <!-- Performance Metrics -->
-      <section class="mb-8">
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold text-slate-900 mb-2">Port Performance Overview</h2>
-          <p class="text-slate-600">Real-time metrics showing berth utilization and operational efficiency</p>
+      <section class="mb-10">
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold text-slate-900 mb-3">Port Performance Overview</h2>
+          <p class="text-slate-600 text-lg">Real-time metrics showing berth utilization and operational efficiency</p>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div class="flex items-start justify-between mb-4">
-              <div class="p-3 bg-blue-50 rounded-lg">
-                <MapPin :size="24" class="text-blue-600" />
+          <div class="bg-white rounded-2xl border border-slate-200 p-7 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+            <div class="flex items-start justify-between mb-5">
+              <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl group-hover:from-blue-100 group-hover:to-blue-200 transition-colors">
+                <MapPin :size="28" class="text-blue-600" />
               </div>
             </div>
-            <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">{{ stats.totalBerths }}</p>
-              <p class="text-sm font-medium text-slate-600">Total Berths</p>
-              <div class="flex items-center gap-1 mt-2">
-                <TrendingUp :size="14" class="text-green-600" />
-                <span class="text-sm font-medium text-green-600">100%</span>
+            <div class="mb-4">
+              <p class="text-4xl font-bold text-slate-900 mb-2">{{ stats.totalBerths }}</p>
+              <p class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Total Berths</p>
+              <div class="flex items-center gap-2 mt-3">
+                <TrendingUp :size="16" class="text-green-600" />
+                <span class="text-sm font-bold text-green-600">100%</span>
                 <span class="text-sm text-slate-500">capacity</span>
               </div>
             </div>
           </div>
 
-          <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div class="flex items-start justify-between mb-4">
-              <div class="p-3 bg-green-50 rounded-lg">
-                <CheckCircle :size="24" class="text-green-600" />
+          <div class="bg-white rounded-2xl border border-slate-200 p-7 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+            <div class="flex items-start justify-between mb-5">
+              <div class="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl group-hover:from-green-100 group-hover:to-green-200 transition-colors">
+                <CheckCircle :size="28" class="text-green-600" />
               </div>
             </div>
-            <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">{{ stats.availableBerths }}</p>
-              <p class="text-sm font-medium text-slate-600">Available Berths</p>
-              <div class="flex items-center gap-1 mt-2">
-                <span class="text-sm font-medium text-green-600">{{ stats.availabilityPercentage }}%</span>
+            <div class="mb-4">
+              <p class="text-4xl font-bold text-slate-900 mb-2">{{ stats.availableBerths }}</p>
+              <p class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Available Berths</p>
+              <div class="flex items-center gap-2 mt-3">
+                <span class="text-sm font-bold text-green-600">{{ stats.availabilityPercentage }}%</span>
                 <span class="text-sm text-slate-500">available</span>
               </div>
             </div>
           </div>
 
-          <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div class="flex items-start justify-between mb-4">
-              <div class="p-3 bg-orange-50 rounded-lg">
-                <Clock :size="24" class="text-orange-600" />
+          <div class="bg-white rounded-2xl border border-slate-200 p-7 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+            <div class="flex items-start justify-between mb-5">
+              <div class="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl group-hover:from-orange-100 group-hover:to-orange-200 transition-colors">
+                <Clock :size="28" class="text-orange-600" />
               </div>
             </div>
-            <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">{{ stats.occupiedBerths }}</p>
-              <p class="text-sm font-medium text-slate-600">Occupied Berths</p>
-              <div class="flex items-center gap-1 mt-2">
-                <span class="text-sm font-medium text-orange-600">{{ stats.occupancyPercentage }}%</span>
+            <div class="mb-4">
+              <p class="text-4xl font-bold text-slate-900 mb-2">{{ stats.occupiedBerths }}</p>
+              <p class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Occupied Berths</p>
+              <div class="flex items-center gap-2 mt-3">
+                <span class="text-sm font-bold text-orange-600">{{ stats.occupancyPercentage }}%</span>
                 <span class="text-sm text-slate-500">occupied</span>
               </div>
             </div>
           </div>
 
-          <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div class="flex items-start justify-between mb-4">
-              <div class="p-3 bg-purple-50 rounded-lg">
-                <Ship :size="24" class="text-purple-600" />
+          <div class="bg-white rounded-2xl border border-slate-200 p-7 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+            <div class="flex items-start justify-between mb-5">
+              <div class="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl group-hover:from-purple-100 group-hover:to-purple-200 transition-colors">
+                <Ship :size="28" class="text-purple-600" />
               </div>
             </div>
-            <div class="mb-3">
-              <p class="text-3xl font-bold text-slate-900">{{ stats.totalShips }}</p>
-              <p class="text-sm font-medium text-slate-600">Ships in Port</p>
-              <div class="flex items-center gap-1 mt-2">
-                <span class="text-sm font-medium text-purple-600">{{ stats.dockedShips }}</span>
+            <div class="mb-4">
+              <p class="text-4xl font-bold text-slate-900 mb-2">{{ stats.totalShips }}</p>
+              <p class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Ships in Port</p>
+              <div class="flex items-center gap-2 mt-3">
+                <span class="text-sm font-bold text-purple-600">{{ stats.dockedShips }}</span>
                 <span class="text-sm text-slate-500">docked</span>
               </div>
             </div>
@@ -100,19 +108,19 @@
       <!-- Main Dashboard Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Berth Management -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm h-96 flex flex-col">
-          <div class="border-b border-slate-200 p-6 flex-shrink-0">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg hover:shadow-xl transition-shadow duration-300 h-96 flex flex-col">
+          <div class="border-b border-slate-200 p-7 flex-shrink-0">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="p-2 bg-blue-50 rounded-lg">
-                  <Anchor :size="20" class="text-blue-600" />
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                  <Anchor :size="24" class="text-blue-600" />
                 </div>
                 <div>
-                  <h3 class="text-xl font-semibold text-slate-900">Berth Management</h3>
-                  <p class="text-sm text-slate-600">Real-time berth status and assignments</p>
+                  <h3 class="text-2xl font-bold text-slate-900">Berth Management</h3>
+                  <p class="text-sm text-slate-600 mt-1">Real-time berth status and assignments</p>
                 </div>
               </div>
-              <button class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+              <button class="px-5 py-2.5 text-sm font-semibold text-blue-600 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-200 border border-blue-200 hover:shadow-md">
                 Assign Berth
               </button>
             </div>
@@ -123,30 +131,30 @@
               <div
                 v-for="(berth, index) in getBerthData()"
                 :key="berth.id"
-                class="p-4 border border-slate-200 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer group animate-slideIn"
+                class="p-5 border border-slate-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer group animate-slideIn hover:-translate-y-1"
                 :style="{ animationDelay: `${index * 50}ms` }"
                 :class="getBerthBorderColor(berth.status)"
               >
-                <div class="text-center space-y-3">
-                  <div class="text-lg font-bold text-slate-900">{{ berth.id }}</div>
+                <div class="text-center space-y-4">
+                  <div class="text-xl font-bold text-slate-900">{{ berth.id }}</div>
                   <span 
-                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full border"
                     :class="getBerthStatusColor(berth.status)"
                   >
                     {{ berth.status }}
                   </span>
-                  <div v-if="berth.status === 'Occupied'" class="text-xs space-y-2">
-                    <div class="p-2 bg-slate-50 rounded-lg">
-                      <div class="text-slate-600 mb-1">Ship:</div>
-                      <div class="font-medium text-slate-900 text-xs">{{ berth.ship }}</div>
+                  <div v-if="berth.status === 'Occupied'" class="text-xs space-y-3">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <div class="text-slate-600 mb-1.5 font-medium">Ship:</div>
+                      <div class="font-semibold text-slate-900 text-sm">{{ berth.ship }}</div>
                     </div>
                     <div class="flex items-center justify-between">
-                      <span class="text-slate-600">Capacity:</span>
+                      <span class="text-slate-600 font-medium">Capacity:</span>
                       <span class="font-bold text-blue-600">{{ berth.capacity }}</span>
                     </div>
-                    <div class="w-full bg-slate-200 rounded-full h-2">
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
                       <div 
-                        class="bg-blue-500 h-2 rounded-full transition-all duration-1000"
+                        class="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-1000"
                         :style="{ width: berth.capacity }"
                       ></div>
                     </div>
@@ -158,19 +166,19 @@
         </div>
 
         <!-- Active Operations -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm h-96 flex flex-col">
-          <div class="border-b border-slate-200 p-6 flex-shrink-0">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg hover:shadow-xl transition-shadow duration-300 h-96 flex flex-col">
+          <div class="border-b border-slate-200 p-7 flex-shrink-0">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="p-2 bg-purple-50 rounded-lg">
-                  <Activity :size="20" class="text-purple-600" />
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+                  <Activity :size="24" class="text-purple-600" />
                 </div>
                 <div>
-                  <h3 class="text-xl font-semibold text-slate-900">Active Operations</h3>
-                  <p class="text-sm text-slate-600">Current loading and unloading activities</p>
+                  <h3 class="text-2xl font-bold text-slate-900">Active Operations</h3>
+                  <p class="text-sm text-slate-600 mt-1">Current loading and unloading activities</p>
                 </div>
               </div>
-              <button class="px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+              <button class="px-5 py-2.5 text-sm font-semibold text-purple-600 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-200 border border-purple-200 hover:shadow-md">
                 New Operation
               </button>
             </div>
@@ -427,11 +435,12 @@ import {
   Eye,
   Edit,
   Trash2,
-  Filter
+  Filter,
+  RefreshCw
 } from 'lucide-vue-next';
-import { portApi, shipApi, containerApi } from '../services/api';
-import { berthApi } from '../services/berthApi'
-import { berthAssignmentApi } from '../services/berthAssignmentApi'
+import { portApi, shipApi, containerApi } from '../../services/api';
+import { berthApi } from '../../services/berthApi'
+import { berthAssignmentApi } from '../../services/berthAssignmentApi'
 
 export default {
   name: 'PortOperationManagement',
