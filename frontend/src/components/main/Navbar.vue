@@ -330,13 +330,13 @@ import {
   Settings,
   UserCog
 } from 'lucide-vue-next'
-import LoginForm from '../forms/LoginForm.vue'
-import RegistrationForm from '../forms/RegistrationForm.vue'
-import RoleApplication from '../components/RoleApplication.vue'
-import ChangePassword from '../components/ChangePassword.vue'
-import AccountSettings from '../components/AccountSettings.vue'
-import { authApi, roleApplicationApi } from '../services/api'
-import { useToast } from '../composables/useToast.js'
+import LoginForm from '../../forms/LoginForm.vue'
+import RegistrationForm from '../../forms/RegistrationForm.vue'
+import RoleApplication from '../RoleApplication.vue'
+import ChangePassword from '../ChangePassword.vue'
+import AccountSettings from '../AccountSettings.vue'
+import { authApi, roleApplicationApi } from '../../services/api.js'
+import { useToast } from '../../composables/useToast.js'
 
 export default {
   name: 'Navbar',
@@ -398,8 +398,8 @@ export default {
           icon: Container
         },
         {
-          name: 'Port Operations',
-          path: '/port-operation-management',
+          name: 'Berth Operations',
+          path: '/berth-operation-management',
           icon: Anchor
         },
         {
@@ -440,6 +440,33 @@ export default {
 
     closeMobileMenu() {
       this.isMobileMenuOpen = false
+    },
+
+    // Navigation helper methods
+    isActivePage(path) {
+      // Check if current route matches the path
+      if (this.currentRoute.path === path) return true
+      
+      // Special handling for exact matches and sub-routes
+      if (path === '/home' && this.currentRoute.path === '/home') return true
+      if (path !== '/home' && path !== '/' && this.currentRoute.path.startsWith(path)) return true
+      
+      return false
+    },
+
+    async navigateToPage(path) {
+      // Programmatic navigation with loading state
+      if (this.currentRoute.path !== path) {
+        this.isNavigating = true
+        try {
+          await this.$router.push(path)
+        } catch (error) {
+          console.error('Navigation error:', error)
+        } finally {
+          this.isNavigating = false
+        }
+      }
+      this.closeMobileMenu()
     },
 
     // Authentication methods

@@ -8,9 +8,9 @@ import { shipService } from './shipService';
 import { userManagementApi } from './userManagementApi';
 
 // API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-api-domain.com/api' 
-  : 'http://localhost:5221/api';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5221/api' 
+  : 'https://your-api-domain.com/api';
 
 // Create axios instance (shared by all services)
 export const api: AxiosInstance = axios.create({
@@ -303,18 +303,8 @@ export const roleApplicationApi = {
   }
 };
 
-// ===== BERTH API =====
-export const berthApi = {
-  async getAll() {
-    const response = await api.get('/berths');
-    return response.data;
-  },
-
-  async getById(id: number | string) {
-    const response = await api.get(`/berths/${id}`);
-    return response.data;
-  }
-};
+// ===== BERTH API ===== 
+export { berthApi } from './berthApi';
 
 // ===== BERTH ASSIGNMENT API =====
 export const berthAssignmentApi = {
@@ -323,6 +313,7 @@ export const berthAssignmentApi = {
       const response = await api.get('/berth-assignments');
       return response.data;
     } catch (error) {
+      console.error('Error fetching berth assignments:', error);
       // Return mock data if API endpoint doesn't exist yet
       return {
         data: [
@@ -346,11 +337,12 @@ export const berthAssignmentApi = {
     shipId?: number;
     berthId: number;
     containerId?: string;
-    scheduledArrival?: string;
-    scheduledDeparture?: string;
     assignmentType?: string;
     priority?: string;
     status?: string;
+    scheduledArrival?: string;
+    scheduledDeparture?: string;
+    notes?: string;
   }) {
     try {
       const response = await api.post('/berth-assignments', assignmentData);
@@ -452,7 +444,8 @@ export { analyticsService } from './analyticsService';
 // ===== TYPE EXPORTS =====
 export type { Container, ContainerFilters, ContainerStats, PaginatedResponse } from '../types/container';
 export type { Ship } from './shipService';
-export type { Port } from './portService';
+export type { Port, PortCreateUpdate, PortDetail } from '../types/port';
+export type { Berth, BerthCreateUpdate, BerthAssignment } from '../types/berth';
 export type { 
   UserListDto, 
   UpdateUserRolesDto, 

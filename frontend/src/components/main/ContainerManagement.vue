@@ -86,81 +86,27 @@ import { ref, computed, onMounted } from 'vue';
 import { Loader2Icon } from 'lucide-vue-next';
 
 // Import child components from containers subfolder
-import ContainerHeader from './containers/ContainerHeader.vue';
-import ContainerStats from './containers/ContainerStats.vue';
-import ContainerFilters from './containers/ContainerFilters.vue';
-import ContainerBulkActions from './containers/ContainerBulkActions.vue';
-import ContainerError from './containers/ContainerError.vue';
-import ContainerTable from './containers/ContainerTable.vue';
-import ContainerModal from './containers/ContainerModal.vue';
+import ContainerHeader from '../containers/ContainerHeader.vue';
+import ContainerStats from '../containers/ContainerStats.vue';
+import ContainerFilters from '../containers/ContainerFilters.vue';
+import ContainerBulkActions from '../containers/ContainerBulkActions.vue';
+import ContainerError from '../containers/ContainerError.vue';
+import ContainerTable from '../containers/ContainerTable.vue';
+import ContainerModal from '../containers/ContainerModal.vue';
 
 // Import services and types
-import { containerService } from '../services/containerService';
-import { portService } from '../services/portService';
-import { shipService } from '../services/shipService';
-
-// Type definitions
-interface Container {
-  containerId: string;
-  cargoType: string;
-  cargoDescription?: string;
-  type: string;
-  status: string;
-  condition?: string;
-  currentLocation: string;
-  destination?: string;
-  weight?: number;
-  size?: string;
-  temperature?: number;
-  shipId?: number;
-  shipName?: string;
-  updatedAt: string;
-}
-
-interface ContainerFilters {
-  page: number;
-  pageSize: number;
-  sortBy: string;
-  sortDirection: string;
-  searchTerm: string;
-  status: string;
-  type: string;
-  cargoType: string;
-  currentLocation: string;
-  destination: string;
-  shipId: string;
-  createdAfter: string;
-  createdBefore: string;
-  minWeight: string;
-  maxWeight: string;
-}
-
-interface ContainerStats {
-  totalContainers: number;
-  availableContainers: number;
-  inTransitContainers: number;
-  atPortContainers: number;
-  loadingContainers: number;
-  unloadingContainers: number;
-  containersByType: Record<string, number>;
-  containersByStatus: Record<string, number>;
-  containersByLocation: Record<string, number>;
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-
-interface BulkStatusUpdate {
-  containerIds: string[];
-  newStatus: string;
-}
+import { containerService } from '../../services/containerService';
+import { portService } from '../../services/portService';
+import { shipService } from '../../services/shipService';
+import type { 
+  Container, 
+  ContainerCreateRequest,
+  ContainerUpdateRequest,
+  ContainerFilters as ContainerFiltersType,
+  ContainerStats as ContainerStatsType,
+  PaginatedResponse,
+  BulkStatusUpdate 
+} from '../../types/container';
 
 // Reactive data
 const paginatedData = ref<PaginatedResponse<Container>>({
@@ -173,7 +119,7 @@ const paginatedData = ref<PaginatedResponse<Container>>({
   hasPreviousPage: false
 });
 
-const stats = ref<ContainerStats>({
+const stats = ref<ContainerStatsType>({
   totalContainers: 0,
   availableContainers: 0,
   inTransitContainers: 0,
@@ -190,7 +136,7 @@ const locationOptions = ref<string[]>([]);
 const shipOptions = ref<Array<{ id: number; name: string }>>([]);
 
 // Filters
-const filters = ref<ContainerFilters>({
+const filters = ref<ContainerFiltersType>({
   page: 1,
   pageSize: 25,
   sortBy: 'updatedAt',
@@ -283,6 +229,7 @@ const loadContainers = async () => {
             status: 'In Transit',
             currentLocation: 'Port of Shanghai',
             shipName: 'Maersk Edinburgh',
+            createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           },
           {
@@ -292,6 +239,7 @@ const loadContainers = async () => {
             status: 'Loading',
             currentLocation: 'Port of Rotterdam',
             shipName: 'MSC Oscar',
+            createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }
         ],
@@ -589,12 +537,12 @@ const handleFormSubmit = async (containerData: any) => {
       currentLocation: containerData.currentLocation || '',
       destination: containerData.destination || '',
       weight: containerData.weight ? parseFloat(containerData.weight.toString()) : 0,
-      maxWeight: containerData.maxWeight ? parseFloat(containerData.maxWeight.toString()) : null,
+      maxWeight: containerData.maxWeight ? parseFloat(containerData.maxWeight.toString()) : undefined,
       size: containerData.size || '',
-      temperature: containerData.temperature ? parseFloat(containerData.temperature.toString()) : null,
+      temperature: containerData.temperature ? parseFloat(containerData.temperature.toString()) : undefined,
       coordinates: containerData.coordinates || '',
       estimatedArrival: containerData.estimatedArrival || null,
-      shipId: containerData.shipId ? parseInt(containerData.shipId.toString()) : null
+      shipId: containerData.shipId ? parseInt(containerData.shipId.toString()) : undefined
     };
 
     if (showCreateModal.value) {

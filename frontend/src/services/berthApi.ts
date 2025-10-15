@@ -1,45 +1,115 @@
 import { apiClient } from './api'
+import type { Berth, BerthCreateUpdate, BerthAssignment } from '../types/berth'
+import type { ApiResponse } from './api'
 
-export interface Berth {
-  berthId: number
-  name: string
-  identifier: string
-  type: string
-  status: string
-  capacity: number
-  currentLoad: number
-  portId: number
-  portName?: string
-}
-
+/**
+ * Enhanced Berth API Service aligned with backend BerthsController
+ */
 export const berthApi = {
+  /**
+   * Get all berths
+   */
   async getAll(): Promise<{ data: Berth[] }> {
     try {
-      const response = await apiClient.get('/berths')
-      return { data: response.data.data || response.data || [] }
+      const response = await apiClient.get<ApiResponse<Berth[]>>('/berths')
+      return { data: response.data.data || [] }
     } catch (error) {
       console.error('Error fetching berths:', error)
       return { data: [] }
     }
   },
 
+  /**
+   * Get berth by ID
+   */
+  async getById(id: number): Promise<{ data: Berth | null }> {
+    try {
+      const response = await apiClient.get<ApiResponse<Berth>>(`/berths/${id}`)
+      return { data: response.data.data || null }
+    } catch (error) {
+      console.error(`Error fetching berth ${id}:`, error)
+      return { data: null }
+    }
+  },
+
+  /**
+   * Get detailed berth information with assignments
+   */
+  async getDetails(id: number): Promise<{ data: Berth & { berthAssignments: BerthAssignment[] } | null }> {
+    try {
+      const response = await apiClient.get<ApiResponse<any>>(`/berths/${id}/details`)
+      return { data: response.data.data || null }
+    } catch (error) {
+      console.error(`Error fetching berth details ${id}:`, error)
+      return { data: null }
+    }
+  },
+
+  /**
+   * Get berths by port
+   */
   async getByPort(portId: number): Promise<{ data: Berth[] }> {
     try {
-      const response = await apiClient.get(`/ports/${portId}/berths`)
-      return { data: response.data.data || response.data || [] }
+      const response = await apiClient.get<ApiResponse<Berth[]>>(`/berths/port/${portId}`)
+      return { data: response.data.data || [] }
     } catch (error) {
-      console.error('Error fetching port berths:', error)
+      console.error(`Error fetching berths for port ${portId}:`, error)
       return { data: [] }
     }
   },
 
-  async create(berthData: Partial<Berth>): Promise<Berth> {
-    const response = await apiClient.post('/berths', berthData)
-    return response.data.data || response.data
+  /**
+   * Get berths by status
+   */
+  async getByStatus(status: string): Promise<{ data: Berth[] }> {
+    try {
+      const response = await apiClient.get<ApiResponse<Berth[]>>(`/berths/status/${encodeURIComponent(status)}`)
+      return { data: response.data.data || [] }
+    } catch (error) {
+      console.error(`Error fetching berths with status ${status}:`, error)
+      return { data: [] }
+    }
   },
 
-  async update(id: number, berthData: Partial<Berth>): Promise<Berth> {
-    const response = await apiClient.put(`/berths/${id}`, berthData)
-    return response.data.data || response.data
+  /**
+   * Create new berth
+   */
+  async create(berthData: BerthCreateUpdate): Promise<{ data: Berth }> {
+    try {
+      const response = await apiClient.post<ApiResponse<Berth>>('/berths', berthData)
+      return { data: response.data.data }
+    } catch (error) {
+      console.error('Error creating berth:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Update existing berth
+   */
+  async update(id: number, berthData: BerthCreateUpdate): Promise<{ data: Berth }> {
+    try {
+      const response = await apiClient.put<ApiResponse<Berth>>(`/berths/${id}`, berthData)
+      return { data: response.data.data }
+    } catch (error) {
+      console.error(`Error updating berth ${id}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Delete berth
+   */
+  async delete(id: number): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.delete<ApiResponse<any>>(`/berths/${id}`)
+      return { 
+        success: true, 
+        message: response.data.message || 'Berth deleted successfully' 
+      }
+    } catch (error) {
+      console.error(`Error deleting berth ${id}:`, error)
+      throw error
+    }
   }
 }

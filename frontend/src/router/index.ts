@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/components/Home.vue'
-import Dashboard from '../components/Dashboard.vue'
-import ContainerManagement from '@/components/ContainerManagement.vue'
-import PortOperationManagement from '@/components/PortOperationManagement.vue'
-import EventStreaming from '@/components/EventStreaming.vue'
+import Home from '@/components/main/Home.vue'
+import Dashboard from '@/components/main/Dashboard.vue'
+import ContainerManagement from '@/components/main/ContainerManagement.vue'
+import BerthOperationManagement from '@/components/main/BerthOperationsMain.vue'
+import EventStreaming from '@/components/main/EventStreaming.vue'
 import AdminDashboard from '@/components/AdminDashboard.vue'
 import TestForms from '@/test-forms.vue'
 import { authApi } from '../services/api'
@@ -33,9 +33,9 @@ const router = createRouter({
       redirect: '/container-management'
     },
     {
-      path: '/port-operation-management',
-      name: 'port-operation-management',
-      component: PortOperationManagement,
+      path: '/berth-operation-management',
+      name: 'berth-operation-management',
+      component: BerthOperationManagement,
       meta: { requiresAuth: true }
     },
     {
@@ -71,8 +71,14 @@ router.beforeEach((to, from, next) => {
   
   const isAuthenticated = isAuthenticatedJWT || !!currentUser || !!adminUser
   
+  // Redirect authenticated users from landing page to dashboard
+  if (to.name === 'landing' && isAuthenticated) {
+    next('/dashboard')
+    return
+  }
+  
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // Redirect to home if trying to access protected route without auth
+    // Redirect to landing page if trying to access protected route without auth
     next('/')
   } else if (to.meta.requiresAdmin) {
     // Check if user has admin role
