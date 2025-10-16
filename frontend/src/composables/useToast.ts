@@ -1,19 +1,47 @@
 import { ref, reactive } from 'vue'
 
 // Toast types
-const TOAST_TYPES = {
+export const TOAST_TYPES = {
   SUCCESS: 'success',
   ERROR: 'error',
   WARNING: 'warning',
   INFO: 'info'
+} as const
+
+export type ToastType = typeof TOAST_TYPES[keyof typeof TOAST_TYPES]
+
+export interface ToastAction {
+  text: string
+  handler: () => void
+}
+
+export interface ToastOptions {
+  duration?: number
+  dismissible?: boolean
+  persistent?: boolean
+  action?: {
+    confirm?: ToastAction
+    cancel?: ToastAction
+  }
+}
+
+export interface Toast {
+  id: number
+  message: string
+  type: ToastType
+  duration: number
+  dismissible: boolean
+  action: ToastOptions['action'] | null
+  persistent: boolean
+  createdAt: number
 }
 
 // Global toast state
-const toasts = ref([])
+const toasts = ref<Toast[]>([])
 let toastIdCounter = 0
 
 // Toast interface
-const createToast = (message, type = TOAST_TYPES.INFO, options = {}) => {
+const createToast = (message: string, type: ToastType = TOAST_TYPES.INFO, options: ToastOptions = {}): number => {
   const id = ++toastIdCounter
   const toast = {
     id,
@@ -38,14 +66,14 @@ const createToast = (message, type = TOAST_TYPES.INFO, options = {}) => {
   return id
 }
 
-const removeToast = (id) => {
+const removeToast = (id: number): void => {
   const index = toasts.value.findIndex(toast => toast.id === id)
   if (index > -1) {
     toasts.value.splice(index, 1)
   }
 }
 
-const clearAllToasts = () => {
+const clearAllToasts = (): void => {
   toasts.value = []
 }
 
@@ -114,4 +142,4 @@ export const useToast = () => {
 }
 
 // Export for use in other files without composable
-export { toasts, removeToast, clearAllToasts, createToast, TOAST_TYPES }
+export { toasts, removeToast, clearAllToasts, createToast }
