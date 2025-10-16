@@ -15,6 +15,9 @@ Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CRITICAL: Explicitly configure Kestrel to listen on port 5221
+builder.WebHost.UseUrls("http://localhost:5221", "http://0.0.0.0:5221");
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -187,6 +190,20 @@ builder.Services.Configure<Backend.Services.Kafka.KafkaSettings>(
 // Register Kafka producer service
 builder.Services.AddScoped<Backend.Services.Kafka.IKafkaProducer, Backend.Services.Kafka.KafkaProducerService>();
 
+// Register Kafka consumer as a hosted background service
+builder.Services.AddHostedService<Backend.Services.Kafka.KafkaConsumerService>();
+
+// Add SignalR for real-time event streaming
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = !builder.Environment.IsProduction();
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+});
+
+// Register EventHub service for broadcasting
+builder.Services.AddSingleton<Backend.Hubs.IEventHubService, Backend.Hubs.EventHubService>();
+
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
     ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5173", "http://localhost:5174" };
@@ -208,13 +225,13 @@ builder.Services.AddCors(options =>
     }
     else
     {
-        // Development CORS (more permissive)
+        // Development CORS (more permissive) - Allow SignalR
         options.AddPolicy("DevelopmentCors", 
             policy => policy
                 .WithOrigins(corsOrigins)
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowCredentials());
+                .AllowCredentials()); // Required for SignalR
     }
 });
 
@@ -246,15 +263,17 @@ else
 {
     // SECURITY: Use strict CORS for production
     app.UseCors("ProductionCors");
+    app.UseHttpsRedirection(); // Only redirect to HTTPS in production
 }
-
-app.UseHttpsRedirection();
 
 app.UseRouting();
 
 // Authentication and Authorization middleware (order is important)
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map SignalR hub endpoint
+app.MapHub<Backend.Hubs.EventHub>("/hubs/events");
 
 app.MapControllers();
 
@@ -270,11 +289,11 @@ using (var scope = app.Services.CreateScope())
     {
         // IMPORTANT: Apply any pending migrations first
         logger.LogInformation("Applying pending EF Core migrations...");
-        await context.Database.MigrateAsync();
+        context.Database.Migrate(); // Changed to synchronous
         logger.LogInformation("Migrations applied successfully");
 
         // Bootstrap comprehensive data (roles, permissions, default admin, sample data)
-        await comprehensiveSeedingService.SeedAllAsync(forceReseed: false);
+        comprehensiveSeedingService.SeedAllAsync(forceReseed: false).GetAwaiter().GetResult(); // Synchronous execution
         logger.LogInformation("Database initialization completed successfully");
     }
     catch (Exception ex)
@@ -284,5 +303,23 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Run();
+Console.WriteLine("\n========================================");
+Console.WriteLine("🚀 STARTING WEB SERVER on port 5221...");
+Console.WriteLine("========================================\n");
+
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"\n❌ FATAL ERROR STARTING WEB SERVER:");
+    Console.WriteLine($"Message: {ex.Message}");
+    Console.WriteLine($"StackTrace: {ex.StackTrace}");
+    if (ex.InnerException != null)
+    {
+        Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+    }
+    throw;
+}
 

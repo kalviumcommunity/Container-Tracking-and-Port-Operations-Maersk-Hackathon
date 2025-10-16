@@ -26,6 +26,7 @@ namespace Backend.Extensions
             services.AddScoped<IShipRouteRepository, ShipRouteRepository>();
             services.AddScoped<IBerthUsageChargeRepository, BerthUsageChargeRepository>();
             services.AddScoped<IContainerStorageFeeRepository, ContainerStorageFeeRepository>();
+            services.AddScoped<IEventRepository, EventRepository>();
             
             return services;
         }
@@ -47,6 +48,7 @@ namespace Backend.Extensions
             services.AddScoped<IShipRouteService, ShipRouteService>();
             services.AddScoped<IBerthUsageChargeService, BerthUsageChargeService>();
             services.AddScoped<IContainerStorageFeeService, ContainerStorageFeeService>();
+            services.AddScoped<IEventService, EventService>();
             
             return services;
         }
