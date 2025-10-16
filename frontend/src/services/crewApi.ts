@@ -34,41 +34,8 @@ export const crewApi = {
       return { data: response.data.data || [] }
     } catch (error) {
       console.error('Error fetching crew members:', error)
-      // Return mock data for development
-      return {
-        data: [
-          {
-            id: 1,
-            name: 'John Smith',
-            role: 'Port Operator',
-            department: 'Operations',
-            portId: 1,
-            isActive: true,
-            skills: ['Crane Operation', 'Container Handling'],
-            contactInfo: '+45 12345678'
-          },
-          {
-            id: 2,
-            name: 'Maria Garcia',
-            role: 'Berth Supervisor',
-            department: 'Operations',
-            portId: 1,
-            isActive: true,
-            skills: ['Ship Coordination', 'Safety Management'],
-            contactInfo: '+45 23456789'
-          },
-          {
-            id: 3,
-            name: 'Erik Nielsen',
-            role: 'Dock Worker',
-            department: 'Labor',
-            portId: 1,
-            isActive: true,
-            skills: ['Loading', 'Unloading', 'Equipment Maintenance'],
-            contactInfo: '+45 34567890'
-          }
-        ]
-      }
+      // Return empty data - let components show 0 state instead of mock data
+      return { data: [] }
     }
   },
 

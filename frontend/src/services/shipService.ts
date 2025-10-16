@@ -34,15 +34,8 @@ export class ShipService {
     } catch (error) {
       console.error('Error loading ships from API:', error);
 
-      // Fallback to mock data if API fails
-      const mockShips = [
-        { id: 1, shipId: 1, name: 'Maersk Edinburgh', status: 'Docked', capacity: 13092 },
-        { id: 2, shipId: 2, name: 'MSC Oscar', status: 'At Sea', capacity: 19224 },
-        { id: 3, shipId: 3, name: 'CMA CGM Bougainville', status: 'Loading', capacity: 18000 },
-        { id: 4, shipId: 4, name: 'Ever Given', status: 'Docked', capacity: 20124 }
-      ];
-
-      return { data: mockShips };
+      // Return empty data instead of mock data - let components show 0 state
+      return { data: [] };
     }
   }
 

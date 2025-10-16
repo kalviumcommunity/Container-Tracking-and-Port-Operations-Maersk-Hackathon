@@ -298,6 +298,7 @@ import { Ship, Hash, Package, MapPin, Activity, Calendar, User, Flag, Save, Load
 
 interface ShipForm {
   id?: number
+  shipId?: number
   name: string
   imoNumber: string
   capacity: number
@@ -309,6 +310,18 @@ interface ShipForm {
   flagState?: string
   currentContainerCount?: number
   notes?: string
+  // Additional fields for backend compatibility
+  flag?: string
+  type?: string
+  length?: number
+  beam?: number
+  draft?: number
+  grossTonnage?: number
+  yearBuilt?: number
+  coordinates?: string
+  speed?: number
+  heading?: number
+  nextPort?: string
 }
 
 interface Port {
@@ -413,13 +426,36 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Import shipApi dynamically
+    const { shipApi } = await import('../services/shipApi')
     
     const shipData = {
-      ...form,
-      id: props.ship?.id || Date.now(),
-      imoNumber: form.imoNumber.toUpperCase().replace(/\s+/g, ' ')
+      name: form.name,
+      imoNumber: form.imoNumber.toUpperCase().replace(/\s+/g, ' '),
+      flag: form.flag || '',
+      type: form.type || 'Container Ship',
+      capacity: Number(form.capacity),
+      status: form.status,
+      length: form.length ? Number(form.length) : undefined,
+      beam: form.beam ? Number(form.beam) : undefined,
+      draft: form.draft ? Number(form.draft) : undefined,
+      grossTonnage: form.grossTonnage ? Number(form.grossTonnage) : undefined,
+      yearBuilt: form.yearBuilt ? Number(form.yearBuilt) : undefined,
+      coordinates: form.coordinates || '',
+      speed: form.speed ? Number(form.speed) : undefined,
+      heading: form.heading ? Number(form.heading) : undefined,
+      nextPort: form.nextPort || '',
+      estimatedArrival: form.arrivalDate || undefined,
+      currentPortId: form.currentPortId ? Number(form.currentPortId) : undefined
+    }
+    
+    let result
+    if (props.isEditing && props.ship?.shipId) {
+      // Update existing ship
+      result = await shipApi.update(props.ship.shipId, shipData)
+    } else {
+      // Create new ship
+      result = await shipApi.create(shipData)
     }
     
     successMessage.value = props.isEditing 
@@ -427,7 +463,7 @@ const handleSubmit = async () => {
       : 'Ship created successfully!'
     
     setTimeout(() => {
-      emit('submit', shipData)
+      emit('submit', result.data)
     }, 1000)
     
   } catch (error) {

@@ -336,7 +336,7 @@ import RoleApplication from '../RoleApplication.vue'
 import ChangePassword from '../ChangePassword.vue'
 import AccountSettings from '../AccountSettings.vue'
 import { authApi, roleApplicationApi } from '../../services/api.js'
-import { useToast } from '../../composables/useToast.js'
+import { useToast } from '../../composables/useToast'
 
 export default {
   name: 'Navbar',
