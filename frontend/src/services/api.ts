@@ -99,26 +99,6 @@ api.interceptors.response.use(
   }
 );
 
-// Add debug logging to see what URLs are being called
-api.interceptors.request.use((config) => {
-  console.log(`🔗 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
-
-// Enhanced error logging
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 404) {
-      console.error(`❌ API endpoint not found: ${error.config?.url}`);
-      console.error(`🔍 Full URL attempted: ${error.config?.baseURL}${error.config?.url}`);
-    }
-    return Promise.reject(error);
-  }
-);
-
 // ===== API RESPONSE TYPE =====
 export interface ApiResponse<T> {
   data: T;

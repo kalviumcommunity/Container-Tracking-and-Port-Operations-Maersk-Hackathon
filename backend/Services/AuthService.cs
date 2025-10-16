@@ -351,7 +351,10 @@ namespace Backend.Services
         /// </summary>
         public async Task<(List<string> roles, List<string> permissions)> GetUserRolesAndPermissionsAsync(int userId)
         {
+            // PERFORMANCE FIX: Use AsSplitQuery to avoid cartesian explosion and AsNoTracking for read-only query
             var userRoles = await _context.UserRoles
+                .AsNoTracking()
+                .AsSplitQuery()  // This breaks the query into multiple SQL queries to avoid cartesian explosion
                 .Include(ur => ur.Role)
                 .ThenInclude(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)

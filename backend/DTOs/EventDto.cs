@@ -9,32 +9,47 @@ namespace Backend.DTOs
     {
         public int Id { get; set; }
         public int EventId { get; set; } // Add this for compatibility
-        public string EventType { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
+        public string EventType { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty; // Container, Ship, Berth, Port, System
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public DateTime EventTime { get; set; }
-        public string Severity { get; set; }
-        public string ContainerId { get; set; }
+        public DateTime EventTimestamp { get; set; } // Alias for EventTime
+        public string Severity { get; set; } = string.Empty;
+        public string Priority { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string? ContainerId { get; set; }
         public int? ShipId { get; set; }
-        public string ShipName { get; set; }
+        public string? ShipName { get; set; }
         public int? BerthId { get; set; }
-        public string BerthName { get; set; }
+        public string? BerthName { get; set; }
         public int? PortId { get; set; }
-        public string PortName { get; set; }
+        public string? PortName { get; set; }
         public int? UserId { get; set; }
-        public string UserName { get; set; }
-        public string Source { get; set; }
+        public string? UserName { get; set; }
+        public int? AssignedToUserId { get; set; }
+        public string? AssignedToUserName { get; set; }
+        public string Source { get; set; } = string.Empty;
         public bool IsRead { get; set; }
+        public bool IsResolved { get; set; }
+        public bool RequiresAction { get; set; }
+        public string EventData { get; set; } = "{}";
+        public string Metadata { get; set; } = "{}";
+        public string Coordinates { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime? AcknowledgedAt { get; set; }
+        public int? AcknowledgedByUserId { get; set; }
+        public string? AcknowledgedByUserName { get; set; }
     }
 
     public class EventUpdateDto
     {
-        public string EventType { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string Priority { get; set; }
-        public string Status { get; set; }
+        public string EventType { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Priority { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public int? AssignedToUserId { get; set; }
     }
 

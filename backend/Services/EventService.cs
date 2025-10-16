@@ -1,6 +1,7 @@
 using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
+using Backend.Repositories;
 using Backend.Services.Kafka;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -114,12 +115,18 @@ namespace Backend.Services
     public class EventService : IEventService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEventRepository _eventRepository;
         private readonly ILogger<EventService> _logger;
         private readonly IKafkaProducer _kafkaProducer;
 
-        public EventService(ApplicationDbContext context, ILogger<EventService> logger, IKafkaProducer kafkaProducer)
+        public EventService(
+            ApplicationDbContext context, 
+            IEventRepository eventRepository,
+            ILogger<EventService> logger, 
+            IKafkaProducer kafkaProducer)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _eventRepository = eventRepository ?? throw new ArgumentNullException(nameof(eventRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _kafkaProducer = kafkaProducer ?? throw new ArgumentNullException(nameof(kafkaProducer));
         }
