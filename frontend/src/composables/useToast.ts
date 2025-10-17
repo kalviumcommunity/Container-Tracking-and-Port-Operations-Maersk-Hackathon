@@ -39,6 +39,7 @@ export interface Toast {
 // Global toast state
 const toasts = ref<Toast[]>([])
 let toastIdCounter = 0
+const activeTimeouts = new Map<number, number>()
 
 // Toast interface
 const createToast = (message: string, type: ToastType = TOAST_TYPES.INFO, options: ToastOptions = {}): number => {
@@ -58,15 +59,23 @@ const createToast = (message: string, type: ToastType = TOAST_TYPES.INFO, option
 
   // Auto-dismiss unless persistent
   if (!toast.persistent) {
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       removeToast(id)
     }, toast.duration)
+    
+    activeTimeouts.set(id, timeoutId)
   }
 
   return id
 }
 
 const removeToast = (id: number): void => {
+  // Clear any active timeout
+  if (activeTimeouts.has(id)) {
+    clearTimeout(activeTimeouts.get(id))
+    activeTimeouts.delete(id)
+  }
+  
   const index = toasts.value.findIndex(toast => toast.id === id)
   if (index > -1) {
     toasts.value.splice(index, 1)
@@ -74,6 +83,10 @@ const removeToast = (id: number): void => {
 }
 
 const clearAllToasts = (): void => {
+  // Clear all active timeouts
+  activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+  activeTimeouts.clear()
+  
   toasts.value = []
 }
 
@@ -84,59 +97,65 @@ export const useToast = () => {
     toasts: toasts,
     
     // Methods
-    toast: (message, type = TOAST_TYPES.INFO, options = {}) => 
+    toast: (message: string, type: ToastType = TOAST_TYPES.INFO, options: ToastOptions = {}) => 
       createToast(message, type, options),
     
-    success: (message, options = {}) => 
+    success: (message: string, options: ToastOptions = {}) => 
       createToast(message, TOAST_TYPES.SUCCESS, options),
     
-    error: (message, options = {}) => 
+    error: (message: string, options: ToastOptions = {}) => 
       createToast(message, TOAST_TYPES.ERROR, options),
     
-    warning: (message, options = {}) => 
+    warning: (message: string, options: ToastOptions = {}) => 
       createToast(message, TOAST_TYPES.WARNING, options),
     
-    info: (message, options = {}) => 
+    info: (message: string, options: ToastOptions = {}) => 
       createToast(message, TOAST_TYPES.INFO, options),
     
     remove: removeToast,
     clear: clearAllToasts,
     
     // Utility methods
-    showSuccess: (message) => createToast(message, TOAST_TYPES.SUCCESS),
-    showError: (message) => createToast(message, TOAST_TYPES.ERROR),
-    showWarning: (message) => createToast(message, TOAST_TYPES.WARNING),
-    showInfo: (message) => createToast(message, TOAST_TYPES.INFO),
+    showSuccess: (message: string) => createToast(message, TOAST_TYPES.SUCCESS),
+    showError: (message: string) => createToast(message, TOAST_TYPES.ERROR),
+    showWarning: (message: string) => createToast(message, TOAST_TYPES.WARNING),
+    showInfo: (message: string) => createToast(message, TOAST_TYPES.INFO),
     
     // Advanced methods
-    confirmAction: (message, onConfirm, onCancel = null) => {
-      return createToast(message, TOAST_TYPES.WARNING, {
+    confirmAction: (message: string, onConfirm: () => void, onCancel: (() => void) | null = null) => {
+      const toastId = createToast(message, TOAST_TYPES.WARNING, {
         persistent: true,
         action: {
           confirm: {
             text: 'Confirm',
             handler: () => {
               onConfirm()
-              // Toast will be removed automatically after action
+              removeToast(toastId) // Remove the toast after action
             }
           },
           cancel: {
             text: 'Cancel',
             handler: () => {
               if (onCancel) onCancel()
-              // Toast will be removed automatically after action
+              removeToast(toastId) // Remove the toast after action
             }
           }
         }
       })
+      return toastId
     },
     
     // Loading toast
-    loading: (message = 'Loading...') => {
+    loading: (message: string = 'Loading...') => {
       return createToast(message, TOAST_TYPES.INFO, {
         persistent: true,
         dismissible: false
       })
+    },
+    
+    // Remove loading toast
+    removeLoading: (toastId: number) => {
+      removeToast(toastId)
     }
   }
 }

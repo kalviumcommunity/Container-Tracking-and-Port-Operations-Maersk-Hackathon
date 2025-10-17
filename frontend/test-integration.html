@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Activity Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Container Activity Integration Test</h1>
+        
+        <div class="info">
+            <h3>Test Steps:</h3>
+            <ol>
+                <li>Login to get auth token</li>
+                <li>Store token in localStorage</li>
+                <li>Test container API endpoint</li>
+                <li>Test container filtering and sorting</li>
+            </ol>
+        </div>
+
+        <div id="results"></div>
+
+        <button onclick="runFullTest()">Run Full Integration Test</button>
+        <button onclick="testContainerAPI()">Test Container API Only</button>
+        <button onclick="clearStorage()">Clear Local Storage</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5221/api';
+        const resultsDiv = document.getElementById('results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            addResult('Local storage cleared', 'info');
+        }
+
+        async function login() {
+            try {
+                addResult('Attempting login...', 'info');
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'TempAdmin123!ChangeMePlease'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Login failed: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Store token in the format expected by the frontend
+                localStorage.setItem('auth_token', data.token);
+                localStorage.setItem('current_user', JSON.stringify(data.user));
+                
+                addResult(`Login successful! User: ${data.user.username} (${data.user.fullName})`, 'success');
+                addResult(`Token stored: ${data.token.substring(0, 50)}...`, 'info');
+                
+                return data.token;
+            } catch (error) {
+                addResult(`Login error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function testContainerAPI() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No auth token found. Please login first.');
+                }
+
+                addResult('Testing container API with sorting...', 'info');
+
+                // Test the filtered endpoint with sorting
+                const url = `${API_BASE}/containers?page=1&pageSize=10&sortBy=CreatedAt&sortDirection=desc`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Container API failed: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const containers = data.data.data || data.data;
+                    addResult(`Container API success! Retrieved ${containers.length} containers`, 'success');
+                    addResult(`Total containers: ${data.data.totalCount || containers.length}`, 'info');
+                    
+                    if (containers.length > 0) {
+                        addResult(`First container: ${containers[0].containerId} - ${containers[0].status} - ${containers[0].type}`, 'info');
+                        addResult(`Created at: ${containers[0].createdAt}`, 'info');
+                        
+                        // Show first 3 containers
+                        const containerList = containers.slice(0, 3).map(c => 
+                            `${c.containerId} | ${c.status} | ${c.type} | ${c.currentLocation || 'N/A'} | ${new Date(c.createdAt).toLocaleString()}`
+                        ).join('<br>');
+                        addResult(`First 3 containers:<br><pre>${containerList}</pre>`, 'success');
+                    }
+                } else {
+                    throw new Error('Invalid response format');
+                }
+
+            } catch (error) {
+                addResult(`Container API error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function runFullTest() {
+            clearResults();
+            addResult('Starting full integration test...', 'info');
+            
+            try {
+                // Step 1: Login
+                await login();
+                
+                // Step 2: Test Container API
+                await testContainerAPI();
+                
+                addResult('✅ All tests passed! Container Activity should now work with real backend data.', 'success');
+                addResult('You can now navigate to the main application and check the Container Activity section in the dashboard.', 'info');
+                
+            } catch (error) {
+                addResult(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run test on page load if we have credentials
+        window.addEventListener('load', () => {
+            addResult('Container Activity Integration Test loaded', 'info');
+            addResult('Click "Run Full Integration Test" to test the backend connection', 'info');
+        });
+    </script>
+</body>
+</html>

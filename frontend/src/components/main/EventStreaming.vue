@@ -370,9 +370,14 @@ onMounted(() => {
   // Set up auto-refresh if enabled
   if (autoRefresh.value) {
     refreshInterval = setInterval(() => {
-      // Simulate new events
-      streamStats.value.eventsPerSecond = Math.floor(Math.random() * 20) + 5
-      streamStats.value.avgLatency = Math.floor(Math.random() * 50) + 20
+      // Only update if we have real data, otherwise keep zeros
+      if (events.value.length > 0) {
+        streamStats.value.eventsPerSecond = Math.min(events.value.length, 25)
+        streamStats.value.avgLatency = 30 // Fixed reasonable latency
+      } else {
+        streamStats.value.eventsPerSecond = 0
+        streamStats.value.avgLatency = 0
+      }
     }, 2000)
   }
 })

@@ -36,7 +36,7 @@
 <script setup>
 import { computed } from 'vue'
 import Toast from './Toast.vue'
-import { useToast } from '../composables/useToast.js'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps({
   position: {

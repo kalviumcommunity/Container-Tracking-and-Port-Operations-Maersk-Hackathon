@@ -5,6 +5,8 @@ import ContainerManagement from '@/components/main/ContainerManagement.vue'
 import BerthOperationsMain from '@/components/main/BerthOperationsMain.vue'
 import EventStreaming from '@/components/main/EventStreaming.vue'
 import AdminDashboard from '@/components/AdminDashboard.vue'
+import Login from '@/views/Login.vue'
+import Register from '@/views/Register.vue'
 import { authApi } from '../services/api'
 
 const router = createRouter({
@@ -14,6 +16,18 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: Login,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: Register,
+      meta: { requiresGuest: true }
     },
     {
       path: '/dashboard',
@@ -86,10 +100,19 @@ router.beforeEach((to, from, next) => {
     return
   }
   
+  // Redirect authenticated users from login/register pages to dashboard
+  if (to.meta.requiresGuest && isAuthenticated) {
+    next('/dashboard')
+    return
+  }
+  
+  // Redirect unauthenticated users from protected routes to login
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // Redirect to landing page if trying to access protected route without auth
-    next('/')
-  } else if (to.meta.requiresAdmin) {
+    next('/login')
+    return
+  }
+  
+  if (to.meta.requiresAdmin) {
     // Check if user has admin role
     let userRoles = []
     
