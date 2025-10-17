@@ -263,15 +263,20 @@ namespace Backend.Services
                     var payload = new
                     {
                         id = eventEntity.EventId,
-                        type = eventEntity.EventType,
+                        eventId = eventEntity.EventId,
+                        eventType = eventEntity.EventType,
+                        title = eventEntity.Title,
+                        description = eventEntity.Description,
                         status = eventEntity.Status,
                         timestamp = eventEntity.EventTimestamp,
+                        eventTime = eventEntity.EventTimestamp,
                         source = eventEntity.Source,
                         portId = eventEntity.PortId,
                         shipId = eventEntity.ShipId,
                         containerId = eventEntity.ContainerId,
                         berthId = eventEntity.BerthId,
                         priority = eventEntity.Priority,
+                        severity = eventEntity.Priority,  // Add severity field for email service
                         requiresAction = eventEntity.RequiresAction
                     };
                     var json = JsonSerializer.Serialize(payload);

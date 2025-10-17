@@ -131,13 +131,28 @@ namespace Backend.Controllers
         {
             try
             {
-                var assignment = await _berthAssignmentService.CreateAsync(createDto);
+                var userId = User.GetUserId();
+                var assignment = await _berthAssignmentService.CreateAsync(createDto, userId);
                 return CreatedAtAction(nameof(GetBerthAssignment), new { id = assignment.Id }, 
                     ApiResponse<BerthAssignmentDto>.Ok(assignment));
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+                // Provide more helpful error messages for foreign key violations
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                if (errorMessage.Contains("FK_BerthAssignments_Containers"))
+                {
+                    return BadRequest(ApiResponse<object>.Fail($"Container '{createDto.ContainerId}' does not exist in the database."));
+                }
+                else if (errorMessage.Contains("FK_BerthAssignments_Ships"))
+                {
+                    return BadRequest(ApiResponse<object>.Fail($"Ship with ID {createDto.ShipId} does not exist in the database."));
+                }
+                else if (errorMessage.Contains("FK_BerthAssignments_Berths"))
+                {
+                    return BadRequest(ApiResponse<object>.Fail($"Berth with ID {createDto.BerthId} does not exist in the database."));
+                }
+                return BadRequest(ApiResponse<object>.Fail(errorMessage));
             }
         }
         

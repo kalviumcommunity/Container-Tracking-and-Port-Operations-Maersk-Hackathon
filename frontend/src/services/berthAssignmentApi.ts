@@ -90,7 +90,7 @@ export const berthAssignmentApi = {
     shipId?: number
     containerId?: string
     assignmentType: string
-    priority?: string
+    priority?: number
     status?: string
     scheduledArrival?: string
     scheduledDeparture?: string

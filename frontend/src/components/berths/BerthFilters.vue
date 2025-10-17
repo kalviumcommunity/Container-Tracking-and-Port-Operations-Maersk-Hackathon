@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-lg shadow-md p-6">
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
       <Filter class="w-5 h-5 mr-2 text-blue-600" />
       Filter Berths
@@ -14,7 +14,7 @@
             v-for="quickFilter in quickFilters"
             :key="quickFilter.key"
             @click="applyQuickFilter(quickFilter)"
-            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             :class="{ 'bg-blue-50 border-blue-300 text-blue-700': activeQuickFilter === quickFilter.key }"
           >
             <component :is="quickFilter.icon" class="w-4 h-4 mr-1" />
@@ -23,12 +23,12 @@
         </div>
       </div>
 
-      <!-- Status Filter -->
+      <!-- Status and Port Filter -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
           <select
-            v-model="filters.status"
+            v-model="localFilters.status"
             @change="emitFilters"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
@@ -42,41 +42,38 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Port</label>
           <select
-            v-model="filters.portId"
+            v-model="localFilters.portId"
             @change="emitFilters"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">All Ports</option>
-            <option v-for="port in portOptions" :key="port.id" :value="port.id">
+            <option v-for="port in portOptions" :key="port.id" :value="port.id.toString()">
               {{ port.name }}
             </option>
           </select>
         </div>
       </div>
 
-      <!-- Berth Type and Capacity -->
+      <!-- Berth Type and Min Capacity -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Berth Type</label>
           <select
-            v-model="filters.berthType"
+            v-model="localFilters.type"
             @change="emitFilters"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">All Types</option>
-            <option value="Container">Container Terminal</option>
-            <option value="Bulk">Bulk Cargo</option>
-            <option value="RoRo">RoRo (Roll-on/Roll-off)</option>
-            <option value="Passenger">Passenger Terminal</option>
-            <option value="General">General Cargo</option>
-            <option value="Specialized">Specialized</option>
+            <option v-for="type in typeOptions" :key="type" :value="type">
+              {{ type }}
+            </option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Capacity</label>
           <input
-            v-model.number="filters.minCapacity"
+            v-model="localFilters.minCapacity"
             @input="emitFilters"
             type="number"
             min="0"
@@ -86,63 +83,34 @@
         </div>
       </div>
 
-      <!-- Utilization Range -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Utilization Range: {{ filters.utilizationMin }}% - {{ filters.utilizationMax }}%
-        </label>
-        <div class="flex items-center space-x-4">
+      <!-- Max Capacity and Search -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Maximum Capacity</label>
           <input
-            v-model.number="filters.utilizationMin"
+            v-model="localFilters.maxCapacity"
             @input="emitFilters"
-            type="range"
+            type="number"
             min="0"
-            max="100"
-            class="flex-1"
+            placeholder="e.g., 1000"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-          <span class="text-sm text-gray-500 w-12">{{ filters.utilizationMin }}%</span>
-          <input
-            v-model.number="filters.utilizationMax"
-            @input="emitFilters"
-            type="range"
-            min="0"
-            max="100"
-            class="flex-1"
-          />
-          <span class="text-sm text-gray-500 w-12">{{ filters.utilizationMax }}%</span>
         </div>
-      </div>
 
-      <!-- Features Filter -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Features</label>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-          <label v-for="feature in featureOptions" :key="feature.key" class="flex items-center">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search class="h-5 w-5 text-gray-400" />
+            </div>
             <input
-              type="checkbox"
-              :checked="filters.features.includes(feature.key)"
-              @change="toggleFeature(feature.key)"
-              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              v-model="localFilters.searchTerm"
+              @input="emitFilters"
+              type="text"
+              placeholder="Search berth names..."
+              class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <span class="ml-2 text-sm text-gray-700">{{ feature.label }}</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Search -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search class="h-5 w-5 text-gray-400" />
           </div>
-          <input
-            v-model="filters.search"
-            @input="emitFilters"
-            type="text"
-            placeholder="Search berth names, notes..."
-            class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
         </div>
       </div>
 
@@ -150,12 +118,18 @@
       <div class="flex justify-between items-center pt-4 border-t border-gray-200">
         <button
           @click="clearFilters"
-          class="text-sm text-gray-600 hover:text-gray-800"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:border-red-300 hover:text-red-600"
+          :disabled="appliedFiltersCount === 0"
+          :class="{ 'opacity-50 cursor-not-allowed': appliedFiltersCount === 0 }"
         >
+          <Filter class="w-4 h-4 mr-2" />
           Clear all filters
         </button>
         <div class="text-sm text-gray-500">
-          {{ appliedFiltersCount }} filter{{ appliedFiltersCount === 1 ? '' : 's' }} applied
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                :class="appliedFiltersCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'">
+            {{ appliedFiltersCount }} filter{{ appliedFiltersCount === 1 ? '' : 's' }} applied
+          </span>
         </div>
       </div>
     </div>
@@ -163,155 +137,81 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { 
-  Filter, 
-  Search,
-  Package,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Zap,
-  Users
-} from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { Filter, Search, CheckCircle, Package, AlertCircle, Zap, Users } from 'lucide-vue-next';
+import type { BerthFilters } from '../../types/berth';
 
-interface Props {
-  statusOptions?: string[];
-  portOptions?: Array<{ id: number; name: string }>;
-  initialFilters?: any;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  statusOptions: () => ['Available', 'Occupied', 'Under Maintenance', 'Reserved', 'Full', 'Partially Occupied', 'Inactive'],
-  portOptions: () => [],
-  initialFilters: () => ({})
-});
+const props = defineProps<{
+  statusOptions: string[];
+  typeOptions: string[];
+  portOptions: Array<{ id: number; name: string }>;
+}>();
 
 const emit = defineEmits<{
-  'filters-changed': [filters: any];
+  'update:filters': [filters: BerthFilters];
+  apply: [];
+  clear: [];
 }>();
 
 const activeQuickFilter = ref('');
-
-const filters = ref({
+const localFilters = ref<BerthFilters>({
   status: '',
+  type: '',
   portId: '',
-  berthType: '',
-  minCapacity: null,
-  utilizationMin: 0,
-  utilizationMax: 100,
-  features: [],
-  search: '',
-  ...props.initialFilters
+  minCapacity: '',
+  maxCapacity: '',
+  searchTerm: '',
+  page: 1,
+  pageSize: 25,
+  sortBy: 'updatedAt',
+  sortDirection: 'desc'
 });
 
 const quickFilters = [
-  {
-    key: 'available',
-    label: 'Available',
-    icon: CheckCircle,
-    filters: { status: 'Available' }
-  },
-  {
-    key: 'full',
-    label: 'At Capacity',
-    icon: Package,
-    filters: { utilizationMin: 90, utilizationMax: 100 }
-  },
-  {
-    key: 'maintenance',
-    label: 'Under Maintenance',
-    icon: AlertCircle,
-    filters: { status: 'Under Maintenance' }
-  },
-  {
-    key: 'high-capacity',
-    label: 'High Capacity',
-    icon: Zap,
-    filters: { minCapacity: 500 }
-  },
-  {
-    key: 'active',
-    label: 'Active',
-    icon: Users,
-    filters: { status: 'Available,Occupied,Partially Occupied'.split(',') }
-  }
-];
-
-const featureOptions = [
-  { key: 'refrigerated', label: 'Refrigerated' },
-  { key: 'dangerous', label: 'Dangerous Goods' },
-  { key: 'oversized', label: 'Oversized Cargo' },
-  { key: 'heavyLift', label: 'Heavy Lift' },
-  { key: 'railConnection', label: 'Rail Connection' },
-  { key: 'roadAccess', label: 'Road Access' }
+  { key: 'available', label: 'Available', icon: CheckCircle, filters: { status: 'Available' } },
+  { key: 'occupied', label: 'Occupied', icon: Package, filters: { status: 'Occupied' } },
+  { key: 'maintenance', label: 'Under Maintenance', icon: AlertCircle, filters: { status: 'Under Maintenance' } },
+  { key: 'high-capacity', label: 'High Capacity (500+)', icon: Zap, filters: { minCapacity: '500' } },
+  { key: 'reserved', label: 'Reserved', icon: Users, filters: { status: 'Reserved' } }
 ];
 
 const appliedFiltersCount = computed(() => {
   let count = 0;
-  
-  if (filters.value.status) count++;
-  if (filters.value.portId) count++;
-  if (filters.value.berthType) count++;
-  if (filters.value.minCapacity) count++;
-  if (filters.value.utilizationMin > 0 || filters.value.utilizationMax < 100) count++;
-  if (filters.value.features.length > 0) count++;
-  if (filters.value.search) count++;
-  
+  if (localFilters.value.status) count++;
+  if (localFilters.value.portId) count++;
+  if (localFilters.value.type) count++;
+  if (localFilters.value.minCapacity) count++;
+  if (localFilters.value.maxCapacity) count++;
+  if (localFilters.value.searchTerm) count++;
   return count;
 });
 
 const applyQuickFilter = (quickFilter: any) => {
   if (activeQuickFilter.value === quickFilter.key) {
-    // Deactivate if already active
     clearFilters();
     return;
   }
-  
   activeQuickFilter.value = quickFilter.key;
-  
-  // Clear previous filters first
-  clearFilters();
-  
-  // Apply the quick filter
-  Object.assign(filters.value, quickFilter.filters);
-  
-  emitFilters();
-};
-
-const toggleFeature = (featureKey: string) => {
-  const index = filters.value.features.indexOf(featureKey);
-  if (index > -1) {
-    filters.value.features.splice(index, 1);
-  } else {
-    filters.value.features.push(featureKey);
-  }
+  localFilters.value = {
+    status: '', type: '', portId: '', minCapacity: '', maxCapacity: '', searchTerm: '',
+    page: 1, pageSize: 25, sortBy: 'updatedAt', sortDirection: 'desc'
+  };
+  Object.assign(localFilters.value, quickFilter.filters);
   emitFilters();
 };
 
 const clearFilters = () => {
   activeQuickFilter.value = '';
-  filters.value = {
-    status: '',
-    portId: '',
-    berthType: '',
-    minCapacity: null,
-    utilizationMin: 0,
-    utilizationMax: 100,
-    features: [],
-    search: ''
+  localFilters.value = {
+    status: '', type: '', portId: '', minCapacity: '', maxCapacity: '', searchTerm: '',
+    page: 1, pageSize: 25, sortBy: 'updatedAt', sortDirection: 'desc'
   };
+  emit('clear');
   emitFilters();
 };
 
 const emitFilters = () => {
-  emit('filters-changed', { ...filters.value });
+  emit('update:filters', { ...localFilters.value });
+  emit('apply');
 };
-
-// Watch for external filter changes
-watch(() => props.initialFilters, (newFilters) => {
-  if (newFilters) {
-    Object.assign(filters.value, newFilters);
-  }
-}, { deep: true });
 </script>

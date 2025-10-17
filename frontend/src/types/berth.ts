@@ -144,25 +144,22 @@ export interface BerthUsageCharge {
 
 /**
  * Berth statistics for dashboard display
+ * Based on actual backend data from Berth model
  */
 export interface BerthStats {
+  // Core counts
   totalBerths: number;
+  activeBerths: number; // Berths not in maintenance or out of service
   availableBerths: number;
-  occupiedBerths: number;
-  maintenanceBerths: number;
-  averageOccupancyRate: number; // percentage
-  totalRevenue: number;
-  activeBerths: number;
-  totalCapacity: number;
-  currentOccupancy: number;
-  statusCounts: Record<string, number>;
-  averageUtilization: number;
-  berthsByStatus: Record<string, number>;
-  berthsByType: Record<string, number>;
-  berthsByPort: Record<string, number>;
-  portCounts: Record<string, number>;
-  utilizationRanges: Record<string, number>;
-  featureCounts: Record<string, number>;
+  
+  // Capacity metrics
+  totalCapacity: number; // Sum of all berth capacities
+  currentOccupancy: number; // Sum of all currentLoad values
+  
+  // Breakdown by actual backend fields
+  statusCounts: Record<string, number>; // Available, Occupied, Under Maintenance, Reserved, Out of Service
+  typeCounts: Record<string, number>; // Container, Bulk, Tanker, RoRo, Multipurpose, General Cargo
+  portCounts: Record<string, number>; // Berths grouped by port name
 }
 
 /**

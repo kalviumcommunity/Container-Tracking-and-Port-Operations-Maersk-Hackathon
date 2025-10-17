@@ -4,8 +4,7 @@
       <div class="mt-3">
         <h3 class="text-lg font-medium text-gray-900 mb-6 flex items-center">
           <MapPin class="w-5 h-5 mr-2 text-blue-600" />
-      
-    console.log('Development: Form populated successfully');    {{ isEditing ? 'Edit Berth' : 'Create New Berth' }}
+          {{ isEditing ? 'Edit Berth' : 'Create New Berth' }}
         </h3>
         
         <form @submit.prevent="handleSubmit" class="space-y-6">
@@ -66,47 +65,45 @@
             </div>
           </div>
 
-          <!-- Berth Type and Size -->
+          <!-- Berth Identifier and Type -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Berth Type</label>
-              <select
-                v-model="form.berthType"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select Type</option>
-                <option value="Container">Container Terminal</option>
-                <option value="Bulk">Bulk Cargo</option>
-                <option value="RoRo">RoRo (Roll-on/Roll-off)</option>
-                <option value="Passenger">Passenger Terminal</option>
-                <option value="General">General Cargo</option>
-                <option value="Specialized">Specialized</option>
-              </select>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Berth Length (meters)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Berth Identifier</label>
               <input
-                v-model.number="form.length"
-                type="number"
-                min="1"
-                step="0.1"
-                placeholder="e.g., 300"
+                v-model="form.identifier"
+                type="text"
+                placeholder="e.g., B-001, WHARF-A1"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Berth Type</label>
+              <select
+                v-model="form.type"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Type</option>
+                <option value="Container">Container</option>
+                <option value="Bulk">Bulk</option>
+                <option value="Tanker">Tanker</option>
+                <option value="RoRo">RoRo</option>
+                <option value="Multipurpose">Multipurpose</option>
+                <option value="General Cargo">General Cargo</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Water Depth and Draft -->
+          <!-- Ship Specifications -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Water Depth (meters)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Max Ship Length (meters)</label>
               <input
-                v-model.number="form.waterDepth"
+                v-model.number="form.maxShipLength"
                 type="number"
                 min="0"
                 step="0.1"
-                placeholder="e.g., 15.5"
+                placeholder="e.g., 300"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -124,8 +121,8 @@
             </div>
           </div>
 
-          <!-- Equipment and Features -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Equipment and Financial -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Crane Count</label>
               <input
@@ -138,98 +135,51 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Crane Capacity (tons)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate ($)</label>
               <input
-                v-model.number="form.craneCapacity"
+                v-model.number="form.hourlyRate"
                 type="number"
                 min="0"
-                step="0.1"
-                placeholder="e.g., 65"
+                step="0.01"
+                placeholder="e.g., 250.00"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-            </div>
-          </div>
-
-          <!-- Special Features -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Special Features</label>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.features.refrigerated"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">Refrigerated Storage</span>
-              </label>
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.features.dangerous"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">Dangerous Goods</span>
-              </label>
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.features.oversized"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">Oversized Cargo</span>
-              </label>
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.features.heavyLift"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">Heavy Lift</span>
-              </label>
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.features.railConnection"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">Rail Connection</span>
-              </label>
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.features.roadAccess"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">Road Access</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Operating Hours and Schedule -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Operating Hours</label>
-              <select
-                v-model="form.operatingHours"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select Operating Hours</option>
-                <option value="24/7">24/7 Operations</option>
-                <option value="Daytime">Daytime Only (6 AM - 6 PM)</option>
-                <option value="Extended">Extended Hours (6 AM - 10 PM)</option>
-                <option value="Custom">Custom Schedule</option>
-              </select>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Maintenance Window</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
               <input
-                v-model="form.maintenanceWindow"
+                v-model="form.priority"
                 type="text"
-                placeholder="e.g., Sunday 2 AM - 6 AM"
+                placeholder="High, Medium, Low"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+          </div>
+
+          <!-- Available Services -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Available Services</label>
+            <input
+              v-model="form.availableServices"
+              type="text"
+              placeholder="e.g., Crane, Refueling, Maintenance, Loading"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p class="mt-1 text-sm text-gray-500">Enter services separated by commas</p>
+          </div>
+
+          <!-- Current Load (for editing) -->
+          <div v-if="isEditing">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Current Load</label>
+            <input
+              v-model.number="form.currentLoad"
+              type="number"
+              min="0"
+              :max="form.capacity"
+              placeholder="Current container count"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
           <!-- Notes and Additional Information -->
@@ -244,11 +194,11 @@
           </div>
 
           <!-- Current Utilization (for editing existing berths) -->
-          <div v-if="isEditing" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+          <div v-if="isEditing" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Current Occupancy</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Current Load</label>
               <div class="text-lg font-semibold text-blue-600">
-                {{ form.currentOccupancy || 0 }}/{{ form.capacity }}
+                {{ form.currentLoad || 0 }}/{{ form.capacity }}
               </div>
               <div class="text-xs text-gray-500">Containers</div>
             </div>
@@ -256,17 +206,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Utilization Rate</label>
               <div class="text-lg font-semibold text-green-600">
-                {{ Math.round(((form.currentOccupancy || 0) / form.capacity) * 100) }}%
+                {{ Math.round(((form.currentLoad || 0) / form.capacity) * 100) }}%
               </div>
               <div class="text-xs text-gray-500">Capacity Used</div>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Active Assignments</label>
-              <div class="text-lg font-semibold text-purple-600">
-                {{ form.activeAssignmentCount || 0 }}
-              </div>
-              <div class="text-xs text-gray-500">Active Jobs</div>
             </div>
           </div>
 
@@ -333,8 +275,6 @@ const form = ref({
 
 // Watch for berth prop changes
 watch(() => props.berth, (newBerth) => {
-  console.log('Development: Berth prop changed');
-  
   if (newBerth) {
     Object.assign(form.value, {
       name: newBerth.name || '',
@@ -352,37 +292,31 @@ watch(() => props.berth, (newBerth) => {
       priority: newBerth.priority || '',
       notes: newBerth.notes || ''
     });
-    
-    console.log('Development: Berth form populated successfully');
   }
 }, { immediate: true });
 
 const handleSubmit = () => {
-  const submissionData = { ...form.value };
+  const submissionData: any = { ...form.value };
   
   // Ensure proper data types
   if (submissionData.portId) {
-    submissionData.portId = parseInt(submissionData.portId.toString());
+    submissionData.portId = parseInt(String(submissionData.portId));
   }
   
-  // Handle null/empty values properly
-  if (!submissionData.portId || submissionData.portId === '') {
-    submissionData.portId = null;
-  }
-  if (!submissionData.maxShipLength || submissionData.maxShipLength === '') {
+  // Handle null/empty values properly - keep as null for optional fields
+  if (!submissionData.maxShipLength) {
     submissionData.maxShipLength = null;
   }
-  if (!submissionData.maxDraft || submissionData.maxDraft === '') {
+  if (!submissionData.maxDraft) {
     submissionData.maxDraft = null;
   }
-  if (!submissionData.craneCount || submissionData.craneCount === '') {
+  if (!submissionData.craneCount) {
     submissionData.craneCount = null;
   }
-  if (!submissionData.hourlyRate || submissionData.hourlyRate === '') {
+  if (!submissionData.hourlyRate) {
     submissionData.hourlyRate = null;
   }
   
-  console.log('Development: Submitting berth form data');
   emit('submit', submissionData);
 };
 

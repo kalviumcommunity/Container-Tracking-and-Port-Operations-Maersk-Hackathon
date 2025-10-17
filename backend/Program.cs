@@ -191,8 +191,10 @@ builder.Services.Configure<Backend.Services.Kafka.KafkaSettings>(
 builder.Services.AddScoped<Backend.Services.Kafka.IKafkaProducer, Backend.Services.Kafka.KafkaProducerService>();
 
 // Register Kafka consumer as a hosted background service
-// Temporarily disabled to prevent shutdown due to missing topics
-// builder.Services.AddHostedService<Backend.Services.Kafka.KafkaConsumerService>();
+builder.Services.AddHostedService<Backend.Services.Kafka.KafkaConsumerService>();
+
+// Register Email notification service
+builder.Services.AddScoped<Backend.Services.IEmailService, Backend.Services.EmailService>();
 
 // Add SignalR for real-time event streaming
 builder.Services.AddSignalR(options =>

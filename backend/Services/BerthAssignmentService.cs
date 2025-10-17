@@ -104,12 +104,50 @@ namespace Backend.Services
         /// <returns>The created berth assignment</returns>
         public async Task<BerthAssignmentDto> CreateAsync(BerthAssignmentCreateUpdateDto createDto)
         {
+            return await CreateAsync(createDto, 0); // Call the overload with userId = 0 (fallback)
+        }
+
+        /// <summary>
+        /// Creates a new berth assignment with user ID
+        /// </summary>
+        /// <param name="createDto">Berth assignment data</param>
+        /// <param name="userId">The ID of the user creating the assignment</param>
+        /// <returns>The created berth assignment</returns>
+        public async Task<BerthAssignmentDto> CreateAsync(BerthAssignmentCreateUpdateDto createDto, int userId)
+        {
+            // Convert priority number to string
+            string priorityString = null;
+            if (createDto.Priority.HasValue)
+            {
+                priorityString = createDto.Priority.Value switch
+                {
+                    1 => "High",
+                    2 => "Medium",
+                    3 => "Low",
+                    _ => "Medium" // Default to Medium for any other value
+                };
+            }
+
             var assignment = new BerthAssignment
             {
-                ContainerId = createDto.ContainerId,
                 BerthId = createDto.BerthId,
-                AssignedAt = createDto.AssignedAt ?? DateTime.UtcNow,
-                ReleasedAt = createDto.ReleasedAt
+                ShipId = createDto.ShipId,
+                ContainerId = createDto.ContainerId,
+                AssignmentType = createDto.AssignmentType,
+                Priority = priorityString,
+                Status = createDto.Status ?? "Scheduled",
+                ScheduledArrival = createDto.ScheduledArrival.HasValue 
+                    ? DateTime.SpecifyKind(createDto.ScheduledArrival.Value, DateTimeKind.Utc) 
+                    : (DateTime?)null,
+                ScheduledDeparture = createDto.ScheduledDeparture.HasValue 
+                    ? DateTime.SpecifyKind(createDto.ScheduledDeparture.Value, DateTimeKind.Utc) 
+                    : (DateTime?)null,
+                ContainerCount = createDto.ContainerCount,
+                Notes = createDto.Notes ?? string.Empty, // Database requires non-null value
+                AssignedAt = DateTime.UtcNow,
+                CreatedByUserId = userId > 0 ? userId : (int?)null, // Set user ID if valid
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow // Set to same as CreatedAt on creation
             };
             
             var createdAssignment = await _berthAssignmentRepository.CreateAsync(assignment);
@@ -130,12 +168,36 @@ namespace Backend.Services
                 throw new KeyNotFoundException($"Berth assignment with ID {id} not found");
             }
             
+            // Convert priority number to string
+            string priorityString = null;
+            if (updateDto.Priority.HasValue)
+            {
+                priorityString = updateDto.Priority.Value switch
+                {
+                    1 => "High",
+                    2 => "Medium",
+                    3 => "Low",
+                    _ => "Medium" // Default to Medium for any other value
+                };
+            }
+
             // Update fields
-            existingAssignment.ContainerId = updateDto.ContainerId;
             existingAssignment.BerthId = updateDto.BerthId;
-            if (updateDto.AssignedAt.HasValue)
-                existingAssignment.AssignedAt = updateDto.AssignedAt.Value;
-            existingAssignment.ReleasedAt = updateDto.ReleasedAt;
+            existingAssignment.ShipId = updateDto.ShipId;
+            existingAssignment.ContainerId = updateDto.ContainerId;
+            existingAssignment.AssignmentType = updateDto.AssignmentType;
+            existingAssignment.Priority = priorityString;
+            if (!string.IsNullOrEmpty(updateDto.Status))
+                existingAssignment.Status = updateDto.Status;
+            existingAssignment.ScheduledArrival = updateDto.ScheduledArrival.HasValue 
+                ? DateTime.SpecifyKind(updateDto.ScheduledArrival.Value, DateTimeKind.Utc) 
+                : (DateTime?)null;
+            existingAssignment.ScheduledDeparture = updateDto.ScheduledDeparture.HasValue 
+                ? DateTime.SpecifyKind(updateDto.ScheduledDeparture.Value, DateTimeKind.Utc) 
+                : (DateTime?)null;
+            existingAssignment.ContainerCount = updateDto.ContainerCount;
+            existingAssignment.Notes = updateDto.Notes ?? string.Empty; // Database requires non-null value
+            existingAssignment.UpdatedAt = DateTime.UtcNow;
             
             var updatedAssignment = await _berthAssignmentRepository.UpdateAsync(existingAssignment);
             return MapToDto(updatedAssignment);

@@ -33,6 +33,36 @@
       @clear-selection="clearSelection"
     />
 
+    <!-- View Toggle -->
+    <div class="mb-6 flex justify-end">
+      <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1 shadow-sm">
+        <button
+          @click="viewMode = 'table'"
+          :class="[
+            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            viewMode === 'table' 
+              ? 'bg-blue-600 text-white shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          ]"
+        >
+          <ListIcon :size="16" />
+          Table View
+        </button>
+        <button
+          @click="viewMode = 'grid'"
+          :class="[
+            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            viewMode === 'grid' 
+              ? 'bg-blue-600 text-white shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          ]"
+        >
+          <LayoutGridIcon :size="16" />
+          Grid View
+        </button>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center items-center py-12">
       <Loader2Icon class="w-12 h-12 text-blue-600 animate-spin" />
@@ -45,7 +75,23 @@
       @retry="loadContainers" 
     />
 
-    <!-- Main Table Component -->
+    <!-- Grid View -->
+    <div
+      v-else-if="viewMode === 'grid'"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+    >
+      <ContainerCard
+        v-for="container in paginatedData.data"
+        :key="container.containerId"
+        :container="container"
+        :can-manage="canManageContainers"
+        @view="viewContainer"
+        @edit="editContainer"
+        @delete="deleteContainer"
+      />
+    </div>
+
+    <!-- Table View -->
     <ContainerTable
       v-else
       :containers="paginatedData.data"
@@ -65,7 +111,7 @@
       @previous-page="previousPage"
     />
 
-    <!-- Modal Component -->
+    <!-- Edit/Create Modal Component -->
     <ContainerModal
       v-if="showCreateModal || showEditModal"
       :is-editing="showEditModal"
@@ -78,12 +124,21 @@
       @submit="handleFormSubmit"
       @cancel="closeModal"
     />
+
+    <!-- Details Modal Component -->
+    <ContainerDetailsModal
+      :is-open="showDetailsModal"
+      :container="selectedContainer"
+      :can-manage="canManageContainers"
+      @close="closeDetailsModal"
+      @edit="editContainer"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { Loader2Icon } from 'lucide-vue-next';
+import { Loader2Icon, ListIcon, LayoutGridIcon } from 'lucide-vue-next';
 
 // Import child components from containers subfolder
 import ContainerHeader from '../containers/ContainerHeader.vue';
@@ -92,7 +147,9 @@ import ContainerFilters from '../containers/ContainerFilters.vue';
 import ContainerBulkActions from '../containers/ContainerBulkActions.vue';
 import ContainerError from '../containers/ContainerError.vue';
 import ContainerTable from '../containers/ContainerTable.vue';
+import ContainerCard from '../containers/ContainerCard.vue';
 import ContainerModal from '../containers/ContainerModal.vue';
+import ContainerDetailsModal from '../containers/ContainerDetailsModal.vue';
 
 // Import services and types
 import { containerService } from '../../services/containerService';
@@ -160,8 +217,11 @@ const error = ref<string | null>(null);
 const isSubmitting = ref(false);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDetailsModal = ref(false);
 const selectedContainers = ref<string[]>([]);
+const selectedContainer = ref<Container | null>(null);
 const containerForm = ref<Partial<Container & ContainerCreateRequest>>({});
+const viewMode = ref<'table' | 'grid'>('table');
 
 // Current sort state
 const currentSort = ref({ field: 'updatedAt', direction: 'desc' });
@@ -435,13 +495,20 @@ const exportContainers = async () => {
 };
 
 const viewContainer = (container: Container) => {
-  // TODO: Implement detailed view modal
-  alert(`Viewing container: ${container.containerId}`);
+  selectedContainer.value = container;
+  showDetailsModal.value = true;
+};
+
+const closeDetailsModal = () => {
+  showDetailsModal.value = false;
+  selectedContainer.value = null;
 };
 
 const editContainer = (container: Container) => {
   containerForm.value = { ...container };
   showEditModal.value = true;
+  // Close details modal if open
+  showDetailsModal.value = false;
 };
 
 const deleteContainer = async (container: Container) => {
