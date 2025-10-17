@@ -1,8 +1,30 @@
 <template>
   <section class="mb-12">
-    <div class="mb-8">
+    <div class="mb-8 flex justify-between items-center">
+      <div>
         <h2 class="text-2xl font-bold text-slate-900 mb-2">Port Activity at a Glance</h2>
         <p class="text-slate-600">Live overview of cargo operations and port capacity • Updated every 5 minutes</p>
+      </div>
+      
+      <!-- Port Selector Dropdown -->
+      <div class="min-w-64">
+        <label for="port-select" class="block text-sm font-medium text-slate-700 mb-2">Select Port</label>
+        <select 
+          id="port-select"
+          :value="selectedPort?.portId || ''"
+          @change="handlePortChange"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        >
+          <option value="">All Ports</option>
+          <option 
+            v-for="port in ports" 
+            :key="port.portId" 
+            :value="port.portId"
+          >
+            {{ port.name }}
+          </option>
+        </select>
+      </div>
     </div>
     
     <!-- Loading State -->
@@ -92,17 +114,40 @@ interface MetricStat {
   progress: string;
 }
 
+interface Port {
+  portId: number;
+  name: string;
+  location: string;
+  country: string;
+  capacity: number;
+}
+
 interface Props {
   stats: MetricStat[];
   loading?: boolean;
   error?: string | null;
+  ports: Port[];
+  selectedPort: Port | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
-defineEmits<{
+const emit = defineEmits<{
   retry: [];
+  'port-changed': [port: Port | null];
 }>();
+
+const handlePortChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  const portId = target.value;
+  
+  if (!portId) {
+    emit('port-changed', null);
+  } else {
+    const selectedPort = props.ports.find(p => p.portId === parseInt(portId));
+    emit('port-changed', selectedPort || null);
+  }
+};
 </script>
 
 <style scoped>

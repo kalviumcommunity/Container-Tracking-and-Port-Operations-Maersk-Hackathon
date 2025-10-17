@@ -50,7 +50,7 @@
                   <div class="flex items-center space-x-4 text-xs text-slate-500 ml-11">
                     <span class="flex items-center">
                       <Calendar class="w-3 h-3 mr-1" />
-                      {{ formatDate(application.requestedAt) }}
+                      {{ formatDate(application.requestedAt || application.applicationDate) }}
                     </span>
                   </div>
                 </div>
@@ -164,7 +164,7 @@
               >
                 {{ application.status }}
               </span>
-              <span class="text-xs text-slate-500">{{ formatDate(application.submittedAt) }}</span>
+              <span class="text-xs text-slate-500">{{ formatDate(application.submittedAt || application.applicationDate) }}</span>
             </div>
           </div>
         </div>
@@ -217,8 +217,22 @@ interface SystemStats {
   berths: number
 }
 
-const pendingApplications = ref([])
-const allApplications = ref([])
+interface RoleApplication {
+  applicationId: number
+  username: string
+  fullName?: string
+  applicantName?: string
+  requestedRole: string
+  justification: string
+  applicationDate: string
+  requestedAt?: string
+  submittedAt?: string
+  status: string
+  currentRole?: string
+}
+
+const pendingApplications = ref<RoleApplication[]>([])
+const allApplications = ref<RoleApplication[]>([])
 const stats = ref<SystemStats>({ users: 0, containers: 0, ships: 0, berths: 0 })
 const loading = ref(true)
 const processing = ref(false)
@@ -315,7 +329,8 @@ const rejectApplication = async (applicationId: number) => {
   }
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',

@@ -2,12 +2,12 @@
   <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
     <div class="border-b border-slate-200 p-6">
       <div class="flex items-center gap-3">
-        <div class="p-2 bg-blue-50 rounded-lg">
-          <Container :size="20" class="text-blue-600" />
+        <div class="p-2 bg-emerald-50 rounded-lg">
+          <Building2 :size="20" class="text-emerald-600" />
         </div>
         <div>
-          <h3 class="text-xl font-semibold text-slate-900">Container Activity</h3>
-          <p class="text-sm text-slate-600">Latest containers first (with creation date & time)</p>
+          <h3 class="text-xl font-semibold text-slate-900">Available Berths</h3>
+          <p class="text-sm text-slate-600">Free berths ready for ship docking</p>
         </div>
       </div>
     </div>
@@ -34,7 +34,7 @@
       <!-- Error State -->
       <div v-else-if="error" class="text-center py-8">
         <AlertCircle :size="48" class="mx-auto text-red-500 mb-4" />
-        <h3 class="text-lg font-semibold text-red-900 mb-2">Failed to Load Container Activity</h3>
+        <h3 class="text-lg font-semibold text-red-900 mb-2">Failed to Load Available Berths</h3>
         <p class="text-red-700 mb-4">{{ error }}</p>
         <button
           @click="$emit('retry')"
@@ -45,53 +45,53 @@
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="containers.length === 0" class="text-center py-8">
-        <Container :size="48" class="mx-auto text-slate-400 mb-4" />
-        <h3 class="text-lg font-semibold text-slate-700 mb-2">No Container Activity</h3>
-        <p class="text-slate-500">No recent container movements to display</p>
+      <div v-else-if="berths.length === 0" class="text-center py-8">
+        <Building2 :size="48" class="mx-auto text-slate-400 mb-4" />
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">No Available Berths</h3>
+        <p class="text-slate-500">All berths are currently occupied or under maintenance</p>
       </div>
 
-      <!-- Container List -->
+      <!-- Berth List -->
       <div v-else class="space-y-4">
         <div 
-          v-for="(container, index) in paginatedContainers"
-          :key="container.id"
+          v-for="(berth, index) in paginatedBerths"
+          :key="berth.berthId"
           class="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all duration-200 group animate-slideIn"
           :style="{ animationDelay: `${index * 50}ms` }"
         >
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-lg bg-white border-2 border-slate-200 flex items-center justify-center font-bold text-slate-700 group-hover:border-blue-300 transition-colors">
-              {{ (container.containerNumber || container.id.toString()).slice(-3) }}
+            <div class="w-12 h-12 rounded-lg bg-white border-2 border-slate-200 flex items-center justify-center font-bold text-slate-700 group-hover:border-emerald-300 transition-colors">
+              {{ getBerthDisplayNumber(berth) }}
             </div>
             <div class="flex flex-col">
-              <span class="font-semibold text-slate-900">{{ container.containerNumber || container.id }}</span>
-              <span class="text-sm text-slate-600">{{ container.type }} Container</span>
-              <span v-if="container.cargoType" class="text-xs text-slate-500">{{ container.cargoType }}</span>
+              <span class="font-semibold text-slate-900">{{ berth.name }}</span>
+              <span class="text-sm text-slate-600">{{ berth.type || 'Standard' }} Berth</span>
+              <span v-if="berth.availableServices" class="text-xs text-slate-500">{{ formatServices(berth.availableServices) }}</span>
             </div>
             <span 
               class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-              :class="getStatusColor(container.status)"
+              :class="getStatusColor(berth.status)"
             >
-              {{ container.status }}
+              {{ berth.status }}
             </span>
-            <div v-if="container.size || container.weight" class="text-xs text-slate-500">
-              <div v-if="container.size">{{ container.size }}</div>
-              <div v-if="container.weight">{{ (container.weight / 1000).toFixed(1) }}t</div>
+            <div v-if="berth.capacity || berth.craneCount" class="text-xs text-slate-500">
+              <div v-if="berth.capacity">{{ berth.capacity }} TEU capacity</div>
+              <div v-if="berth.craneCount">{{ berth.craneCount }} cranes</div>
             </div>
           </div>
           <div class="text-right">
-            <div class="text-sm font-semibold text-slate-900">{{ container.location || 'Port Area' }}</div>
-            <div v-if="container.destination" class="text-xs text-slate-500">→ {{ container.destination }}</div>
-            <div class="text-xs text-slate-500">{{ formatDate(container.createdAt) }}</div>
+            <div class="text-sm font-semibold text-slate-900">{{ berth.portName || 'Port Area' }}</div>
+            <div v-if="berth.hourlyRate" class="text-xs text-slate-500">${{ berth.hourlyRate }}/hr</div>
+            <div class="text-xs text-slate-500">Available Now</div>
           </div>
         </div>
       </div>
       
       <!-- Pagination Controls -->
-      <div v-if="!loading && !error && containers.length > 0" class="mt-6 pt-4 border-t border-slate-200">
+      <div v-if="!loading && !error && berths.length > 0" class="mt-6 pt-4 border-t border-slate-200">
         <div class="flex items-center justify-between">
           <p class="text-sm text-slate-600">
-            Showing {{ (currentPage - 1) * containersPerPage + 1 }} to {{ Math.min(currentPage * containersPerPage, containers.length) }} of {{ containers.length }} containers
+            Showing {{ (currentPage - 1) * berthsPerPage + 1 }} to {{ Math.min(currentPage * berthsPerPage, berths.length) }} of {{ berths.length }} available berths
           </p>
           <div class="flex items-center gap-2">
             <button 
@@ -109,7 +109,7 @@
                 :class="[
                   'px-3 py-1 text-sm font-medium rounded transition-colors',
                   page === currentPage 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-emerald-600 text-white' 
                     : 'text-slate-600 hover:text-slate-900'
                 ]"
               >
@@ -134,27 +134,30 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Container, AlertCircle } from 'lucide-vue-next';
+import { Building2, AlertCircle } from 'lucide-vue-next';
 
-interface ContainerActivity {
-  id: string;
-  containerNumber?: string;
+interface Berth {
+  berthId: number;
+  name: string;
+  identifier?: string;
+  type?: string;
+  capacity: number;
+  currentLoad: number;
+  maxShipLength?: number;
+  maxDraft?: number;
   status: string;
-  berth?: string;
-  time?: string;
-  type: string;
-  location?: string;
-  createdAt?: string;
-  cargoType?: string;
-  destination?: string;
-  condition?: string;
-  size?: string;
-  weight?: number;
-  shipId?: number;
+  availableServices?: string;
+  craneCount?: number;
+  hourlyRate?: number;
+  priority?: string;
+  notes?: string;
+  portId: number;
+  portName: string;
+  activeAssignmentCount: number;
 }
 
 interface Props {
-  containers: ContainerActivity[];
+  berths: Berth[];
   loading?: boolean;
   error?: string | null;
 }
@@ -170,15 +173,15 @@ defineEmits<{
 
 // Pagination state
 const currentPage = ref(1)
-const containersPerPage = 10
+const berthsPerPage = 10
 
 // Computed properties for pagination
-const totalPages = computed(() => Math.ceil(props.containers.length / containersPerPage))
+const totalPages = computed(() => Math.ceil(props.berths.length / berthsPerPage))
 
-const paginatedContainers = computed(() => {
-  const start = (currentPage.value - 1) * containersPerPage
-  const end = start + containersPerPage
-  return props.containers.slice(start, end)
+const paginatedBerths = computed(() => {
+  const start = (currentPage.value - 1) * berthsPerPage
+  const end = start + berthsPerPage
+  return props.berths.slice(start, end)
 })
 
 const visiblePages = computed(() => {
@@ -214,51 +217,32 @@ const previousPage = () => {
 }
 
 // Utility methods
-const formatDate = (dateString?: string) => {
-  if (!dateString) return 'Unknown'
-  
-  try {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffHours / 24)
-    
-    // Show relative time for recent dates, absolute time for older ones
-    if (diffDays === 0) {
-      if (diffHours === 0) {
-        const diffMinutes = Math.floor(diffMs / (1000 * 60))
-        return diffMinutes <= 1 ? 'Just now' : `${diffMinutes}m ago`
-      }
-      return `${diffHours}h ago`
-    } else if (diffDays <= 7) {
-      return `${diffDays}d ago`
-    } else {
-      // Show full date and time for older containers
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
-  } catch {
-    return 'Unknown'
+const getBerthDisplayNumber = (berth: Berth): string => {
+  if (berth.identifier) {
+    return berth.identifier.slice(-3)
   }
+  return berth.berthId.toString().padStart(3, '0')
+}
+
+const formatServices = (services?: string): string => {
+  if (!services) return ''
+  
+  const serviceList = services.split(',').map(s => s.trim())
+  if (serviceList.length <= 2) {
+    return serviceList.join(', ')
+  }
+  return `${serviceList.slice(0, 2).join(', ')} +${serviceList.length - 2} more`
 }
 
 const getStatusColor = (status: string): string => {
   const statusColors: Record<string, string> = {
-    "Arrived": "bg-blue-100 text-blue-800 border-blue-200",
-    "Loading": "bg-orange-100 text-orange-800 border-orange-200",
-    "Inspection": "bg-purple-100 text-purple-800 border-purple-200",
-    "Departed": "bg-green-100 text-green-800 border-green-200",
-    "In Transit": "bg-blue-100 text-blue-800",
-    "At Port": "bg-green-100 text-green-800",
-    "Loaded": "bg-purple-100 text-purple-800",
-    "Unloaded": "bg-orange-100 text-orange-800",
-    "Available": "bg-emerald-100 text-emerald-800"
+    "Available": "bg-emerald-100 text-emerald-800 border-emerald-200",
+    "Free": "bg-green-100 text-green-800 border-green-200",
+    "Ready": "bg-blue-100 text-blue-800 border-blue-200",
+    "Occupied": "bg-orange-100 text-orange-800 border-orange-200",
+    "Maintenance": "bg-red-100 text-red-800 border-red-200",
+    "Reserved": "bg-purple-100 text-purple-800 border-purple-200",
+    "Out of Service": "bg-gray-100 text-gray-800 border-gray-200"
   }
   return statusColors[status] || "bg-gray-100 text-gray-800"
 }
