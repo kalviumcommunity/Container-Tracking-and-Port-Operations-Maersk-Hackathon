@@ -326,7 +326,7 @@ import {
   Mail,
   Calendar
 } from 'lucide-vue-next'
-import { useToast } from '../composables/useToast.js'
+import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
 const { success, info } = useToast()

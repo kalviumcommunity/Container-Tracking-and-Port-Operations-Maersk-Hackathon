@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/components/main/Home.vue'
 import Dashboard from '@/components/main/Dashboard.vue'
 import ContainerManagement from '@/components/main/ContainerManagement.vue'
-import PortOperationManagement from '@/components/main/PortOperationManagement.vue'
+import BerthOperationsMain from '@/components/main/BerthOperationsMain.vue'
 import EventStreaming from '@/components/main/EventStreaming.vue'
 import AdminDashboard from '@/components/AdminDashboard.vue'
 import { authApi } from '../services/api'
@@ -34,7 +34,7 @@ const router = createRouter({
     {
       path: '/berth-operation-management',
       name: 'berth-operation-management',
-      component: PortOperationManagement,
+      component: BerthOperationsMain,
       meta: { requiresAuth: true }
     },
     {
@@ -48,6 +48,21 @@ const router = createRouter({
       name: 'admin-dashboard',
       component: AdminDashboard,
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    // Add aliases for berth operations
+    {
+      path: '/berths',
+      redirect: '/berth-operation-management'
+    },
+    {
+      path: '/operations',
+      redirect: '/berth-operation-management'
+    },
+    // Catch all route for 404 handling
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      redirect: '/'
     }
   ]
 })
@@ -65,8 +80,8 @@ router.beforeEach((to, from, next) => {
   
   const isAuthenticated = isAuthenticatedJWT || !!currentUser || !!adminUser
   
-  // Redirect authenticated users from landing page to dashboard
-  if (to.name === 'landing' && isAuthenticated) {
+  // Redirect authenticated users from home page to dashboard
+  if (to.name === 'home' && isAuthenticated) {
     next('/dashboard')
     return
   }
