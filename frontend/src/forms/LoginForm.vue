@@ -5,7 +5,7 @@
       <button
         @click="$emit('cancel')"
         class="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
-        title="Go back to home"
+        title="Go back"
       >
         <ArrowLeft :size="20" class="text-slate-600" />
       </button>
@@ -120,9 +120,9 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { Ship, User, Lock, LogIn, Loader2, AlertTriangle, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
+import { Ship, User, Lock, LogIn, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 import { authApi } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { useToast } from '../composables/useToast.js'
 
 const emit = defineEmits(['login-success', 'show-register', 'cancel'])
 const { success, error: showError } = useToast()

@@ -924,10 +924,8 @@ namespace Backend.Services
                         var analytic = new Analytics
                         {
                             MetricType = metricType,
-                            Category = GetMetricCategory(metricType),
                             Value = GenerateRealisticMetricValue(metricType),
                             Period = "Month",
-                            Unit = GetMetricUnit(metricType),
                             MetricTimestamp = date,
                             PortId = port.PortId,
                             CreatedAt = date.AddDays(_random.Next(0, 30))
@@ -948,10 +946,8 @@ namespace Backend.Services
                     var berthAnalytic = new Analytics
                     {
                         MetricType = "Utilization",
-                        Category = "Performance",
                         Value = _random.Next(40, 95),
                         Period = "Week",
-                        Unit = "Percentage",
                         MetricTimestamp = date,
                         BerthId = berth.BerthId,
                         PortId = berth.PortId,
@@ -1041,38 +1037,6 @@ namespace Backend.Services
                 "Delay Notification" => "Operation is experiencing delays due to unforeseen circumstances.",
                 "Cargo Damage" => "Cargo damage has been reported. Initiate damage assessment procedure.",
                 _ => $"System generated event for {eventType}. Please review and take appropriate action."
-            };
-        }
-
-        private string GetMetricCategory(string metricType)
-        {
-            return metricType switch
-            {
-                "Throughput" => "Operations",
-                "Utilization" => "Performance", 
-                "Turnaround Time" => "Efficiency",
-                "Efficiency" => "Performance",
-                "Revenue" => "Financial",
-                "Costs" => "Financial",
-                "Delays" => "Operations",
-                "Performance Score" => "Performance",
-                _ => "Operations"
-            };
-        }
-
-        private string GetMetricUnit(string metricType)
-        {
-            return metricType switch
-            {
-                "Throughput" => "TEU",
-                "Utilization" => "Percentage",
-                "Turnaround Time" => "Hours",
-                "Efficiency" => "Percentage",
-                "Revenue" => "USD",
-                "Costs" => "USD",
-                "Delays" => "Percentage",
-                "Performance Score" => "Score",
-                _ => "Count"
             };
         }
 

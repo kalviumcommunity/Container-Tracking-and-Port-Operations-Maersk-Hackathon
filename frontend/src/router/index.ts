@@ -2,11 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/components/main/Home.vue'
 import Dashboard from '@/components/main/Dashboard.vue'
 import ContainerManagement from '@/components/main/ContainerManagement.vue'
-import BerthOperationsMain from '@/components/main/BerthOperationsMain.vue'
+import PortOperationManagement from '@/components/main/PortOperationManagement.vue'
 import EventStreaming from '@/components/main/EventStreaming.vue'
 import AdminDashboard from '@/components/AdminDashboard.vue'
-import Login from '@/views/Login.vue'
-import Register from '@/views/Register.vue'
 import { authApi } from '../services/api'
 
 const router = createRouter({
@@ -16,18 +14,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: Login,
-      meta: { requiresGuest: true }
-    },
-    {
-      path: '/register',
-      name: 'register',
-      component: Register,
-      meta: { requiresGuest: true }
     },
     {
       path: '/dashboard',
@@ -48,7 +34,7 @@ const router = createRouter({
     {
       path: '/berth-operation-management',
       name: 'berth-operation-management',
-      component: BerthOperationsMain,
+      component: PortOperationManagement,
       meta: { requiresAuth: true }
     },
     {
@@ -62,21 +48,6 @@ const router = createRouter({
       name: 'admin-dashboard',
       component: AdminDashboard,
       meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    // Add aliases for berth operations
-    {
-      path: '/berths',
-      redirect: '/berth-operation-management'
-    },
-    {
-      path: '/operations',
-      redirect: '/berth-operation-management'
-    },
-    // Catch all route for 404 handling
-    {
-      path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      redirect: '/'
     }
   ]
 })
@@ -94,25 +65,16 @@ router.beforeEach((to, from, next) => {
   
   const isAuthenticated = isAuthenticatedJWT || !!currentUser || !!adminUser
   
-  // Redirect authenticated users from home page to dashboard
-  if (to.name === 'home' && isAuthenticated) {
+  // Redirect authenticated users from landing page to dashboard
+  if (to.name === 'landing' && isAuthenticated) {
     next('/dashboard')
     return
   }
   
-  // Redirect authenticated users from login/register pages to dashboard
-  if (to.meta.requiresGuest && isAuthenticated) {
-    next('/dashboard')
-    return
-  }
-  
-  // Redirect unauthenticated users from protected routes to login
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-    return
-  }
-  
-  if (to.meta.requiresAdmin) {
+    // Redirect to landing page if trying to access protected route without auth
+    next('/')
+  } else if (to.meta.requiresAdmin) {
     // Check if user has admin role
     let userRoles = []
     

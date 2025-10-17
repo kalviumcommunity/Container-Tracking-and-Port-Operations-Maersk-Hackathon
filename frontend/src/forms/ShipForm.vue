@@ -298,7 +298,6 @@ import { Ship, Hash, Package, MapPin, Activity, Calendar, User, Flag, Save, Load
 
 interface ShipForm {
   id?: number
-  shipId?: number
   name: string
   imoNumber: string
   capacity: number
@@ -310,18 +309,6 @@ interface ShipForm {
   flagState?: string
   currentContainerCount?: number
   notes?: string
-  // Additional fields for backend compatibility
-  flag?: string
-  type?: string
-  length?: number
-  beam?: number
-  draft?: number
-  grossTonnage?: number
-  yearBuilt?: number
-  coordinates?: string
-  speed?: number
-  heading?: number
-  nextPort?: string
 }
 
 interface Port {
@@ -402,17 +389,19 @@ const validate = (): boolean => {
 
 const loadAvailablePorts = async () => {
   try {
-    // Try to load from API
-    const { portApi } = await import('../services/api')
-    const response = await portApi.getAll()
-    availablePorts.value = (response.data || []).map((port: any) => ({
-      id: port.id || port.portId || 0,
-      name: port.name || 'Unknown Port',
-      code: port.code || port.portCode || ''
-    }))
+    // Mock API call to load ports
+    availablePorts.value = [
+      { id: 1, name: 'Port of Shanghai', code: 'CNSHA' },
+      { id: 2, name: 'Port of Singapore', code: 'SGSIN' },
+      { id: 3, name: 'Port of Ningbo-Zhoushan', code: 'CNNGB' },
+      { id: 4, name: 'Port of Shenzhen', code: 'CNSZN' },
+      { id: 5, name: 'Port of Guangzhou', code: 'CNGZH' },
+      { id: 6, name: 'Port of Busan', code: 'KRPUS' },
+      { id: 7, name: 'Port of Hong Kong', code: 'HKHKG' },
+      { id: 8, name: 'Port of Qingdao', code: 'CNTAO' }
+    ]
   } catch (error) {
-    console.warn('Backend not connected - no ports data available')
-    availablePorts.value = []
+    console.error('Failed to load ports:', error)
   }
 }
 
@@ -424,36 +413,13 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Import shipApi dynamically
-    const { shipApi } = await import('../services/shipApi')
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
     const shipData = {
-      name: form.name,
-      imoNumber: form.imoNumber.toUpperCase().replace(/\s+/g, ' '),
-      flag: form.flag || '',
-      type: form.type || 'Container Ship',
-      capacity: Number(form.capacity),
-      status: form.status,
-      length: form.length ? Number(form.length) : undefined,
-      beam: form.beam ? Number(form.beam) : undefined,
-      draft: form.draft ? Number(form.draft) : undefined,
-      grossTonnage: form.grossTonnage ? Number(form.grossTonnage) : undefined,
-      yearBuilt: form.yearBuilt ? Number(form.yearBuilt) : undefined,
-      coordinates: form.coordinates || '',
-      speed: form.speed ? Number(form.speed) : undefined,
-      heading: form.heading ? Number(form.heading) : undefined,
-      nextPort: form.nextPort || '',
-      estimatedArrival: form.arrivalDate || undefined,
-      currentPortId: form.currentPortId ? Number(form.currentPortId) : undefined
-    }
-    
-    let result
-    if (props.isEditing && props.ship?.shipId) {
-      // Update existing ship
-      result = await shipApi.update(props.ship.shipId, shipData)
-    } else {
-      // Create new ship
-      result = await shipApi.create(shipData)
+      ...form,
+      id: props.ship?.id || Date.now(),
+      imoNumber: form.imoNumber.toUpperCase().replace(/\s+/g, ' ')
     }
     
     successMessage.value = props.isEditing 
@@ -461,7 +427,7 @@ const handleSubmit = async () => {
       : 'Ship created successfully!'
     
     setTimeout(() => {
-      emit('submit', result.data)
+      emit('submit', shipData)
     }, 1000)
     
   } catch (error) {

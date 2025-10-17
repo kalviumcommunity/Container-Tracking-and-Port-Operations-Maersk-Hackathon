@@ -364,7 +364,6 @@ import {
 
 interface BerthForm {
   id?: number
-  berthId?: number
   berthNumber: string
   portId?: number
   type: string
@@ -378,28 +377,12 @@ interface BerthForm {
   operatingHoursEnd?: string
   currentShip?: string
   notes?: string
-  // Additional fields for backend compatibility
-  name?: string
-  identifier?: string
-  capacity?: number
-  maxShipLength?: number
-  maxDraft?: number
-  availableServices?: string
-  craneCount?: number
-  hourlyRate?: number
-  priority?: number
 }
 
 interface Port {
   id: number
   name: string
   code: string
-}
-
-interface PortOption {
-  id: number
-  name: string
-  code?: string
 }
 
 interface Equipment {
@@ -484,15 +467,19 @@ const loadAvailablePorts = async () => {
     // Try to use the portApi from services
     const { portApi } = await import('../services/api')
     const response = await portApi.getAll()
-    availablePorts.value = (response.data || []).map(port => ({
-      id: port.portId,
-      name: port.name,
-      code: port.code || ''
-    }))
+    availablePorts.value = response.data || []
   } catch (error) {
-    // Show empty state when backend not connected
-    availablePorts.value = []
-    console.warn('Backend not connected - no ports data available')
+    // Fallback to mock data if API fails
+    availablePorts.value = [
+      { id: 1, name: 'Port of Shanghai', code: 'CNSHA' },
+      { id: 2, name: 'Port of Singapore', code: 'SGSIN' },
+      { id: 3, name: 'Port of Ningbo-Zhoushan', code: 'CNNGB' },
+      { id: 4, name: 'Port of Shenzhen', code: 'CNSZN' },
+      { id: 5, name: 'Port of Guangzhou', code: 'CNGZH' },
+      { id: 6, name: 'Port of Busan', code: 'KRPUS' },
+      { id: 7, name: 'Port of Hong Kong', code: 'HKHKG' },
+      { id: 8, name: 'Port of Qingdao', code: 'CNTAO' }
+    ]
   }
 }
 
@@ -522,32 +509,12 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Import berthApi dynamically
-    const { berthApi } = await import('../services/berthApi')
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
     const berthData = {
-      name: form.name || form.berthNumber || 'New Berth',
-      identifier: form.identifier || '',
-      type: form.type || '',
-      capacity: Number(form.capacity || 0),
-      status: form.status,
-      portId: Number(form.portId),
-      maxShipLength: form.maxShipLength ? Number(form.maxShipLength) : undefined,
-      maxDraft: form.maxDraft ? Number(form.maxDraft) : undefined,
-      availableServices: form.availableServices || '',
-      craneCount: form.craneCount ? Number(form.craneCount) : undefined,
-      hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : undefined,
-      priority: form.priority ? Number(form.priority) : undefined,
-      notes: form.notes || ''
-    }
-    
-    let result
-    if (props.isEditing && props.berth?.berthId) {
-      // Update existing berth
-      result = await berthApi.update(props.berth.berthId, berthData)
-    } else {
-      // Create new berth
-      result = await berthApi.create(berthData)
+      ...form,
+      id: props.berth?.id || Date.now()
     }
     
     successMessage.value = props.isEditing 
@@ -555,7 +522,7 @@ const handleSubmit = async () => {
       : 'Berth created successfully!'
     
     setTimeout(() => {
-      emit('submit', result.data)
+      emit('submit', berthData)
     }, 1000)
     
   } catch (error) {

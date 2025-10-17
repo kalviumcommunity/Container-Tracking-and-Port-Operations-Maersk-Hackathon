@@ -138,20 +138,20 @@
 
             <!-- Login/Register buttons for non-authenticated users -->
             <div v-else class="flex items-center space-x-2">
-              <router-link
-                to="/login"
+              <button
+                @click="showLoginModal = true"
                 class="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all duration-200"
               >
                 <LogIn :size="16" />
                 <span class="text-sm font-medium">Sign In</span>
-              </router-link>
-              <router-link
-                to="/register"
+              </button>
+              <button
+                @click="showRegisterModal = true"
                 class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200"
               >
                 <UserPlus :size="16" />
                 <span class="text-sm font-medium">Sign Up</span>
-              </router-link>
+              </button>
             </div>
         </div>
 
@@ -231,29 +231,46 @@
             </div>
             <div v-else class="flex flex-col gap-2 px-2">
               <!-- Login Button -->
-              <router-link
-                to="/login"
-                @click="closeMobileMenu"
+              <button
+                @click="showLoginModal = true; closeMobileMenu()"
                 class="w-full flex items-center justify-center gap-2 px-4 py-3 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
               >
                 <LogIn :size="20" />
                 <span class="font-medium">Sign In</span>
-              </router-link>
+              </button>
               <!-- Register Button -->
-              <router-link
-                to="/register"
-                @click="closeMobileMenu"
+              <button
+                @click="showRegisterModal = true; closeMobileMenu()"
                 class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-all duration-200"
               >
                 <UserPlus :size="20" />
                 <span class="font-medium">Sign Up</span>
-              </router-link>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
     
+
+    <!-- Authentication Modals -->
+    <!-- Login Modal -->
+    <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <LoginForm
+        @login-success="handleLoginSuccess"
+        @show-register="showRegisterModal = true; showLoginModal = false"
+        @cancel="showLoginModal = false"
+      />
+    </div>
+
+    <!-- Register Modal -->
+    <div v-if="showRegisterModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <RegistrationForm
+        @register-success="handleRegisterSuccess"
+        @show-login="showLoginModal = true; showRegisterModal = false"
+        @cancel="showRegisterModal = false"
+      />
+    </div>
 
     <!-- Role Application Modal -->
     <div 
@@ -319,7 +336,7 @@ import RoleApplication from '../RoleApplication.vue'
 import ChangePassword from '../ChangePassword.vue'
 import AccountSettings from '../AccountSettings.vue'
 import { authApi, roleApplicationApi } from '../../services/api.js'
-import { useToast } from '../../composables/useToast'
+import { useToast } from '../../composables/useToast.js'
 
 export default {
   name: 'Navbar',
@@ -340,6 +357,8 @@ export default {
     Settings,
     UserCog,
 
+    LoginForm,
+    RegistrationForm,
     RoleApplication,
     ChangePassword,
     AccountSettings
@@ -352,6 +371,8 @@ export default {
   data() {
     return {
       isMobileMenuOpen: false,
+      showLoginModal: false,
+      showRegisterModal: false,
       showUserDropdown: false,
       showRoleApplicationModal: false,
       showChangePasswordModal: false,
@@ -408,19 +429,6 @@ export default {
     }
     document.addEventListener('click', this.handleClickOutside)
   },
-  watch: {
-    // Watch for route changes to update authentication status
-    async '$route'() {
-      // Add a small delay to ensure localStorage is updated
-      await this.$nextTick()
-      setTimeout(() => {
-        this.checkAuthStatus()
-        if (this.isAuthenticated) {
-          this.loadPendingApplicationsCount()
-        }
-      }, 100)
-    }
-  },
   beforeUnmount() {
     document.removeEventListener('click', this.handleClickOutside)
   },
@@ -463,14 +471,12 @@ export default {
 
     // Authentication methods
     async checkAuthStatus() {
-      console.log('Checking auth status...')
       // Check for current user in localStorage (our primary authentication method)
       const currentUser = localStorage.getItem('current_user')
       if (currentUser) {
         try {
           this.currentUser = JSON.parse(currentUser)
           this.isAuthenticated = true
-          console.log('User authenticated from localStorage:', this.currentUser.username)
           return
         } catch (error) {
           console.error('Error parsing current user from localStorage:', error)
@@ -516,8 +522,34 @@ export default {
           }
         }
       }
+    },
+
+    async handleLoginSuccess(user) {
+      this.currentUser = user
+      this.isAuthenticated = true
+      this.showLoginModal = false
       
-      console.log('Auth status result:', { isAuthenticated: this.isAuthenticated, user: this.currentUser?.username })
+      // Show success toast
+      this.toast.success('Welcome back! You have been logged in successfully.')
+      
+      // Redirect to dashboard after login
+      if (this.$route.path === '/') {
+        this.$router.push('/dashboard')
+      }
+    },
+
+    async handleRegisterSuccess(user) {
+      this.showRegisterModal = false
+      
+      // Set user as logged in
+      this.currentUser = user
+      this.isAuthenticated = true
+      
+      // Show success toast
+      this.toast.success('Account created successfully! Welcome to PortTrack!')
+      
+      // Redirect to dashboard after registration
+      this.$router.push('/dashboard')
     },
 
     async handleLogout() {

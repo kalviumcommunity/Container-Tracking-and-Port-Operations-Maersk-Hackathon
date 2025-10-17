@@ -1,33 +1,4 @@
 /**
- * Pagination response interface
- */
-export interface PaginatedResponse<T> {
-  data: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-
-/**
- * Berth filters interface
- */
-export interface BerthFilters {
-  page?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
-  searchTerm?: string;
-  status?: string;
-  type?: string;
-  portId?: string;
-  minCapacity?: string;
-  maxCapacity?: string;
-}
-
-/**
  * Enhanced Berth interface matching the updated backend BerthDto
  * Includes all rich fields from the backend Model
  */
@@ -40,13 +11,13 @@ export interface Berth {
   // Berth specifications
   type?: string; // Container, Bulk, RoRo, Cruise, etc.
   capacity: number;
-  currentLoad?: number;
+  currentLoad: number;
   maxShipLength?: number; // in meters
   maxDraft?: number; // in meters
   
   // Operational status
   status: string; // Available, Occupied, Maintenance, etc.
-  priority?: number; // Priority level (1-9)
+  priority?: string; // High, Medium, Low
   
   // Services and equipment
   availableServices?: string; // Comma-separated services
@@ -81,7 +52,7 @@ export interface BerthCreateUpdate {
   availableServices?: string;
   craneCount?: number;
   hourlyRate?: number;
-  priority?: number;
+  priority?: string;
   notes?: string;
 }
 
@@ -152,17 +123,6 @@ export interface BerthStats {
   maintenanceBerths: number;
   averageOccupancyRate: number; // percentage
   totalRevenue: number;
-  activeBerths: number;
-  totalCapacity: number;
-  currentOccupancy: number;
-  statusCounts: Record<string, number>;
-  averageUtilization: number;
-  berthsByStatus: Record<string, number>;
-  berthsByType: Record<string, number>;
-  berthsByPort: Record<string, number>;
-  portCounts: Record<string, number>;
-  utilizationRanges: Record<string, number>;
-  featureCounts: Record<string, number>;
 }
 
 /**
@@ -195,7 +155,3 @@ export interface BerthFormErrors {
   portId?: string;
   notes?: string;
 }
-
-// Type aliases for backward compatibility
-export type BerthCreateRequest = BerthCreateUpdate;
-export type BerthUpdateRequest = BerthCreateUpdate;

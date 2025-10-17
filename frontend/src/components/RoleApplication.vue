@@ -96,7 +96,7 @@
 import { ref, onMounted } from 'vue'
 import { UserPlus, Shield, CheckCircle, AlertTriangle, Loader2, ChevronRight } from 'lucide-vue-next'
 import { roleApplicationApi } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { useToast } from '../composables/useToast.js'
 
 const emit = defineEmits(['close', 'application-submitted'])
 const { success: showSuccess, error: showError, warning } = useToast()

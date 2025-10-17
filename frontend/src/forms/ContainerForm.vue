@@ -251,21 +251,13 @@ import { ref, reactive, onMounted } from 'vue'
 import { Package, Hash, Scale, MapPin, Activity, Ship, Save, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 
 interface Container {
-  containerId?: string
+  id?: number
   containerNumber: string
-  cargoType?: string
-  cargoDescription?: string
   type: string
-  status: string
-  condition?: string
-  currentLocation?: string
-  origin?: string
-  destination: string
   weight: number
-  maxWeight?: number
-  size?: string
-  temperature?: number
-  coordinates?: string
+  origin: string
+  destination: string
+  status: string
   shipId?: number
   notes?: string
 }
@@ -285,19 +277,11 @@ const emit = defineEmits(['submit', 'cancel'])
 
 const form = reactive<Container>({
   containerNumber: '',
-  cargoType: '',
-  cargoDescription: '',
   type: '',
-  status: 'Available',
-  condition: 'Good',
-  currentLocation: '',
+  weight: 0,
   origin: '',
   destination: '',
-  weight: 0,
-  maxWeight: undefined,
-  size: '20ft',
-  temperature: undefined,
-  coordinates: '',
+  status: '',
   shipId: undefined,
   notes: ''
 })
@@ -332,12 +316,12 @@ const validate = (): boolean => {
     return false
   }
   
-  if (!form.origin?.trim()) {
+  if (!form.origin.trim()) {
     errors.origin = 'Origin is required'
     return false
   }
   
-  if (!form.destination?.trim()) {
+  if (!form.destination.trim()) {
     errors.destination = 'Destination is required'
     return false
   }
@@ -352,15 +336,15 @@ const validate = (): boolean => {
 
 const loadAvailableShips = async () => {
   try {
-    // TODO: Replace with actual API call to load ships
-    // const response = await shipApi.getAll()
-    // availableShips.value = response.data || []
-    
-    // For now, show empty state until API integration is complete
-    availableShips.value = []
+    // Mock API call to load ships
+    availableShips.value = [
+      { id: 1, name: 'MSC Gülsün', capacity: 23756 },
+      { id: 2, name: 'Ever Ace', capacity: 23992 },
+      { id: 3, name: 'OOCL Hong Kong', capacity: 21413 },
+      { id: 4, name: 'Madrid Maersk', capacity: 20568 }
+    ]
   } catch (error) {
     console.error('Failed to load ships:', error)
-    availableShips.value = []
   }
 }
 
@@ -372,33 +356,13 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Import containerApi dynamically
-    const { containerApi } = await import('../services/containerApi')
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
     const containerData = {
-      containerId: form.containerNumber.toUpperCase(),
-      cargoType: form.cargoType || '',
-      cargoDescription: form.cargoDescription || '',
-      type: form.type,
-      status: form.status || 'Available',
-      condition: form.condition || 'Good',
-      currentLocation: form.origin || '',
-      destination: form.destination || '',
-      weight: Number(form.weight),
-      maxWeight: form.maxWeight ? Number(form.maxWeight) : undefined,
-      size: form.size || '20ft',
-      temperature: form.temperature ? Number(form.temperature) : undefined,
-      coordinates: form.coordinates || '',
-      shipId: form.shipId ? Number(form.shipId) : undefined
-    }
-    
-    let result
-    if (props.isEditing && props.container?.containerId) {
-      // Update existing container
-      result = await containerApi.update(props.container.containerId, containerData)
-    } else {
-      // Create new container  
-      result = await containerApi.create(containerData)
+      ...form,
+      id: props.container?.id || Date.now(),
+      containerNumber: form.containerNumber.toUpperCase()
     }
     
     successMessage.value = props.isEditing 
@@ -406,15 +370,13 @@ const handleSubmit = async () => {
       : 'Container created successfully!'
     
     setTimeout(() => {
-      emit('submit', result.data)
+      emit('submit', containerData)
     }, 1000)
     
-  } catch (error: any) {
-    console.error('Container form submission error:', error)
-    errorMessage.value = error.response?.data?.message || 
-      (props.isEditing 
-        ? 'Failed to update container. Please try again.' 
-        : 'Failed to create container. Please try again.')
+  } catch (error) {
+    errorMessage.value = props.isEditing 
+      ? 'Failed to update container. Please try again.' 
+      : 'Failed to create container. Please try again.'
   } finally {
     isLoading.value = false
   }

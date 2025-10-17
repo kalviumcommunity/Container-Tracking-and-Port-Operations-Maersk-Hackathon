@@ -1,0 +1,345 @@
+{
+  "info": {
+    "name": "Container Tracking API - With Authentication",
+    "description": "Complete API collection for Container Tracking & Port Operations System with JWT authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.1.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5221",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.status === 'OK') {",
+                  "    const response = pm.response.json();",
+                  "    if (response.token) {",
+                  "        pm.collectionVariables.set('jwt_token', response.token);",
+                  "        console.log('JWT token saved to collection variable');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with default admin credentials. Token is automatically saved to collection variable."
+          }
+        },
+        {
+          "name": "Register New User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"John Doe\",\n  \"phoneNumber\": \"+1234567890\",\n  \"department\": \"Operations\",\n  \"portId\": 1,\n  \"roles\": [\"Operator\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user with operator role"
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Get current user profile information"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Admin123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "change-password"]
+            },
+            "description": "Change current user password"
+          }
+        }
+      ],
+      "description": "Authentication endpoints for JWT token management"
+    },
+    {
+      "name": "📦 Containers",
+      "item": [
+        {
+          "name": "Get All Containers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/containers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "containers"]
+            },
+            "description": "Retrieve all containers (requires ViewContainers permission)"
+          }
+        },
+        {
+          "name": "Get Container by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/containers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "containers", "1"]
+            },
+            "description": "Get specific container details (requires ViewContainers permission)"
+          }
+        },
+        {
+          "name": "Create Container",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"containerId\": \"MAEU9999999\",\n  \"name\": \"Test Container\",\n  \"type\": \"Dry\",\n  \"status\": \"Available\",\n  \"currentLocation\": \"Port of Copenhagen\",\n  \"size\": \"40ft\",\n  \"weight\": 25000.0,\n  \"shipId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/containers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "containers"]
+            },
+            "description": "Create new container (requires ManageContainers permission)"
+          }
+        },
+        {
+          "name": "Update Container",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Container Name\",\n  \"status\": \"In Transit\",\n  \"currentLocation\": \"Port of Rotterdam\",\n  \"weight\": 26000.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/containers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "containers", "1"]
+            },
+            "description": "Update container details (requires ManageContainers permission)"
+          }
+        },
+        {
+          "name": "Delete Container",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/containers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "containers", "1"]
+            },
+            "description": "Delete container (requires ManageContainers permission)"
+          }
+        }
+      ],
+      "description": "Container management endpoints with role-based access control"
+    },
+    {
+      "name": "🚢 Ships",
+      "item": [
+        {
+          "name": "Get All Ships",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ships",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ships"]
+            },
+            "description": "Retrieve all ships (requires ViewShips permission)"
+          }
+        },
+        {
+          "name": "Create Ship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Ship\",\n  \"status\": \"Available\",\n  \"capacity\": 10000,\n  \"currentPortId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ships",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ships"]
+            },
+            "description": "Create new ship (requires ManageShips permission)"
+          }
+        }
+      ],
+      "description": "Ship management endpoints"
+    },
+    {
+      "name": "🏭 Ports",
+      "item": [
+        {
+          "name": "Get All Ports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ports",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ports"]
+            },
+            "description": "Retrieve all ports (requires ViewPortDetails permission)"
+          }
+        },
+        {
+          "name": "Create Port",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Port\",\n  \"location\": \"Test Location\",\n  \"totalContainerCapacity\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ports",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ports"]
+            },
+            "description": "Create new port (requires ManageAllPorts or ManagePortDetails permission)"
+          }
+        }
+      ],
+      "description": "Port management endpoints"
+    },
+    {
+      "name": "🚏 Berths",
+      "item": [
+        {
+          "name": "Get All Berths",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/berths",
+              "host": ["{{base_url}}"],
+              "path": ["api", "berths"]
+            },
+            "description": "Retrieve all berths (requires ViewBerths permission)"
+          }
+        },
+        {
+          "name": "Create Berth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Berth\",\n  \"portId\": 1,\n  \"capacity\": 100,\n  \"currentOccupancy\": 0,\n  \"status\": \"Available\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/berths",
+              "host": ["{{base_url}}"],
+              "path": ["api", "berths"]
+            },
+            "description": "Create new berth (requires ManageBerths permission)"
+          }
+        }
+      ],
+      "description": "Berth management endpoints"
+    }
+  ]
+}
