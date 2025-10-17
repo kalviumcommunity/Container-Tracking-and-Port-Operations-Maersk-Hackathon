@@ -361,7 +361,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authApi } from '../../services/api'
 import { 
   Ship, 
   Anchor, 
@@ -418,20 +417,7 @@ const heroStats = ref([
 
 // Navigation methods
 const navigateToDashboard = () => {
-  // Check if user is authenticated first
-  const isAuthenticated = authApi.isAuthenticated()
-  const currentUser = localStorage.getItem('current_user')
-  const adminUser = localStorage.getItem('admin_user')
-  
-  if (isAuthenticated || currentUser || adminUser) {
-    router.push('/dashboard')
-  } else {
-    // Redirect to signin page with intended destination
-    router.push({
-      path: '/signin',
-      query: { redirect: '/dashboard' }
-    })
-  }
+  router.push('/dashboard')
 }
 
 const navigateTo = (route: string) => {

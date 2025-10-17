@@ -490,9 +490,17 @@ const loadAvailablePorts = async () => {
       code: port.code || ''
     }))
   } catch (error) {
-    // Show empty state when backend not connected
-    availablePorts.value = []
-    console.warn('Backend not connected - no ports data available')
+    // Fallback to mock data if API fails
+    availablePorts.value = [
+      { id: 1, name: 'Port of Shanghai', code: 'CNSHA' },
+      { id: 2, name: 'Port of Singapore', code: 'SGSIN' },
+      { id: 3, name: 'Port of Ningbo-Zhoushan', code: 'CNNGB' },
+      { id: 4, name: 'Port of Shenzhen', code: 'CNSZN' },
+      { id: 5, name: 'Port of Guangzhou', code: 'CNGZH' },
+      { id: 6, name: 'Port of Busan', code: 'KRPUS' },
+      { id: 7, name: 'Port of Hong Kong', code: 'HKHKG' },
+      { id: 8, name: 'Port of Qingdao', code: 'CNTAO' }
+    ]
   }
 }
 

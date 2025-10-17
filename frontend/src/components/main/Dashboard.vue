@@ -45,38 +45,249 @@
 
       <!-- Key Metrics Section -->
       <section class="mb-12">
+        
+        
         <MetricsGrid 
           :stats="metrics"
           :loading="loading"
           :error="metricsError"
-          :ports="ports"
-          :selected-port="selectedPort"
           @retry="loadDashboardData"
-          @port-changed="handlePortChange"
         />
       </section>
 
       <!-- Main Dashboard Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Enhanced Operational Insights Banner -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6 mb-8 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="p-3 bg-emerald-100 rounded-full">
+              <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Port Operations Running Smoothly</h3>
+              <p class="text-slate-600">All systems operational • Average processing time: 3.2 hours • No weather delays</p>
+            </div>
+          </div>
+          <div class="hidden md:flex items-center gap-6 text-sm">
+            <div class="text-center">
+              <div class="font-semibold text-slate-900">98.5%</div>
+              <div class="text-slate-500">Efficiency Rate</div>
+            </div>
+            <div class="text-center">
+              <div class="font-semibold text-slate-900">2.1 hrs</div>
+              <div class="text-slate-500">Avg. Turnaround</div>
+            </div>
+            <div class="text-center">
+              <div class="font-semibold text-slate-900">Zero</div>
+              <div class="text-slate-500">Safety Incidents</div>
+            </div>
+            <div class="text-center">
+              <div class="font-semibold text-slate-900">{{ financialMetrics.totalDailyRevenue }}</div>
+              <div class="text-slate-500">Daily Revenue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enhanced Analytics Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Ship Tracking Panel -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-blue-100 rounded-lg">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-900">Live Ship Tracking</h3>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">In Port</span>
+              <span class="font-medium text-slate-900">{{ ships.length }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Arriving Today</span>
+              <span class="font-medium text-emerald-600">3</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Average Speed</span>
+              <span class="font-medium text-slate-900">12.5 knots</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Summary Panel -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-green-100 rounded-lg">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-900">Revenue Today</h3>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Berth Charges</span>
+              <span class="font-medium text-slate-900">{{ financialMetrics.berthCharges }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Storage Fees</span>
+              <span class="font-medium text-slate-900">{{ financialMetrics.containerStorageCharges }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Service Charges</span>
+              <span class="font-medium text-slate-900">{{ financialMetrics.serviceCharges }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Equipment Status Panel -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-purple-100 rounded-lg">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+              </svg>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-900">Equipment Status</h3>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Cranes Active</span>
+              <span class="font-medium text-emerald-600">8/12</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Trucks Available</span>
+              <span class="font-medium text-slate-900">15/20</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Efficiency</span>
+              <span class="font-medium text-slate-900">94%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather & Environment Panel -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-orange-100 rounded-lg">
+              <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+              </svg>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-900">Conditions</h3>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Weather</span>
+              <span class="font-medium text-emerald-600">Clear</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Wind Speed</span>
+              <span class="font-medium text-slate-900">8 knots</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Tide Level</span>
+              <span class="font-medium text-slate-900">High</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Container Activity Panel -->
         <ContainerActivity 
-          :containers="filteredContainers"
+          :containers="recentContainers"
           :loading="loading"
           :error="containerError"
-          :total-operations="filteredContainers.length"
+          :total-operations="156"
           @retry="loadDashboardData"
           @view-all="handleViewAllContainers"
-          class="lg:col-span-1"
+          class="lg:col-span-2"
         />
 
-        <!-- Available Berths Panel -->
-        <BerthActivity 
-          :berths="filteredBerths"
-          :loading="loading"
-          :error="berthError"
-          @retry="loadDashboardData"
-          class="lg:col-span-1"
-        />
+        <!-- Status & Analytics Panel -->
+        <div class="space-y-6">
+          <!-- Port Status Component -->
+          <PortStatus 
+            :status-data="portStatus"
+            :berth-utilization="utilizationMetrics.berthUtilization"
+            :container-capacity="utilizationMetrics.containerCapacity"
+            :loading="loading"
+            :error="statusError"
+            @retry="loadDashboardData"
+            @view-analytics="handleViewAnalytics"
+          />
+
+          <!-- Real-time Movement History Panel -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div class="p-6 border-b border-slate-100">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-indigo-100 rounded-lg">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Live Operations</h3>
+                    <p class="text-sm text-slate-500">Real-time equipment and movement tracking</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-emerald-600">
+                  <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <span class="font-medium">Live Feed</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4">
+                <div v-for="movement in recentMovements" :key="movement.id" 
+                     class="flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                  <div class="p-2 rounded-full" :class="getMovementIconStyle(movement.type)">
+                    <component :is="getMovementIcon(movement.type)" :size="16" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="text-sm font-semibold text-slate-900">{{ movement.containerNumber }}</h4>
+                      <span class="text-xs text-slate-500">{{ movement.time }}</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-2">{{ movement.description }}</p>
+                    <div class="flex items-center gap-4 text-xs text-slate-500">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        {{ movement.location }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        {{ movement.operator }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                        </svg>
+                        {{ movement.duration }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+                <button class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                  View Complete Movement History →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -87,26 +298,18 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import DashboardHeader from '../dashboard/DashboardHeader.vue';
 import MetricsGrid from '../dashboard/MetricsGrid.vue';
 import ContainerActivity from '../dashboard/ContainerActivity.vue';
-import BerthActivity from '../dashboard/BerthActivity.vue';
-import { containerApi, portApi, shipApi, berthApi, berthAssignmentApi, authApi } from '../../services/api';
+import PortStatus from '../dashboard/PortStatus.vue';
+import { containerApi, portApi, shipApi, berthApi, berthAssignmentApi } from '../../services/api';
 import { analyticsService } from '../../services/analyticsService';
-import { Container as ContainerIcon, Ship as ShipIcon, Anchor, Activity } from 'lucide-vue-next';
+import { Container as ContainerIcon, Ship as ShipIcon, Anchor, Activity, ArrowUpCircle, ArrowDownCircle, RefreshCw, Package } from 'lucide-vue-next';
 
 // Types for our data structures
 interface Container {
-  id: string | number;
+  id: number;
   containerNumber: string;
   type: string;
   weight: number;
   shipId: number;
-  status?: string;
-  currentLocation?: string;
-  destination?: string;
-  cargoType?: string;
-  condition?: string;
-  size?: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 interface Ship {
@@ -117,23 +320,10 @@ interface Ship {
 }
 
 interface Berth {
-  berthId: number;
-  name: string;
-  identifier?: string;
-  type?: string;
-  capacity: number;
-  currentLoad: number;
-  maxShipLength?: number;
-  maxDraft?: number;
+  id: number;
+  identifier: string;
+  port: string;
   status: string;
-  availableServices?: string;
-  craneCount?: number;
-  hourlyRate?: number;
-  priority?: string;
-  notes?: string;
-  portId: number;
-  portName: string;
-  activeAssignmentCount: number;
 }
 
 interface BerthAssignment {
@@ -145,9 +335,8 @@ interface BerthAssignment {
 }
 
 interface Port {
-  portId: number;
+  id: number;
   name: string;
-  location: string;
   country: string;
   capacity: number;
 }
@@ -157,10 +346,7 @@ const currentTime = ref(new Date().toLocaleTimeString());
 const loading = ref(true);
 const metricsError = ref<string | null>(null);
 const containerError = ref<string | null>(null);
-const berthError = ref<string | null>(null);
-
-// Port selection state
-const selectedPort = ref<Port | null>(null);
+const statusError = ref<string | null>(null);
 
 // Data arrays
 const containers = ref<Container[]>([]);
@@ -169,6 +355,7 @@ const berths = ref<Berth[]>([]);
 const berthAssignments = ref<BerthAssignment[]>([]);
 const ports = ref<Port[]>([]);
 const recentContainers = ref<any[]>([]);
+const recentMovements = ref<any[]>([]);
 
 // Analytics and financial data
 const dashboardStats = ref<any>(null);
@@ -203,107 +390,91 @@ const isAdminUser = computed(() => {
   return !!adminUser;
 });
 
-const metrics = computed(() => {
-  // Get port-specific counts
-  const portContainers = selectedPort.value ? 
-    containers.value.filter(c => c.currentLocation?.includes(selectedPort.value!.name)) : 
-    containers.value;
-  
-  const portBerths = selectedPort.value ? 
-    berths.value.filter(b => b.portName === selectedPort.value!.name) : 
-    berths.value;
-  
-  const portAvailableBerths = selectedPort.value ? 
-    filteredBerths.value : 
-    availableBerths.value;
+const metrics = computed(() => [
+  { 
+    title: "Cargo Containers in Port", 
+    subtitle: "Total containers currently being processed",
+    value: dashboardStats.value ? dashboardStats.value.containersAtPort.toLocaleString() : containers.value.length.toString(), 
+    change: dashboardStats.value ? `${dashboardStats.value.containersInTransit} in transit` : "+12% from yesterday",
+    icon: ContainerIcon,
+    bgColor: "bg-blue-50",
+    iconColor: "text-blue-600",
+    progressColor: "bg-blue-500",
+    progress: Math.min((containers.value.length / 50) * 100, 100).toFixed(0) + '%'
+  },
+  { 
+    title: "Ships Currently Docked", 
+    subtitle: "Vessels actively loading/unloading cargo",
+    value: dashboardStats.value ? dashboardStats.value.activeShips.toString() : ships.value.length.toString(), 
+    change: dashboardStats.value ? `Avg ${dashboardStats.value.averageTurnaroundTime}h turnaround` : "+3% from yesterday",
+    icon: ShipIcon,
+    bgColor: "bg-green-50",
+    iconColor: "text-green-600",
+    progressColor: "bg-green-500",
+    progress: Math.min((ships.value.length / 20) * 100, 100).toFixed(0) + '%'
+  },
+  { 
+    title: "Open Docking Spaces", 
+    subtitle: "Available berths for incoming ships",
+    value: dashboardStats.value ? `${dashboardStats.value.availableBerths} available` : `${berths.value.length - berthAssignments.value.length} of ${berths.value.length}`, 
+    change: dashboardStats.value ? `${Math.round(dashboardStats.value.berthUtilizationRate)}% utilization` : "2 spaces occupied today",
+    icon: Anchor,
+    bgColor: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    progressColor: "bg-emerald-500",
+    progress: berths.value.length > 0 ? ((berths.value.length - berthAssignments.value.length) / berths.value.length * 100).toFixed(0) + '%' : '0%'
+  },
+  { 
+    title: "Today's Operations", 
+    subtitle: "Completed loading/unloading activities",
+    value: dashboardStats.value ? `${dashboardStats.value.todayArrivals + dashboardStats.value.todayDepartures}` : berthAssignments.value.length.toString(), 
+    change: dashboardStats.value ? `${dashboardStats.value.todayArrivals} arrivals, ${dashboardStats.value.todayDepartures} departures` : "+8% efficiency gain",
+    icon: Activity,
+    bgColor: "bg-purple-50",
+    iconColor: "text-purple-600",
+    progressColor: "bg-purple-500",
+    progress: Math.min((berthAssignments.value.length / 30) * 100, 100).toFixed(0) + '%'
+  },
+]);
 
-  return [
-    { 
-      title: "Cargo Containers in Port", 
-      subtitle: "Total containers currently being processed",
-      value: portContainers.length.toString(), 
-      change: `${portContainers.filter(c => c.status === 'In Transit').length} in transit`,
-      icon: ContainerIcon,
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
-      progressColor: "bg-blue-500",
-      progress: Math.min((portContainers.length / 50) * 100, 100).toFixed(0) + '%'
-    },
-    { 
-      title: "Ships Currently Docked", 
-      subtitle: "Vessels actively loading/unloading cargo",
-      value: ships.value.length.toString(), 
-      change: `Avg 41h turnaround`,
-      icon: ShipIcon,
-      bgColor: "bg-green-50",
-      iconColor: "text-green-600",
-      progressColor: "bg-green-500",
-      progress: Math.min((ships.value.length / 20) * 100, 100).toFixed(0) + '%'
-    },
-    { 
-      title: "Total Berths in Port", 
-      subtitle: "Available berths for incoming ships",
-      value: `${portBerths.length} total`, 
-      change: `${portAvailableBerths.length} available`,
-      icon: Anchor,
-      bgColor: "bg-emerald-50",
-      iconColor: "text-emerald-600",
-      progressColor: "bg-emerald-500",
-      progress: portBerths.length > 0 ? ((portAvailableBerths.length / portBerths.length) * 100).toFixed(0) + '%' : '0%'
-    },
-    { 
-      title: "Today's Operations", 
-      subtitle: "Completed loading/unloading activities",
-      value: berthAssignments.value.length.toString(), 
-      change: "0 arrivals, 2 departures",
-      icon: Activity,
-      bgColor: "bg-purple-50",
-      iconColor: "text-purple-600",
-      progressColor: "bg-purple-500",
-      progress: Math.min((berthAssignments.value.length / 30) * 100, 100).toFixed(0) + '%'
-    },
-  ];
-});
+const portStatus = computed(() => ({
+  operationalStatus: 'Fully Operational',
+  systemStatus: 'Active',
+  statusMessage: 'All Systems Active',
+  description: 'No critical alerts or maintenance required'
+}));
 
-// Computed property for available berths
-const availableBerths = computed(() => {
-  return berths.value.filter(berth => 
-    berth.status === 'Available' || 
-    berth.status === 'Free' || 
-    berth.status === 'Ready'
-  );
-});
-
-// Port-filtered computed properties
-const filteredContainers = computed(() => {
-  if (!selectedPort.value) {
-    return recentContainers.value;
+const utilizationMetrics = computed(() => ({
+  berthUtilization: {
+    percentage: berths.value.length > 0 ? Math.round((berthAssignments.value.length / berths.value.length) * 100) : 0,
+    occupied: berthAssignments.value.length,
+    available: berths.value.length - berthAssignments.value.length,
+    total: berths.value.length,
+    description: berths.value.length - berthAssignments.value.length > 0 
+      ? `${berths.value.length - berthAssignments.value.length} docking spaces ready for incoming ships`
+      : 'All docking spaces are currently occupied'
+  },
+  containerCapacity: {
+    percentage: dashboardStats.value 
+      ? Math.round((dashboardStats.value.containersAtPort / (dashboardStats.value.containersAtPort + dashboardStats.value.containersInTransit)) * 100)
+      : Math.round((containers.value.length / Math.max(containers.value.length + 1000, 3900)) * 100),
+    current: dashboardStats.value ? dashboardStats.value.containersAtPort : containers.value.length,
+    total: dashboardStats.value 
+      ? dashboardStats.value.containersAtPort + dashboardStats.value.containersInTransit
+      : Math.max(containers.value.length + 1000, 3900),
+    message: dashboardStats.value?.containersAtPort > 8000 
+      ? 'Storage area is filling up - consider prioritizing outgoing shipments'
+      : 'Container storage capacity is well within limits'
   }
-  return recentContainers.value.filter(container => 
-    container.location?.includes(selectedPort.value!.name) ||
-    container.berth?.includes(selectedPort.value!.name)
-  );
-});
-
-const filteredBerths = computed(() => {
-  return availableBerths.value.filter(berth => {
-    if (!selectedPort.value) return true;
-    return berth.portName === selectedPort.value.name;
-  });
-});
+}));
 
 // Methods
 const loadDashboardData = async () => {
   try {
-    // Check authentication first
-    if (!authApi.isAuthenticated()) {
-      console.warn('User not authenticated, using fallback data');
-    }
-    
     loading.value = true;
     metricsError.value = null;
     containerError.value = null;
-    berthError.value = null;
+    statusError.value = null;
 
     // Load data individually to better handle errors
     let containersData: Container[] = [];
@@ -313,42 +484,22 @@ const loadDashboardData = async () => {
     let portsData: Port[] = [];
 
     try {
-      const containersResponse = await containerApi.getLatest(50); // Get latest 50 containers
+      const containersResponse = await containerApi.getAll();
       containersData = (containersResponse.data as any[])?.map((c: any) => ({
-        id: c.containerId || c.id || 0,
-        containerNumber: c.containerId || c.containerNumber || c.number || `CNT-${c.id || Math.random().toString(36).substr(2, 9)}`,
+        id: c.id || 0,
+        containerNumber: c.containerNumber || c.number || `CNT-${c.id}`,
         type: c.type || 'Dry',
         weight: c.weight || 0,
-        shipId: c.shipId || 0,
-        status: c.status || 'Available',
-        currentLocation: c.currentLocation || 'Port Area',
-        destination: c.destination || '',
-        cargoType: c.cargoType || '',
-        condition: c.condition || 'Good',
-        size: c.size || '40ft',
-        createdAt: c.createdAt || new Date().toISOString(),
-        updatedAt: c.updatedAt || new Date().toISOString()
+        shipId: c.shipId || 0
       })) || [];
     } catch (error) {
       containerError.value = 'Failed to load container data';
-      console.error('Container API error:', error);
-      // Enhanced mock container data with more entries to test pagination (already sorted by latest first)
+      // Mock container data as fallback
       containersData = [
-        { id: 'MAEU2024015', containerNumber: 'MAEU2024015', type: 'Dry', weight: 25000, shipId: 1, status: 'Arrived', currentLocation: 'Terminal A', destination: 'Hamburg', cargoType: 'Electronics', condition: 'Good', size: '40ft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'COSCO2024014', containerNumber: 'COSCO2024014', type: 'Refrigerated', weight: 28000, shipId: 2, status: 'Loading', currentLocation: 'Terminal B', destination: 'Rotterdam', cargoType: 'Food', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'HAPAG2024013', containerNumber: 'HAPAG2024013', type: 'Tank', weight: 30000, shipId: 1, status: 'Inspection', currentLocation: 'Inspection Zone', destination: 'Antwerp', cargoType: 'Chemicals', condition: 'Good', size: '20ft', createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'MSC2024012', containerNumber: 'MSC2024012', type: 'OpenTop', weight: 22000, shipId: 3, status: 'Departed', currentLocation: 'En Route', destination: 'Le Havre', cargoType: 'Textiles', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'MAEU2024011', containerNumber: 'MAEU2024011', type: 'Dry', weight: 25000, shipId: 1, status: 'Unloading', currentLocation: 'Dock 5', destination: 'Liverpool', cargoType: 'Machinery', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'MAEU2024010', containerNumber: 'MAEU2024010', type: 'Refrigerated', weight: 28000, shipId: 2, status: 'At Port', currentLocation: 'Cold Storage', destination: 'Copenhagen', cargoType: 'Pharmaceuticals', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'MAEU2024009', containerNumber: 'MAEU2024009', type: 'Tank', weight: 30000, shipId: 1, status: 'Loading', currentLocation: 'Tank Farm', destination: 'Marseille', cargoType: 'Petroleum', condition: 'Good', size: '20ft', createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'MAEU2024008', containerNumber: 'MAEU2024008', type: 'OpenTop', weight: 22000, shipId: 3, status: 'Available', currentLocation: 'Storage Yard', destination: 'Valencia', cargoType: 'Steel', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'COSCO2024007', containerNumber: 'COSCO2024007', type: 'Dry', weight: 26000, shipId: 2, status: 'In Transit', currentLocation: 'Sea Route', destination: 'Barcelona', cargoType: 'Consumer Goods', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'HAPAG2024006', containerNumber: 'HAPAG2024006', type: 'Refrigerated', weight: 27000, shipId: 1, status: 'Loaded', currentLocation: 'Ship Hold', destination: 'Genoa', cargoType: 'Fruits', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'MSC2024005', containerNumber: 'MSC2024005', type: 'Tank', weight: 29000, shipId: 3, status: 'Inspection', currentLocation: 'Security Check', destination: 'Naples', cargoType: 'Chemicals', condition: 'Good', size: '20ft', createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'EVERGREEN2024004', containerNumber: 'EVERGREEN2024004', type: 'OpenTop', weight: 24000, shipId: 2, status: 'Arrived', currentLocation: 'Berth 12', destination: 'Piraeus', cargoType: 'Automotive', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'YANG2024003', containerNumber: 'YANG2024003', type: 'Dry', weight: 25500, shipId: 1, status: 'Loading', currentLocation: 'Crane 8', destination: 'Thessaloniki', cargoType: 'Textiles', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'CMA2024002', containerNumber: 'CMA2024002', type: 'Refrigerated', weight: 28500, shipId: 3, status: 'Departed', currentLocation: 'Open Sea', destination: 'Istanbul', cargoType: 'Dairy', condition: 'Good', size: '40ft', createdAt: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'OOCL2024001', containerNumber: 'OOCL2024001', type: 'Tank', weight: 31000, shipId: 2, status: 'Unloaded', currentLocation: 'Processing Area', destination: 'Izmir', cargoType: 'Petroleum', condition: 'Good', size: '20ft', createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(), updatedAt: new Date().toISOString() }
+        { id: 1, containerNumber: 'MAEU1234567', type: 'Dry', weight: 25000, shipId: 1 },
+        { id: 2, containerNumber: 'MAEU2345678', type: 'Refrigerated', weight: 28000, shipId: 2 },
+        { id: 3, containerNumber: 'MAEU3456789', type: 'Tank', weight: 30000, shipId: 1 },
+        { id: 4, containerNumber: 'MAEU4567890', type: 'OpenTop', weight: 22000, shipId: 3 }
       ];
     }
 
@@ -370,86 +521,21 @@ const loadDashboardData = async () => {
     }
 
     try {
-      // Try to get available berths specifically first
-      let berthsResponse;
-      try {
-        berthsResponse = await berthApi.getByStatus('Available');
-        console.log('Loaded available berths specifically:', berthsResponse.data.length);
-      } catch (statusError) {
-        console.log('Status endpoint failed, falling back to all berths:', statusError);
-        // Fallback to getting all berths and filtering
-        berthsResponse = await berthApi.getAll();
-        console.log('Loaded all berths:', berthsResponse.data.length);
-      }
-      
+      const berthsResponse = await berthApi.getAll();
       berthsData = (berthsResponse.data as any[])?.map((b: any) => ({
-        berthId: b.berthId || b.id || 0,
-        name: b.name || `Berth ${b.identifier || b.id}`,
+        id: b.id || 0,
         identifier: b.identifier || `B-${b.id}`,
-        type: b.type || 'Container',
-        capacity: b.capacity || 100,
-        currentLoad: b.currentLoad || 0,
-        maxShipLength: b.maxShipLength,
-        maxDraft: b.maxDraft,
-        status: b.status || 'Available',
-        availableServices: b.availableServices,
-        craneCount: b.craneCount,
-        hourlyRate: b.hourlyRate,
-        priority: b.priority,
-        notes: b.notes,
-        portId: b.portId || 1,
-        portName: b.portName || 'Unknown Port',
-        activeAssignmentCount: b.activeAssignmentCount || 0
+        port: b.port || 'Unknown Port',
+        status: b.status || 'Available'
       })) || [];
-      
-      console.log('Final berths data:', berthsData.length, 'Available berths:', berthsData.filter(b => ['Available', 'Free', 'Ready'].includes(b.status)).length);
     } catch (error) {
-      berthError.value = 'Failed to load berth data';
-      console.error('Berth API error:', error);
-      // Enhanced mock berth data as fallback
+      statusError.value = 'Failed to load berth data';
+      // Mock berth data as fallback
       berthsData = [
-        { 
-          berthId: 1, name: 'Alpha Terminal', identifier: 'A-001', type: 'Container', 
-          capacity: 150, currentLoad: 0, status: 'Available', portId: 1, 
-          portName: 'Port of Singapore', activeAssignmentCount: 0, craneCount: 3, 
-          hourlyRate: 200, availableServices: 'Loading, Unloading, Storage',
-          maxShipLength: 300, maxDraft: 15, priority: 'High'
-        },
-        { 
-          berthId: 2, name: 'Beta Wharf', identifier: 'B-002', type: 'Container', 
-          capacity: 120, currentLoad: 85, status: 'Occupied', portId: 1, 
-          portName: 'Port of Singapore', activeAssignmentCount: 1, craneCount: 2, 
-          hourlyRate: 180, availableServices: 'Loading, Unloading',
-          maxShipLength: 250, maxDraft: 12, priority: 'Medium'
-        },
-        { 
-          berthId: 3, name: 'Gamma Terminal', identifier: 'G-003', type: 'Bulk', 
-          capacity: 200, currentLoad: 0, status: 'Available', portId: 2, 
-          portName: 'Port of Rotterdam', activeAssignmentCount: 0, craneCount: 4, 
-          hourlyRate: 250, availableServices: 'Loading, Unloading, Storage, Refueling',
-          maxShipLength: 400, maxDraft: 18, priority: 'High'
-        },
-        { 
-          berthId: 4, name: 'Delta Dock', identifier: 'D-004', type: 'Container', 
-          capacity: 180, currentLoad: 0, status: 'Ready', portId: 3, 
-          portName: 'Port of Hamburg', activeAssignmentCount: 0, craneCount: 2, 
-          hourlyRate: 220, availableServices: 'Loading, Unloading, Storage',
-          maxShipLength: 280, maxDraft: 14, priority: 'Medium'
-        },
-        { 
-          berthId: 5, name: 'Echo Terminal', identifier: 'E-005', type: 'RoRo', 
-          capacity: 80, currentLoad: 0, status: 'Available', portId: 2, 
-          portName: 'Port of Rotterdam', activeAssignmentCount: 0, craneCount: 1, 
-          hourlyRate: 180, availableServices: 'Vehicle Loading, Storage',
-          maxShipLength: 200, maxDraft: 8, priority: 'Low'
-        },
-        { 
-          berthId: 6, name: 'Foxtrot Pier', identifier: 'F-006', type: 'Container', 
-          capacity: 160, currentLoad: 0, status: 'Free', portId: 4, 
-          portName: 'Port of Los Angeles', activeAssignmentCount: 0, craneCount: 3, 
-          hourlyRate: 280, availableServices: 'Loading, Unloading, Storage, Inspection',
-          maxShipLength: 350, maxDraft: 16, priority: 'High'
-        }
+        { id: 1, identifier: 'B-001', port: 'Singapore', status: 'Available' },
+        { id: 2, identifier: 'B-002', port: 'Singapore', status: 'Occupied' },
+        { id: 3, identifier: 'B-003', port: 'Rotterdam', status: 'Available' },
+        { id: 4, identifier: 'B-004', port: 'Shanghai', status: 'Maintenance' }
       ];
     }
 
@@ -473,18 +559,17 @@ const loadDashboardData = async () => {
     try {
       const portsResponse = await portApi.getAll();
       portsData = (portsResponse.data as any[])?.map((p: any) => ({
-        portId: p.portId || p.id || 0,
+        id: p.id || 0,
         name: p.name || 'Unknown Port',
-        location: p.location || 'Unknown Location',
         country: p.country || 'Unknown',
         capacity: p.capacity || 0
       })) || [];
     } catch (error) {
       // Mock port data as fallback
       portsData = [
-        { portId: 7, name: 'Port of Singapore', location: 'Singapore', country: 'Singapore', capacity: 37.2 },
-        { portId: 8, name: 'Port of Rotterdam', location: 'Rotterdam, Netherlands', country: 'Netherlands', capacity: 15.3 },
-        { portId: 9, name: 'Port of Los Angeles', location: 'Los Angeles, CA, USA', country: 'United States', capacity: 47.0 }
+        { id: 1, name: 'Port of Singapore', country: 'Singapore', capacity: 37.2 },
+        { id: 2, name: 'Port of Rotterdam', country: 'Netherlands', capacity: 15.3 },
+        { id: 3, name: 'Port of Shanghai', country: 'China', capacity: 47.0 }
       ];
     }
 
@@ -495,22 +580,19 @@ const loadDashboardData = async () => {
     berthAssignments.value = berthAssignmentsData;
     ports.value = portsData;
 
-    // Set default port (Singapore) if no port selected
-    if (!selectedPort.value && portsData.length > 0) {
-      selectedPort.value = portsData[0]; // Port of Singapore as default
-    }
-
     // Load analytics data and calculate financial metrics
     await loadAnalyticsData();
 
     // Update recent containers and movements
     updateRecentContainers();
+    updateRecentMovements();
 
   } catch (error) {
     console.error('Error loading dashboard data:', error);
     metricsError.value = 'Failed to load dashboard data';
     // Still update with whatever data we have
     updateRecentContainers();
+    updateRecentMovements();
   } finally {
     loading.value = false;
   }
@@ -534,63 +616,85 @@ const loadAnalyticsData = async () => {
 };
 
 const updateRecentContainers = () => {
-  // Get ALL containers and sort by creation date (latest first)
-  const sortedContainers = [...containers.value].sort((a, b) => {
-    // If containers have createdAt dates, use those
-    const aCreated = (a as any).createdAt;
-    const bCreated = (b as any).createdAt;
-    if (aCreated && bCreated) {
-      return new Date(bCreated).getTime() - new Date(aCreated).getTime();
-    }
-    // Otherwise, sort by ID in descending order (assuming higher ID = newer)
-    const aId = typeof a.id === 'string' ? parseInt(a.id) || 0 : (a.id || 0);
-    const bId = typeof b.id === 'string' ? parseInt(b.id) || 0 : (b.id || 0);
-    return bId - aId;
-  });
-
-  recentContainers.value = sortedContainers.map((container, index) => {
+  // Get recent containers from the first few containers
+  recentContainers.value = containers.value.slice(0, 4).map((container, index) => {
     const statuses = [
-      'Arrived', 'Loading', 'Inspection', 'Departed', 'In Transit', 
-      'At Port', 'Loaded', 'Unloaded', 'Available'
+      { label: 'Just Arrived', description: 'Container arrived at port' },
+      { label: 'Being Loaded', description: 'Loading cargo onto ship' },
+      { label: 'Quality Check', description: 'Undergoing inspection' },
+      { label: 'Shipped Out', description: 'Left the port' }
     ];
+    const times = ['14:30', '13:45', '12:20', '11:55'];
     
     // Find assigned berth for this container
     const assignment = berthAssignments.value.find(a => a.shipId === container.shipId);
-    const berth = assignment ? berths.value.find(b => b.berthId === assignment.berthId) : null;
+    const berth = assignment ? berths.value.find(b => b.id === assignment.berthId) : null;
     
-    // Use actual container data if available, otherwise generate realistic status
-    const currentStatus = container.status || statuses[index % statuses.length];
-    const currentLocation = container.currentLocation || (berth ? `Dock ${berth.identifier}` : 'Port Area');
-    
-    // Use existing createdAt if available, otherwise generate realistic timestamps
-    let createdAt = container.createdAt;
-    if (!createdAt) {
-      const hoursAgo = Math.floor(index / 2) + Math.random() * 2; // Spread over recent hours
-      const generatedDate = new Date();
-      generatedDate.setHours(generatedDate.getHours() - hoursAgo);
-      createdAt = generatedDate.toISOString();
-    }
+    const currentStatus = statuses[index] || statuses[0];
     
     return {
-      id: container.containerNumber || container.id || `CNT-${container.id}`,
-      containerNumber: container.containerNumber || `CNT-${container.id}`,
-      status: currentStatus,
-      berth: berth ? `Dock ${berth.identifier}` : currentLocation,
-      location: currentLocation, 
-      time: new Date(createdAt).toLocaleTimeString().slice(0, 5),
-      type: container.type === 'Dry' ? 'Standard' : 
-            container.type === 'Refrigerated' ? 'Refrigerated' :
-            container.type === 'Tank' ? 'Tank' :
-            container.type === 'OpenTop' ? 'OpenTop' : 'Standard',
-      createdAt: createdAt, // Use proper createdAt timestamp
-      weight: container.weight,
-      shipId: container.shipId,
-      cargoType: container.cargoType || 'General',
-      destination: container.destination || 'Unknown',
-      condition: container.condition || 'Good',
-      size: container.size || '40ft'
+      id: container.containerNumber || `CNT-${container.id}`,
+      status: currentStatus.label,
+      statusDescription: currentStatus.description,
+      berth: berth ? `Dock ${berth.identifier}` : 'Awaiting Assignment',
+      time: times[index] || new Date().toLocaleTimeString().slice(0, 5),
+      type: container.type === 'Dry' ? 'Standard Cargo' : 
+            container.type === 'Refrigerated' ? 'Temperature Controlled' :
+            container.type === 'Tank' ? 'Liquid Cargo' :
+            container.type === 'OpenTop' ? 'Oversized Cargo' : 'Standard Cargo'
     };
   });
+};
+
+const updateRecentMovements = () => {
+  // Generate mock movement data based on enhanced backend features
+  const movementTypes = ['Load', 'Unload', 'Transfer', 'Storage'];
+  const operators = ['Crane Operator A', 'Truck Driver B', 'System Auto', 'Harbor Pilot'];
+  const equipment = ['Crane-01', 'Truck-15', 'Forklift-03', 'Ship Crane'];
+  const locations = ['Dock A1', 'Storage Yard B', 'Ship MSC Oscar', 'Gate 3'];
+
+  recentMovements.value = containers.value.slice(0, 3).map((container, index) => {
+    const movementType = movementTypes[index % movementTypes.length];
+    const operator = operators[index % operators.length];
+    const location = locations[index % locations.length];
+    const equipmentUsed = equipment[index % equipment.length];
+    
+    const timeOffset = [5, 12, 18][index] || 5;
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - timeOffset);
+    
+    return {
+      id: `mov-${container.id}`,
+      containerNumber: container.containerNumber,
+      type: movementType,
+      description: `${movementType} operation using ${equipmentUsed}`,
+      location: location,
+      operator: operator,
+      equipment: equipmentUsed,
+      duration: `${Math.floor(Math.random() * 3) + 1}.${Math.floor(Math.random() * 6)}h`,
+      time: now.toLocaleTimeString().slice(0, 5)
+    };
+  });
+};
+
+const getMovementIcon = (type: string) => {
+  switch (type) {
+    case 'Load': return ArrowUpCircle;
+    case 'Unload': return ArrowDownCircle;
+    case 'Transfer': return RefreshCw;
+    case 'Storage': return Package;
+    default: return Package;
+  }
+};
+
+const getMovementIconStyle = (type: string) => {
+  switch (type) {
+    case 'Load': return 'bg-emerald-100 text-emerald-600';
+    case 'Unload': return 'bg-blue-100 text-blue-600';
+    case 'Transfer': return 'bg-purple-100 text-purple-600';
+    case 'Storage': return 'bg-orange-100 text-orange-600';
+    default: return 'bg-slate-100 text-slate-600';
+  }
 };
 
 const handleViewAllContainers = () => {
@@ -598,46 +702,9 @@ const handleViewAllContainers = () => {
   console.log('View all containers');
 };
 
-const handlePortChange = async (port: Port | null) => {
-  selectedPort.value = port;
-  
-  // Reload data for the selected port if we have backend integration for port filtering
-  if (port) {
-    try {
-      loading.value = true;
-      
-      // Load port-specific berths
-      const berthsResponse = await berthApi.getByPort(port.portId);
-      if (berthsResponse.data) {
-        // Update berths with port-specific data
-        const portBerths = berthsResponse.data.map((b: any) => ({
-          berthId: b.berthId || b.id,
-          name: b.name || `Berth ${b.berthId}`,
-          identifier: b.identifier || b.name,
-          type: b.type || 'General Cargo',
-          capacity: b.capacity || 0,
-          currentLoad: b.currentLoad || 0,
-          maxShipLength: b.maxShipLength || 0,
-          maxDraft: b.maxDraft || 0,
-          status: b.status || 'Available',
-          availableServices: b.availableServices || '',
-          craneCount: b.craneCount || 0,
-          hourlyRate: b.hourlyRate || 0,
-          priority: b.priority || 'Normal',
-          notes: b.notes || '',
-          portId: b.portId || port.portId,
-          portName: b.portName || port.name,
-          activeAssignmentCount: b.activeAssignmentCount || 0
-        }));
-        
-        berths.value = portBerths;
-      }
-    } catch (error) {
-      console.error('Error loading port-specific data:', error);
-    } finally {
-      loading.value = false;
-    }
-  }
+const handleViewAnalytics = () => {
+  // TODO: Navigate to analytics dashboard
+  console.log('View analytics');
 };
 
 // Lifecycle hooks

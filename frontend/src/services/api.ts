@@ -111,22 +111,7 @@ export interface ApiResponse<T> {
 export const authApi = {
   async login(credentials: { username: string; password: string }) {
     try {
-      // Clear any existing tokens before login attempt
-      removeToken();
-      
-      console.log('🔍 Sending login request to:', `${API_BASE_URL}/auth/login`);
-      console.log('📤 Login credentials:', credentials);
-      
-      // Create a request without any authorization header for login
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000,
-      });
-      
-      console.log('📥 Raw response:', response);
-      console.log('📥 Response data:', response.data);
+      const response = await api.post('/auth/login', credentials);
       
       // Store the JWT token in local storage
       if (response.data.token) {

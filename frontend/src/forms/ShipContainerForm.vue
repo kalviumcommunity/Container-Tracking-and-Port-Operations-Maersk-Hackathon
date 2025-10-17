@@ -531,52 +531,46 @@ const onShipChange = () => {
 
 const loadAvailableShips = async () => {
   try {
-    // Try to load from API
-    const { shipApi } = await import('../services/api')
-    const response = await shipApi.getAll()
-    availableShips.value = (response.data || []).map((ship: any) => ({
-      id: ship.id || 0,
-      name: ship.name || 'Unknown Ship',
-      capacity: ship.capacity || 0,
-      currentContainers: ship.currentContainers || 0
-    }))
+    // Mock API call
+    availableShips.value = [
+      { id: 1, name: 'MSC Gülsün', capacity: 23756, currentContainers: 18500 },
+      { id: 2, name: 'Ever Ace', capacity: 23992, currentContainers: 15200 },
+      { id: 3, name: 'OOCL Hong Kong', capacity: 21413, currentContainers: 12800 },
+      { id: 4, name: 'Madrid Maersk', capacity: 20568, currentContainers: 19800 }
+    ]
   } catch (error) {
-    console.warn('Backend not connected - no ships data available')
-    availableShips.value = []
+    console.error('Failed to load ships:', error)
   }
 }
 
 const loadAvailableContainers = async () => {
   try {
-    // Try to load from API
-    const { containerApi } = await import('../services/api')
-    const response = await containerApi.getAll()
-    availableContainers.value = (response.data || []).map((container: any) => ({
-      id: container.id || 0,
-      containerNumber: container.containerNumber || container.number || `CNT-${container.id}`,
-      type: container.type || 'Dry',
-      weight: container.weight || 0,
-      shipId: container.shipId
-    }))
+    // Mock API call
+    availableContainers.value = [
+      { id: 1, containerNumber: 'MSCU1234567', type: 'Dry', weight: 25000 },
+      { id: 2, containerNumber: 'MSCU2345678', type: 'Refrigerated', weight: 28000, shipId: 2 },
+      { id: 3, containerNumber: 'MSCU3456789', type: 'Tank', weight: 30000 },
+      { id: 4, containerNumber: 'MSCU4567890', type: 'OpenTop', weight: 22000 },
+      { id: 5, containerNumber: 'MSCU5678901', type: 'Dry', weight: 24500, shipId: 1 }
+    ]
   } catch (error) {
-    console.warn('Backend not connected - no containers data available')
-    availableContainers.value = []
+    console.error('Failed to load containers:', error)
   }
 }
 
 const loadAvailablePorts = async () => {
   try {
-    // Try to load from API
-    const { portApi } = await import('../services/api')
-    const response = await portApi.getAll()
-    availablePorts.value = (response.data || []).map((port: any) => ({
-      id: port.id || port.portId || 0,
-      name: port.name || 'Unknown Port',
-      code: port.code || port.portCode || ''
-    }))
+    // Mock API call
+    availablePorts.value = [
+      { id: 1, name: 'Port of Shanghai', code: 'CNSHA' },
+      { id: 2, name: 'Port of Singapore', code: 'SGSIN' },
+      { id: 3, name: 'Port of Ningbo-Zhoushan', code: 'CNNGB' },
+      { id: 4, name: 'Port of Shenzhen', code: 'CNSZN' },
+      { id: 5, name: 'Port of Guangzhou', code: 'CNGZH' },
+      { id: 6, name: 'Port of Busan', code: 'KRPUS' }
+    ]
   } catch (error) {
-    console.warn('Backend not connected - no ports data available')
-    availablePorts.value = []
+    console.error('Failed to load ports:', error)
   }
 }
 

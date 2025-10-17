@@ -20,8 +20,12 @@
         </div>
       </div>
       
-      <!-- Right side: Live status and Time (without port name) -->
+      <!-- Right side: Port info, Live status, and Time -->
       <div class="flex items-center gap-6 text-sm text-slate-600">
+        <div class="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg">
+          <Globe :size="16" class="text-blue-600" />
+          <span class="font-medium">{{ portName }}</span>
+        </div>
         <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
           <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span class="text-green-700 font-medium">Live</span>
@@ -31,7 +35,6 @@
           <span>{{ currentTime }}</span>
         </div>
       </div>
-
     </div>
   </div>
 </template>

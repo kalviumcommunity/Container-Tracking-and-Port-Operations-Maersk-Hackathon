@@ -64,7 +64,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { CheckCircle, AlertTriangle, Info, X, AlertCircle } from 'lucide-vue-next'
-import { TOAST_TYPES } from '../composables/useToast'
+import { TOAST_TYPES } from '../composables/useToast.js'
 
 const props = defineProps({
   toast: {
@@ -139,23 +139,17 @@ const handleAction = (action) => {
 
 // Animation callbacks
 const onEnter = (el) => {
-  // Set initial state
   el.style.transform = 'translateX(100%)'
   el.style.opacity = '0'
   
   // Force reflow
   el.offsetHeight
   
-  // Animate to final state
-  requestAnimationFrame(() => {
-    el.style.transition = 'all 0.3s ease-in-out'
-    el.style.transform = 'translateX(0)'
-    el.style.opacity = '1'
-  })
+  el.style.transform = 'translateX(0)'
+  el.style.opacity = '1'
 }
 
 const onLeave = (el) => {
-  el.style.transition = 'all 0.3s ease-in-out'
   el.style.transform = 'translateX(100%)'
   el.style.opacity = '0'
 }
@@ -163,24 +157,18 @@ const onLeave = (el) => {
 // Setup progress bar for non-persistent toasts
 onMounted(() => {
   if (!props.toast.persistent && props.showProgress) {
-    const startTime = props.toast.createdAt
+    const startTime = Date.now()
     const duration = props.toast.duration
     
-    const updateProgress = () => {
+    progressInterval = setInterval(() => {
       const elapsed = Date.now() - startTime
       const remaining = Math.max(0, duration - elapsed)
       progressWidth.value = (remaining / duration) * 100
       
       if (remaining <= 0) {
         clearInterval(progressInterval)
-        progressWidth.value = 0
       }
-    }
-    
-    // Initial update
-    updateProgress()
-    
-    progressInterval = setInterval(updateProgress, 50)
+    }, 50)
   }
 })
 

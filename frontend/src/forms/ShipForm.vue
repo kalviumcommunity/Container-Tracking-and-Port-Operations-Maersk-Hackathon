@@ -402,17 +402,19 @@ const validate = (): boolean => {
 
 const loadAvailablePorts = async () => {
   try {
-    // Try to load from API
-    const { portApi } = await import('../services/api')
-    const response = await portApi.getAll()
-    availablePorts.value = (response.data || []).map((port: any) => ({
-      id: port.id || port.portId || 0,
-      name: port.name || 'Unknown Port',
-      code: port.code || port.portCode || ''
-    }))
+    // Mock API call to load ports
+    availablePorts.value = [
+      { id: 1, name: 'Port of Shanghai', code: 'CNSHA' },
+      { id: 2, name: 'Port of Singapore', code: 'SGSIN' },
+      { id: 3, name: 'Port of Ningbo-Zhoushan', code: 'CNNGB' },
+      { id: 4, name: 'Port of Shenzhen', code: 'CNSZN' },
+      { id: 5, name: 'Port of Guangzhou', code: 'CNGZH' },
+      { id: 6, name: 'Port of Busan', code: 'KRPUS' },
+      { id: 7, name: 'Port of Hong Kong', code: 'HKHKG' },
+      { id: 8, name: 'Port of Qingdao', code: 'CNTAO' }
+    ]
   } catch (error) {
-    console.warn('Backend not connected - no ports data available')
-    availablePorts.value = []
+    console.error('Failed to load ports:', error)
   }
 }
 

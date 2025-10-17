@@ -5,7 +5,7 @@
       <button
         @click="$emit('cancel')"
         class="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
-        title="Go back to home"
+        title="Go back"
       >
         <ArrowLeft :size="20" class="text-slate-600" />
       </button>
