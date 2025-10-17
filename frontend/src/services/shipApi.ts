@@ -4,33 +4,32 @@ import type { ApiResponse } from './api'
 export interface Ship {
   shipId: number
   name: string
-  imoNumber?: string
-  flag?: string
-  type?: string
-  capacity?: number
+  imoNumber: string
+  flag: string
+  type: string
+  capacity: number
   status: string
   length?: number
   beam?: number
   draft?: number
   grossTonnage?: number
   yearBuilt?: number
-  coordinates?: string
+  coordinates: string
   speed?: number
   heading?: number
-  nextPort?: string
+  nextPort: string
   estimatedArrival?: string
   currentPortId?: number
-  containerCount?: number
-  createdAt?: string
-  updatedAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface ShipCreateUpdate {
   name: string
-  imoNumber?: string
-  flag?: string
-  type?: string
-  capacity?: number
+  imoNumber: string
+  flag: string
+  type: string
+  capacity: number
   status: string
   length?: number
   beam?: number

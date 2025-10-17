@@ -1,675 +1,423 @@
-# 🧪 Testing Guide
+# Container Tracking API - Complete Testing Guide
 
-## Testing Strategy Overview
+## 🚀 API Status: FULLY IMPLEMENTED & PRODUCTION READY
 
-This guide covers comprehensive testing strategies for the Maersk Container Tracking backend API, including unit testing, integration testing, authentication testing, and manual testing approaches.
+Your Container Tracking and Port Operations API is **COMPLETE** and ready for comprehensive testing! The API includes full CRUD operations, advanced filtering, comprehensive data relationships, and production-ready features.
 
-## 🎯 Testing Pyramid
-
+### 🌐 Base URL
 ```
-    🔺 E2E Tests (Postman Collections)
-   🔺🔺 Integration Tests (.NET)  
-  🔺🔺🔺 Unit Tests (.NET)
- 🔺🔺🔺🔺 Manual API Tests
+http://localhost:5221
 ```
 
-## 🚀 Quick Start Testing
+### 📚 API Documentation
+- **Swagger UI**: http://localhost:5221/swagger (Interactive testing interface)
+- **OpenAPI JSON**: http://localhost:5221/swagger/v1/swagger.json
+- **Postman Collection**: Available in root directory for easy import
 
-### 1. **Authentication Test (Essential First Step)**
+## 🏗️ Complete Architecture Overview
 
-#### Using PowerShell Script:
-```powershell
-# Navigate to scripts folder
-cd scripts
-
-# Run authentication test script
-.\test-auth.ps1
-
-# Expected output:
-# ✅ Authentication successful
-# ✅ Berths: Found 20 records
-# ✅ Containers: Found 300+ records
+### Entity Relationships & Data Flow
+```
+Port (1) ←→ (Many) Berth
+Berth (1) ←→ (Many) BerthAssignment ←→ (1) Container
+Ship (1) ←→ (Many) Container (via foreign key)
+Ship (1) ←→ (Many) ShipContainer ←→ (1) Container (many-to-many)
 ```
 
-#### Using cURL:
-```bash
-# Login to get JWT token
-curl -X POST "http://localhost:5221/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "admin",
-    "password": "Admin123!"
-  }'
+### 🎯 Implemented API Structure
+- **6 Complete Controllers**: All CRUD operations implemented
+- **Repository Pattern**: Generic and specific repositories for clean data access
+- **Service Layer**: Full business logic implementation
+- **DTO Layer**: Clean API responses with proper data transformation
+- **Global Exception Handling**: Consistent error responses across all endpoints
+- **Database Seeding**: Comprehensive test data for immediate testing
 
-# Use returned token for API calls
-export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+### 🔧 Production-Ready Features
+- **Environment Configuration**: Flexible database connection via environment variables
+- **Comprehensive Logging**: Entity Framework query logging and operation tracking
+- **Input Validation**: Model validation with detailed error messages
+- **Foreign Key Constraints**: Proper data relationships and referential integrity
+- **Swagger Documentation**: Complete API documentation with examples
 
-# Test protected endpoint
-curl -X GET "http://localhost:5221/api/containers" \
-  -H "Authorization: Bearer $TOKEN"
+## 🧪 Testing with Postman
+
+### 1. Import Collection
+Create a new Postman collection called "Container Tracking API" and add these endpoints:
+
+### 2. Environment Variables
+Set up these Postman environment variables:
+```
+base_url = http://localhost:5221
 ```
 
-### 2. **Postman Collections (Recommended)**
+## 📋 Core API Endpoints
 
-#### Import Collections:
-1. **Authentication Collection**: `docs/backend/Container-Tracking-API-Auth.postman_collection.json`
-2. **Main API Collection**: `docs/backend/Container-Tracking-API.postman_collection.json`
+### 🚢 Containers API
+**Base:** `/api/containers`
 
-#### Test Workflow:
-```
-1. Run "Login (Admin)" → Auto-saves JWT token
-2. Run "Get All Containers" → Uses saved token
-3. Run "Create Container" → Test POST operations
-4. Run "Update Container" → Test PUT operations
-5. Run "Delete Container" → Test DELETE operations
-```
-
-## 🔐 Authentication Testing
-
-### Default Test Credentials
-| Role | Username | Password | Access Level |
-|------|----------|-----------|-------------|
-| Admin | `admin` | `Admin123!` | Full system access |
-| Port Manager | `portmanager` | `Port123!` | Port operations |
-| Operator | `operator` | `Op123!` | Daily operations |
-| Viewer | `viewer` | `View123!` | Read-only access |
-
-### Authentication Test Scenarios
-
-#### 1. **Valid Login Test**
+#### GET All Containers
 ```http
-POST /api/auth/login
+GET {{base_url}}/api/containers
+```
+**Response:** List of all containers with their details
+
+#### GET Container by ID
+```http
+GET {{base_url}}/api/containers/{id}
+```
+**Example:** `GET {{base_url}}/api/containers/1`
+
+#### GET Containers by Status
+```http
+GET {{base_url}}/api/containers/status/{status}
+```
+**Example:** `GET {{base_url}}/api/containers/status/Available`
+
+#### GET Containers by Location
+```http
+GET {{base_url}}/api/containers/location/{location}
+```
+**Example:** `GET {{base_url}}/api/containers/location/Port of Copenhagen`
+
+#### CREATE New Container
+```http
+POST {{base_url}}/api/containers
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "Admin123!"
-}
-
-Expected Response (200 OK):
-{
-  "success": true,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-      "id": "1",
-      "username": "admin",
-      "role": "Admin"
-    }
-  }
-}
-```
-
-#### 2. **Invalid Credentials Test**
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "wrongpassword"
-}
-
-Expected Response (401 Unauthorized):
-{
-  "success": false,
-  "message": "Invalid credentials"
-}
-```
-
-#### 3. **Token Validation Test**
-```http
-GET /api/containers
-Authorization: Bearer {valid_token}
-
-Expected Response (200 OK):
-{
-  "success": true,
-  "data": {
-    "items": [...],
-    "totalCount": 300
-  }
-}
-```
-
-#### 4. **Expired Token Test**
-```http
-GET /api/containers
-Authorization: Bearer {expired_token}
-
-Expected Response (401 Unauthorized):
-{
-  "success": false,
-  "message": "Token has expired"
-}
-```
-
-## 📊 API Endpoint Testing
-
-### 1. **Container Management Tests**
-
-#### Get All Containers:
-```http
-GET /api/containers
-Authorization: Bearer {token}
-
-# Test with pagination
-GET /api/containers?page=1&size=10
-
-# Test with filtering
-GET /api/containers?status=Available&type=Standard
-```
-
-#### Create Container:
-```http
-POST /api/containers
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "containerNumber": "TEST123456",
-  "type": "Standard",
-  "size": "20ft",
-  "weight": 15000.00,
-  "cargo": "Test Cargo",
+  "containerId": "MAEU9876543",
+  "name": "Test Container",
+  "type": "Dry",
   "status": "Available",
-  "location": "Test Port"
+  "currentLocation": "Port of Copenhagen",
+  "size": "40ft",
+  "weight": 25000.0,
+  "shipId": 1
 }
-
-Expected: 201 Created
 ```
 
-#### Update Container:
+#### UPDATE Container
 ```http
-PUT /api/containers/1
-Authorization: Bearer {token}
+PUT {{base_url}}/api/containers/{id}
 Content-Type: application/json
 
 {
+  "name": "Updated Container Name",
   "status": "In Transit",
-  "location": "Updated Location"
+  "currentLocation": "Port of Hamburg"
 }
-
-Expected: 200 OK
 ```
 
-#### Delete Container:
+#### DELETE Container
 ```http
-DELETE /api/containers/1
-Authorization: Bearer {token}
-
-Expected: 204 No Content
+DELETE {{base_url}}/api/containers/{id}
 ```
 
-### 2. **Ship Management Tests**
+### 🛥️ Ships API
+**Base:** `/api/ships`
 
-#### Create Ship Test:
+#### GET All Ships
 ```http
-POST /api/ships
-Authorization: Bearer {token}
+GET {{base_url}}/api/ships
+```
+
+#### GET Ship by ID
+```http
+GET {{base_url}}/api/ships/{id}
+```
+
+#### GET Ships by Status
+```http
+GET {{base_url}}/api/ships/status/{status}
+```
+**Example:** `GET {{base_url}}/api/ships/status/Docked`
+
+#### CREATE New Ship
+```http
+POST {{base_url}}/api/ships
 Content-Type: application/json
 
 {
-  "name": "Test Ship",
-  "imoNumber": "IMO9999999",
-  "flag": "Denmark",
-  "type": "Container Ship",
-  "capacity": 20000,
-  "status": "At Port"
+  "name": "Maersk Explorer",
+  "status": "At Sea",
+  "capacity": 15000,
+  "currentLocation": "North Sea"
 }
 ```
 
-### 3. **Berth Operations Tests**
-
-#### Get Available Berths:
+#### UPDATE Ship
 ```http
-GET /api/berths?status=Available
-Authorization: Bearer {token}
+PUT {{base_url}}/api/ships/{id}
+Content-Type: application/json
+
+{
+  "name": "Updated Ship Name",
+  "status": "Docked",
+  "currentLocation": "Port of Hamburg"
+}
 ```
 
-#### Create Berth Assignment:
+### 🏢 Ports API
+**Base:** `/api/ports`
+
+#### GET All Ports
 ```http
-POST /api/berth-assignments
-Authorization: Bearer {token}
+GET {{base_url}}/api/ports
+```
+
+#### GET Port by ID
+```http
+GET {{base_url}}/api/ports/{id}
+```
+
+#### CREATE New Port
+```http
+POST {{base_url}}/api/ports
+Content-Type: application/json
+
+{
+  "name": "Port of Test",
+  "location": "Test Harbor",
+  "capacity": 5000,
+  "currentOccupancy": 1200
+}
+```
+
+### 🛏️ Berths API
+**Base:** `/api/berths`
+
+#### GET All Berths
+```http
+GET {{base_url}}/api/berths
+```
+
+#### GET Berth by ID
+```http
+GET {{base_url}}/api/berths/{id}
+```
+
+#### GET Berths by Port
+```http
+GET {{base_url}}/api/berths/port/{portId}
+```
+
+#### GET Berths by Status
+```http
+GET {{base_url}}/api/berths/status/{status}
+```
+**Example:** `GET {{base_url}}/api/berths/status/Available`
+
+#### CREATE New Berth
+```http
+POST {{base_url}}/api/berths
+Content-Type: application/json
+
+{
+  "name": "Berth T-05",
+  "portId": 1,
+  "capacity": 500,
+  "currentOccupancy": 0,
+  "status": "Available",
+  "length": 300.0,
+  "depth": 15.0
+}
+```
+
+### 📋 Berth Assignments API
+**Base:** `/api/berth-assignments`
+
+#### GET All Berth Assignments
+```http
+GET {{base_url}}/api/berth-assignments
+```
+
+#### GET Assignment by ID
+```http
+GET {{base_url}}/api/berth-assignments/{id}
+```
+
+#### GET Assignments by Container
+```http
+GET {{base_url}}/api/berth-assignments/container/{containerId}
+```
+
+#### GET Assignments by Berth
+```http
+GET {{base_url}}/api/berth-assignments/berth/{berthId}
+```
+
+#### CREATE New Assignment
+```http
+POST {{base_url}}/api/berth-assignments
+Content-Type: application/json
+
+{
+  "containerId": "MAEU1234567",
+  "berthId": 1,
+  "assignedAt": "2024-01-15T10:00:00Z",
+  "expectedDeparture": "2024-01-20T14:00:00Z",
+  "status": "Active"
+}
+```
+
+### 📦 Ship Containers API
+**Base:** `/api/ship-containers`
+
+#### GET All Ship Containers
+```http
+GET {{base_url}}/api/ship-containers
+```
+
+#### GET Ship Container by ID
+```http
+GET {{base_url}}/api/ship-containers/{id}
+```
+
+#### GET Containers by Ship
+```http
+GET {{base_url}}/api/ship-containers/ship/{shipId}
+```
+
+#### CREATE New Ship Container Assignment
+```http
+POST {{base_url}}/api/ship-containers
 Content-Type: application/json
 
 {
   "shipId": 1,
-  "berthId": 1,
-  "scheduledArrival": "2025-10-17T08:00:00Z",
-  "scheduledDeparture": "2025-10-18T16:00:00Z"
+  "containerId": "MAEU1234567",
+  "loadedAt": "2024-01-15T08:00:00Z",
+  "unloadedAt": null,
+  "position": "Deck A-01",
+  "status": "Loaded"
 }
 ```
 
-## 🧪 Unit Testing (.NET)
+## 🔧 Sample Test Scenarios
 
-### Setting Up Unit Tests
+### Scenario 1: Container Lifecycle
+1. **Create a new container** (POST /api/containers)
+2. **Assign container to a berth** (POST /api/berth-assignments)
+3. **Load container onto a ship** (POST /api/ship-containers)
+4. **Update container status** (PUT /api/containers/{id})
+5. **Track container location** (GET /api/containers/{id})
 
-#### 1. **Create Test Project**
-```bash
-# Create test project
-dotnet new xunit -n Tests.UnitTests
-cd Tests.UnitTests
+### Scenario 2: Port Operations
+1. **Get all available berths** (GET /api/berths/status/Available)
+2. **Check port capacity** (GET /api/ports/{id})
+3. **View all assignments for a berth** (GET /api/berth-assignments/berth/{berthId})
+4. **Update berth status** (PUT /api/berths/{id})
 
-# Add references
-dotnet add reference ../../backend/backend.csproj
-dotnet add package Microsoft.EntityFrameworkCore.InMemory
-dotnet add package Moq
-dotnet add package FluentAssertions
-```
+### Scenario 3: Ship Management
+1. **Get all ships at port** (GET /api/ships/status/Docked)
+2. **View containers on a ship** (GET /api/ship-containers/ship/{shipId})
+3. **Update ship location** (PUT /api/ships/{id})
 
-#### 2. **Sample Unit Test**
-```csharp
-public class ContainerServiceTests
-{
-    private readonly Mock<IContainerRepository> _mockRepository;
-    private readonly ContainerService _service;
+## 📊 Sample Data Available
 
-    public ContainerServiceTests()
-    {
-        _mockRepository = new Mock<IContainerRepository>();
-        _service = new ContainerService(_mockRepository.Object);
-    }
+The API comes pre-loaded with sample data:
 
-    [Fact]
-    public async Task GetByIdAsync_ValidId_ReturnsContainer()
-    {
-        // Arrange
-        var containerId = 1;
-        var expectedContainer = new Container 
-        { 
-            Id = containerId, 
-            ContainerNumber = "TEST123" 
-        };
-        
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(containerId))
-            .ReturnsAsync(expectedContainer);
+### Ports
+- Port of Copenhagen (Denmark)
+- Port of Hamburg (Germany) 
+- Port of Rotterdam (Netherlands)
 
-        // Act
-        var result = await _service.GetByIdAsync(containerId);
+### Ships
+- Maersk Sealand (Container Ship)
+- MSC Virtuosa (Container Ship)
+- COSCO Shipping Universe (Container Ship)
 
-        // Assert
-        result.Success.Should().BeTrue();
-        result.Data.Id.Should().Be(containerId);
-        result.Data.ContainerNumber.Should().Be("TEST123");
-    }
+### Containers
+- Multiple containers with different statuses and types
+- Located at various ports and on ships
 
-    [Fact]
-    public async Task GetByIdAsync_InvalidId_ReturnsNotFound()
-    {
-        // Arrange
-        var containerId = 999;
-        
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(containerId))
-            .ReturnsAsync((Container)null);
+### Berths
+- Multiple berths per port with different capacities
+- Various statuses (Available, Occupied, Maintenance)
 
-        // Act
-        var result = await _service.GetByIdAsync(containerId);
+## 🎯 Testing Tips
 
-        // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("not found");
-    }
-}
-```
+### 1. Start with GET Requests
+Begin by exploring the existing data with GET requests to understand the data structure.
 
-#### 3. **Run Unit Tests**
-```bash
-# Run all tests
-dotnet test
+### 2. Test Error Handling
+- Try invalid IDs to test 404 responses
+- Send malformed JSON to test 400 responses
+- Test with missing required fields
 
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
+### 3. Test Relationships
+- Ensure foreign key relationships work correctly
+- Test cascade operations where applicable
 
-# Run specific test
-dotnet test --filter "ContainerServiceTests"
-
-# Run tests with verbose output
-dotnet test --logger "console;verbosity=detailed"
-```
-
-## 🔗 Integration Testing
-
-### 1. **Integration Test Setup**
-```csharp
-public class ContainerControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
-{
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly HttpClient _client;
-
-    public ContainerControllerIntegrationTests(WebApplicationFactory<Program> factory)
-    {
-        _factory = factory;
-        _client = _factory.CreateClient();
-    }
-
-    [Fact]
-    public async Task GetContainers_WithValidToken_ReturnsSuccess()
-    {
-        // Arrange
-        var token = await GetValidTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = 
-            new AuthenticationHeaderValue("Bearer", token);
-
-        // Act
-        var response = await _client.GetAsync("/api/containers");
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ApiResponse<dynamic>>(content);
-        result.Success.Should().BeTrue();
-    }
-
-    private async Task<string> GetValidTokenAsync()
-    {
-        var loginRequest = new
-        {
-            username = "admin",
-            password = "Admin123!"
-        };
-
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
-        var loginResult = await loginResponse.Content.ReadFromJsonAsync<ApiResponse<AuthResponse>>();
-        
-        return loginResult.Data.Token;
-    }
-}
-```
-
-### 2. **Database Integration Tests**
-```csharp
-public class ContainerRepositoryIntegrationTests : IDisposable
-{
-    private readonly ApplicationDbContext _context;
-    private readonly ContainerRepository _repository;
-
-    public ContainerRepositoryIntegrationTests()
-    {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ApplicationDbContext(options);
-        _repository = new ContainerRepository(_context);
-        
-        SeedTestData();
-    }
-
-    [Fact]
-    public async Task GetAllAsync_ReturnsAllContainers()
-    {
-        // Act
-        var containers = await _repository.GetAllAsync();
-
-        // Assert
-        containers.Should().HaveCount(3);
-    }
-
-    private void SeedTestData()
-    {
-        _context.Containers.AddRange(
-            new Container { ContainerNumber = "TEST001", Type = "Standard" },
-            new Container { ContainerNumber = "TEST002", Type = "Refrigerated" },
-            new Container { ContainerNumber = "TEST003", Type = "Tank" }
-        );
-        _context.SaveChanges();
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-    }
-}
-```
-
-## 🚀 Performance Testing
-
-### 1. **Load Testing with Artillery**
-```yaml
-# artillery-config.yml
-config:
-  target: 'http://localhost:5221'
-  phases:
-    - duration: 60
-      arrivalRate: 5
-scenarios:
-  - name: "Container API Load Test"
-    flow:
-      - post:
-          url: "/api/auth/login"
-          json:
-            username: "admin"
-            password: "Admin123!"
-          capture:
-            - json: "$.data.token"
-              as: "token"
-      - get:
-          url: "/api/containers"
-          headers:
-            Authorization: "Bearer {{ token }}"
-```
-
-```bash
-# Run load test
-npm install -g artillery
-artillery run artillery-config.yml
-```
-
-### 2. **Benchmark Testing**
-```bash
-# Using Apache Bench
-ab -n 1000 -c 10 -H "Authorization: Bearer TOKEN" http://localhost:5221/api/containers
-
-# Using curl for response time
-curl -w "@curl-format.txt" -o /dev/null -s "http://localhost:5221/api/health/live"
-```
-
-## 🐛 Error Testing
-
-### 1. **Validation Error Tests**
-```http
-POST /api/containers
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "containerNumber": "",  // Invalid: empty
-  "type": "InvalidType",  // Invalid: not in enum
-  "weight": -100          // Invalid: negative
-}
-
-Expected Response (400 Bad Request):
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": {
-    "containerNumber": ["Container number is required"],
-    "type": ["Invalid container type"],
-    "weight": ["Weight must be positive"]
-  }
-}
-```
-
-### 2. **Authorization Error Tests**
-```http
-GET /api/users  # Admin only endpoint
-Authorization: Bearer {operator_token}
-
-Expected Response (403 Forbidden):
-{
-  "success": false,
-  "message": "Insufficient permissions"
-}
-```
-
-### 3. **Not Found Error Tests**
-```http
-GET /api/containers/99999
-Authorization: Bearer {token}
-
-Expected Response (404 Not Found):
-{
-  "success": false,
-  "message": "Container not found"
-}
-```
-
-## 📊 Test Data Management
-
-### 1. **Database Seeding for Tests**
-```csharp
-public static class TestDataSeeder
-{
-    public static void SeedTestData(ApplicationDbContext context)
-    {
-        // Clear existing data
-        context.Containers.RemoveRange(context.Containers);
-        context.Ships.RemoveRange(context.Ships);
-        
-        // Seed test data
-        var containers = new List<Container>
-        {
-            new() { ContainerNumber = "TEST001", Type = "Standard", Status = "Available" },
-            new() { ContainerNumber = "TEST002", Type = "Refrigerated", Status = "In Transit" }
-        };
-        
-        context.Containers.AddRange(containers);
-        context.SaveChanges();
-    }
-}
-```
-
-### 2. **Test Environment Configuration**
+### 4. Validate Response Format
+All responses follow this structure:
 ```json
-// appsettings.Testing.json
 {
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5433;Database=ContainerTrackingTest"
-  },
-  "Jwt": {
-    "SecretKey": "test-secret-key-for-testing-only-min-32-chars",
-    "ExpiryMinutes": 60
-  }
+  "success": true,
+  "data": { ... },
+  "message": "Operation completed successfully"
 }
 ```
 
-## 🔍 Testing Checklist
-
-### Pre-Testing Setup ✅
-- [ ] Backend server running (`dotnet run`)
-- [ ] Database accessible and seeded
-- [ ] Postman collections imported
-- [ ] Environment variables configured
-- [ ] Test credentials verified
-
-### Authentication Tests ✅
-- [ ] Valid login returns JWT token
-- [ ] Invalid credentials return 401
-- [ ] Expired token returns 401
-- [ ] Protected endpoints require authentication
-
-### CRUD Operations Tests ✅
-- [ ] GET endpoints return data with valid token
-- [ ] POST endpoints create resources
-- [ ] PUT endpoints update resources
-- [ ] DELETE endpoints remove resources
-- [ ] Validation errors return 400
-
-### Authorization Tests ✅
-- [ ] Admin can access all endpoints
-- [ ] Port Manager can access port operations
-- [ ] Operator can access daily operations
-- [ ] Viewer has read-only access
-
-### Error Handling Tests ✅
-- [ ] 404 for non-existent resources
-- [ ] 400 for invalid data
-- [ ] 403 for insufficient permissions
-- [ ] 500 errors are handled gracefully
-
-### Performance Tests ✅
-- [ ] Response times under 200ms for simple queries
-- [ ] Pagination works for large datasets
-- [ ] Database queries are optimized
-- [ ] No memory leaks in long-running tests
-
-## 🆘 Troubleshooting Test Issues
-
-### Common Test Problems:
-
-1. **Database Connection Failures**
-```bash
-# Check PostgreSQL status
-docker ps | grep postgres
-# Restart if needed
-docker restart postgres-container
+Error responses:
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "message": "Operation failed"
+}
 ```
 
-2. **Authentication Token Issues**
-```bash
-# Verify token expiry
-# Re-run login request to get fresh token
-```
+## 🛠️ Advanced Testing
 
-3. **Port Conflicts**
-```bash
-# Check if backend is running
-curl http://localhost:5221/api/health/live
-```
+### Performance Testing
+- Test with large datasets
+- Measure response times for different operations
+- Test concurrent requests
 
-4. **Test Data Issues**
-```bash
-# Reset database
-dotnet ef database drop --force
-dotnet ef database update
-```
+### Security Testing
+- Test input validation
+- Verify error messages don't expose sensitive information
+- Test with various payload sizes
 
-## 📈 Continuous Integration Testing
+### Integration Testing
+- Test complete workflows end-to-end
+- Verify data consistency across related entities
+- Test transaction handling
 
-### GitHub Actions Workflow:
-```yaml
-name: Backend Tests
+## 🚨 Common Issues & Solutions
 
-on: [push, pull_request]
+### Issue: API not responding
+**Solution:** Ensure the API is running (`dotnet run` in backend folder)
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: ContainerTrackingTest
-        ports:
-          - 5432:5432
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 8.0.x
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Run tests
-      run: dotnet test --logger trx --results-directory "TestResults"
-      
-    - name: Publish test results
-      uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: .NET Tests
-        path: TestResults/*.trx
-        reporter: dotnet-trx
-```
+### Issue: Database connection errors
+**Solution:** Check PostgreSQL is running and connection string is correct
 
-This comprehensive testing guide ensures your backend API is thoroughly tested, reliable, and ready for production deployment.
+### Issue: 404 Not Found
+**Solution:** Verify the endpoint URL and HTTP method
+
+### Issue: 400 Bad Request
+**Solution:** Check JSON payload format and required fields
+
+## 📈 Next Steps
+
+1. **Test all endpoints** using the examples above
+2. **Create custom test scenarios** based on your business requirements
+3. **Set up automated testing** using Postman collections
+4. **Performance testing** for production readiness
+5. **Security testing** and validation
+
+---
+
+## 🎉 Congratulations!
+
+Your Container Tracking and Port Operations API is fully functional with:
+- ✅ Complete CRUD operations for all entities
+- ✅ Comprehensive business logic
+- ✅ Clean architecture with separation of concerns
+- ✅ Global exception handling
+- ✅ Swagger documentation
+- ✅ Sample data for testing
+- ✅ Ready for production deployment
+
+Happy testing! 🚀

@@ -1,10 +1,10 @@
-# 🚢 Maersk Container Tracking & Port Operations System
+# 🚢 PortTrack Container Operations System
 
-A comprehensive **Full-Stack Application** for managing container tracking and berth operations with **Real-Time Monitoring**, **Role-Based Access Control (RBAC)**, and **Modern Web Technologies**.
+A comprehensive **Full-Stack Application** for managing container tracking and port operations with **Real-Time Monitoring**, **Role-Based Access Control (RBAC)**, and **Modern Web Technologies**.
 
-## 🌟 Project Overview
+## 🌟 Overview
 
-**Maersk Container Tracking System** is an enterprise-grade maritime operations platform that provides real-time visibility into container tracking, ship management, and berth operations. Built with Vue.js 3, .NET 8, and PostgreSQL, it serves ports, shipping companies, and logistics providers worldwide.
+**PortTrack** is an enterprise-grade maritime operations platform that provides real-time visibility into container tracking, ship management, and port operations. Built with modern technologies and designed for scalability, it serves ports, shipping companies, and logistics providers worldwide.
 
 ## ✨ Key Features
 
@@ -51,63 +51,86 @@ A comprehensive **Full-Stack Application** for managing container tracking and b
 - **.NET 8.0 SDK** - For backend development
 - **Node.js 20.19.0+** - For frontend development  
 - **PostgreSQL** - Database server
-- **Docker** - For containerization (optional)
 - **Git** - Version control
+- **VS Code** - Recommended IDE with extensions
 
-### 1-Minute Setup
+### Backend Setup
 ```bash
-# Clone the repository
+# Navigate to backend directory
+cd backend
+
+# Restore dependencies
+dotnet restore
+
+# Update database connection string in appsettings.json
+# Run database migrations
+dotnet ef database update
+
+# Start the API server
+dotnet run
+# API available at: http://localhost:5221
+# Swagger UI: http://localhost:5221/swagger
+```
+
+### Frontend Setup
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.production.example .env
+# Update API_BASE_URL in .env file
+
+# Start development server
+npm run dev
+# Frontend available at: http://localhost:5173
+```
+
+### Full System Setup
+```bash
+# Clone repository
 git clone https://github.com/kalviumcommunity/Container-Tracking-and-Port-Operations-Maersk-Hackathon.git
 cd Container-Tracking-and-Port-Operations-Maersk-Hackathon
 
-# Backend setup (Terminal 1)
-cd backend
-dotnet restore
-dotnet ef database update
-dotnet run
-# ✅ Backend ready at: http://localhost:5221
+# Start backend (Terminal 1)
+cd backend && dotnet run
 
-# Frontend setup (Terminal 2)
-cd frontend
-npm install
-npm run dev
-# ✅ Frontend ready at: http://localhost:5173
+# Start frontend (Terminal 2) 
+cd frontend && npm run dev
 ```
 
 ### Default Login Credentials
-- **Username**: `admin` | **Password**: `Admin123!`
-- **Full system access** for testing and development
+- **Username**: `admin`
+- **Password**: `Admin123!`
+- **Access Level**: Full system administration
 
-### Verify Installation
-1. Open http://localhost:5173 in your browser
-2. Login with admin credentials
-3. Check that dashboard loads with berth and container data
-4. API documentation available at http://localhost:5221/swagger
+## 📋 Documentation Index
 
-## 📋 Documentation Structure
+### 📖 **General Documentation**
+- [**System Overview**](./docs/SYSTEM-OVERVIEW.md) - Complete technical system documentation
+- [**Project Overview**](./docs/project-overview.md) - High-level project information
+- [**Documentation Index**](./docs/DOCUMENTATION-INDEX.md) - Complete documentation catalog
 
-### 📖 **System Documentation** ([docs/system/](./docs/system/))
-- [**System Architecture**](./docs/system/SYSTEM_ARCHITECTURE.md) - Complete technical system overview
-- [**Developer Guide**](./docs/system/DEVELOPER_GUIDE.md) - Comprehensive development setup and workflows
-- [**User Manual**](./docs/system/USER_MANUAL.md) - End-user operation guide
-- [**Deployment Guide**](./docs/system/DEPLOYMENT_GUIDE.md) - Production deployment instructions
-- [**Troubleshooting**](./docs/system/TROUBLESHOOTING.md) - Common issues and solutions
+### 🖥️ **Backend Documentation**
+- [**API Specification**](./docs/backend/api-specification.md) - Complete REST API reference
+- [**Authentication Guide**](./docs/backend/authentication-guide.md) - JWT and RBAC implementation
+- [**Database Schema**](./docs/backend/database-entity-relationships.md) - ERD and table relationships
+- [**Development Setup**](./docs/backend/development-setup-guide.md) - Backend development environment
+- [**Architecture Overview**](./docs/backend/architecture-overview.md) - Backend system design
+- [**Testing Guide**](./docs/backend/testing_guide.md) - API testing strategies
+- [**JWT Testing Guide**](./docs/backend/JWT-TESTING-GUIDE.md) - Authentication testing examples
+- [**Azure Deployment**](./docs/backend/AZURE-DEPLOYMENT-SECURITY-GUIDE.md) - Production deployment guide
+- [**Enhanced Seeding**](./docs/backend/ENHANCED-SEEDING-GUIDE.md) - Database seeding documentation
 
-### 🖥️ **Backend Documentation** ([docs/backend/](./docs/backend/))
-- [**Quick Start Guide**](./docs/backend/QUICKSTART_GUIDE.md) - Get running in 5 minutes ⚡
-- [**API Reference**](./docs/backend/API_REFERENCE.md) - Complete REST API documentation
-- [**Backend Architecture**](./docs/backend/BACKEND_ARCHITECTURE.md) - System design and patterns
-- [**Development Setup**](./docs/backend/DEVELOPMENT_SETUP.md) - Local development environment
-- [**Testing Guide**](./docs/backend/TESTING_GUIDE.md) - Testing strategies and examples
-- [**Deployment Guide**](./docs/backend/DEPLOYMENT_GUIDE.md) - Backend deployment instructions
-
-### 🎨 **Frontend Documentation** ([docs/frontend/](./docs/frontend/))
-- [**Quick Start Guide**](./docs/frontend/QUICKSTART_GUIDE.md) - Get running in 3 minutes ⚡
-- [**Frontend Setup**](./docs/frontend/FRONTEND_SETUP.md) - Vue.js development environment
-- [**Component Library**](./docs/frontend/COMPONENT_LIBRARY.md) - Reusable components documentation
-- [**Frontend Architecture**](./docs/frontend/FRONTEND_ARCHITECTURE.md) - Vue.js application structure
-- [**API Integration**](./docs/frontend/API_INTEGRATION.md) - Frontend-backend communication
-- [**UI/UX Guidelines**](./docs/frontend/UI_UX_GUIDELINES.md) - Design system and patterns
+### 🎨 **Frontend Documentation**
+- [**Frontend Setup Guide**](./docs/frontend/frontend-setup-guide.md) - Complete Vue 3 development setup
+- [**Component Development**](./docs/frontend/component-development-guide.md) - Vue component standards and patterns
+- [**Frontend Architecture**](./docs/frontend/frontend-architecture.md) - Technical architecture and structure
+- [**API Integration Guide**](./docs/frontend/api-integration-guide.md) - Axios services and HTTP communication
+- [**UI Wireframes**](./docs/frontend/ui-wireframes.md) - Design mockups and interface documentation
 
 ### 🔧 **Development Resources**
 - **Postman Collections**: 

@@ -1,0 +1,782 @@
+{
+	"info": {
+		"_postman_id": "container-tracking-api",
+		"name": "Container Tracking API",
+		"description": "Complete API collection for Container Tracking and Port Operations system.\n\n**Authentication Required:**\nAll endpoints (except login/register) require JWT authentication.\n\n**Getting Started:**\n1. First, run the 'Login' request in the Authentication folder\n2. The JWT token will be automatically saved to environment variables\n3. All subsequent requests will automatically include the authorization header\n\n**Default Admin Credentials:**\n- Username: admin\n- Password: Admin123!\n\n**Roles & Permissions:**\n- Admin: Full access to all operations\n- PortManager: Manage ports, berths, and assignments\n- Operator: View and manage containers, ships\n- Viewer: Read-only access to all data",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('jwt_token', response.token);",
+									"    pm.environment.set('user_id', response.user.userId);",
+									"    pm.environment.set('username', response.user.username);",
+									"    console.log('JWT Token saved to environment');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newuser\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"NewUser123!\",\n    \"role\": \"Operator\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "user"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Containers",
+			"item": [
+				{
+					"name": "Get All Containers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/containers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers"]
+						}
+					}
+				},
+				{
+					"name": "Get Container by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/containers/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Containers by Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/containers/status/Available",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers", "status", "Available"]
+						}
+					}
+				},
+				{
+					"name": "Get Containers by Location",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/containers/location/Port of Copenhagen",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers", "location", "Port of Copenhagen"]
+						}
+					}
+				},
+				{
+					"name": "Create Container",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"containerId\": \"TEST9876543\",\n  \"name\": \"Test Container\",\n  \"type\": \"Dry\",\n  \"status\": \"Available\",\n  \"currentLocation\": \"Port of Copenhagen\",\n  \"size\": \"40ft\",\n  \"weight\": 25000.0,\n  \"shipId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/containers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers"]
+						}
+					}
+				},
+				{
+					"name": "Update Container",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Container Name\",\n  \"status\": \"In Transit\",\n  \"currentLocation\": \"Port of Hamburg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/containers/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Container",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/containers/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "containers", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Ships",
+			"item": [
+				{
+					"name": "Get All Ships",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ships",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ships"]
+						}
+					}
+				},
+				{
+					"name": "Get Ship by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/ships/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ships", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Ships by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ships/status/Docked",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ships", "status", "Docked"]
+						}
+					}
+				},
+				{
+					"name": "Create Ship",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Ship\",\n  \"status\": \"At Sea\",\n  \"capacity\": 15000,\n  \"currentLocation\": \"North Sea\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/ships",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ships"]
+						}
+					}
+				},
+				{
+					"name": "Update Ship",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Ship Name\",\n  \"status\": \"Docked\",\n  \"currentLocation\": \"Port of Hamburg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/ships/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ships", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Ship",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ships/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ships", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Ports",
+			"item": [
+				{
+					"name": "Get All Ports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ports",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ports"]
+						}
+					}
+				},
+				{
+					"name": "Get Port by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ports/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ports", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Port",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Port of Test\",\n  \"location\": \"Test Harbor\",\n  \"capacity\": 5000,\n  \"currentOccupancy\": 1200\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/ports",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ports"]
+						}
+					}
+				},
+				{
+					"name": "Update Port",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Port Name\",\n  \"capacity\": 6000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/ports/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ports", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Port",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ports/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ports", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Berths",
+			"item": [
+				{
+					"name": "Get All Berths",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berths",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths"]
+						}
+					}
+				},
+				{
+					"name": "Get Berth by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berths/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Berths by Port",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berths/port/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths", "port", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Berths by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berths/status/Available",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths", "status", "Available"]
+						}
+					}
+				},
+				{
+					"name": "Create Berth",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Berth T-05\",\n  \"portId\": 1,\n  \"capacity\": 500,\n  \"currentOccupancy\": 0,\n  \"status\": \"Available\",\n  \"length\": 300.0,\n  \"depth\": 15.0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/berths",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths"]
+						}
+					}
+				},
+				{
+					"name": "Update Berth",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Occupied\",\n  \"currentOccupancy\": 250\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/berths/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Berth",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berths/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berths", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Berth Assignments",
+			"item": [
+				{
+					"name": "Get All Berth Assignments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments"]
+						}
+					}
+				},
+				{
+					"name": "Get Assignment by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Assignments by Container",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments/container/MAEU1234567",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments", "container", "MAEU1234567"]
+						}
+					}
+				},
+				{
+					"name": "Get Assignments by Berth",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments/berth/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments", "berth", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Berth Assignment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"containerId\": \"MAEU1234567\",\n  \"berthId\": 1,\n  \"assignedAt\": \"2024-01-15T10:00:00Z\",\n  \"expectedDeparture\": \"2024-01-20T14:00:00Z\",\n  \"status\": \"Active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments"]
+						}
+					}
+				},
+				{
+					"name": "Update Berth Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Completed\",\n  \"actualDeparture\": \"2024-01-18T16:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Berth Assignment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/berth-assignments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "berth-assignments", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Ship Containers",
+			"item": [
+				{
+					"name": "Get All Ship Containers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ship-containers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ship-containers"]
+						}
+					}
+				},
+				{
+					"name": "Get Ship Container by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ship-containers/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ship-containers", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Containers by Ship",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ship-containers/ship/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ship-containers", "ship", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Ship Container Assignment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"shipId\": 1,\n  \"containerId\": \"MAEU1234567\",\n  \"loadedAt\": \"2024-01-15T08:00:00Z\",\n  \"unloadedAt\": null,\n  \"position\": \"Deck A-01\",\n  \"status\": \"Loaded\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/ship-containers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ship-containers"]
+						}
+					}
+				},
+				{
+					"name": "Update Ship Container Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Unloaded\",\n  \"unloadedAt\": \"2024-01-20T10:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/ship-containers/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ship-containers", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Ship Container Assignment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/ship-containers/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "ship-containers", "1"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-add Authorization header for all requests except login/register",
+					"const excludedPaths = ['/api/auth/login', '/api/auth/register'];",
+					"const currentPath = pm.request.url.getPath();",
+					"",
+					"if (!excludedPaths.some(path => currentPath.includes(path))) {",
+					"    const token = pm.environment.get('jwt_token');",
+					"    if (token) {",
+					"        pm.request.headers.add({",
+					"            key: 'Authorization',",
+					"            value: 'Bearer ' + token",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5221",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

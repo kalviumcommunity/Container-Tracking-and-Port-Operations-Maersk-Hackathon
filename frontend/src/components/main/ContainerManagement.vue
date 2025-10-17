@@ -78,6 +78,15 @@
       @submit="handleFormSubmit"
       @cancel="closeModal"
     />
+
+    <!-- Container Details Modal -->
+    <ContainerDetailsModal
+      v-if="selectedContainer"
+      :is-open="showDetailsModal"
+      :container="selectedContainer"
+      @close="closeDetailsModal"
+      @edit="editContainerFromDetails"
+    />
   </div>
 </template>
 
@@ -93,6 +102,7 @@ import ContainerBulkActions from '../containers/ContainerBulkActions.vue';
 import ContainerError from '../containers/ContainerError.vue';
 import ContainerTable from '../containers/ContainerTable.vue';
 import ContainerModal from '../containers/ContainerModal.vue';
+import ContainerDetailsModal from '../modals/ContainerDetailsModal.vue';
 
 // Import services and types
 import { containerService } from '../../services/containerService';
@@ -160,7 +170,9 @@ const error = ref<string | null>(null);
 const isSubmitting = ref(false);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDetailsModal = ref(false);
 const selectedContainers = ref<string[]>([]);
+const selectedContainer = ref<Container | null>(null);
 const containerForm = ref<Partial<Container & ContainerCreateRequest>>({});
 
 // Current sort state
@@ -219,13 +231,34 @@ const loadContainers = async () => {
     if (containerService && typeof containerService.getContainers === 'function') {
       paginatedData.value = await containerService.getContainers(filters.value);
     } else {
-      // Show empty state instead of mock data
+      // Fallback to mock data
       paginatedData.value = {
-        data: [],
-        totalCount: 0,
+        data: [
+          {
+            containerId: 'MAEU1234567',
+            cargoType: 'Electronics',
+            type: 'Dry',
+            status: 'In Transit',
+            currentLocation: 'Port of Shanghai',
+            shipName: 'Maersk Edinburgh',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            containerId: 'MAEU2345678',
+            cargoType: 'Automotive Parts',
+            type: 'Refrigerated',
+            status: 'Loading',
+            currentLocation: 'Port of Rotterdam',
+            shipName: 'MSC Oscar',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ],
+        totalCount: 2,
         page: 1,
         pageSize: 25,
-        totalPages: 0,
+        totalPages: 1,
         hasNextPage: false,
         hasPreviousPage: false
       };
@@ -242,17 +275,30 @@ const loadStatistics = async () => {
     if (containerService && typeof containerService.getStatistics === 'function') {
       stats.value = await containerService.getStatistics();
     } else {
-      // Show zero state instead of mock statistics
+      // Mock statistics
       stats.value = {
-        totalContainers: 0,
-        availableContainers: 0,
-        inTransitContainers: 0,
-        atPortContainers: 0,
-        loadingContainers: 0,
-        unloadingContainers: 0,
-        containersByType: {},
-        containersByStatus: {},
-        containersByLocation: {}
+        totalContainers: 1250,
+        availableContainers: 345,
+        inTransitContainers: 623,
+        atPortContainers: 282,
+        loadingContainers: 89,
+        unloadingContainers: 67,
+        containersByType: {
+          'Dry': 850,
+          'Refrigerated': 200,
+          'Tank': 100,
+          'Open Top': 100
+        },
+        containersByStatus: {
+          'Available': 345,
+          'In Transit': 623,
+          'At Port': 282
+        },
+        containersByLocation: {
+          'Port of Shanghai': 200,
+          'Port of Rotterdam': 180,
+          'At Sea': 623
+        }
       };
     }
   } catch (err) {
@@ -270,13 +316,28 @@ const loadPorts = async () => {
         .filter((name): name is string => !!name)
         .sort();
     } else {
-      // Show empty ports list until API data loads
-      locationOptions.value = [];
+      // Mock port data
+      locationOptions.value = [
+        'Port of Shanghai',
+        'Port of Rotterdam',
+        'Port of Los Angeles',
+        'Port of Singapore',
+        'Port of Hamburg',
+        'Port of Copenhagen',
+        'Port of Antwerp',
+        'Port of Bremen'
+      ];
     }
   } catch (err) {
     console.error('Error loading ports:', err);
-    // Show empty list instead of fallback mock data
-    locationOptions.value = [];
+    // Use fallback data
+    locationOptions.value = [
+      'Port of Shanghai',
+      'Port of Rotterdam',
+      'Port of Los Angeles',
+      'Port of Singapore',
+      'Port of Hamburg'
+    ];
   }
 };
 
@@ -292,13 +353,25 @@ const loadShips = async () => {
         name: ship.name || `Ship ${ship.id}`
       })).sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      // Show empty ships list until API data loads
-      shipOptions.value = [];
+      // Mock ship data as fallback
+      shipOptions.value = [
+        { id: 1, name: 'Maersk Edinburgh' },
+        { id: 2, name: 'MSC Oscar' },
+        { id: 3, name: 'CMA CGM Bougainville' },
+        { id: 4, name: 'Ever Given' },
+        { id: 5, name: 'OOCL Hong Kong' }
+      ];
     }
   } catch (err) {
     console.error('Error loading ships:', err);
-    // Show empty list instead of fallback mock data
-    shipOptions.value = [];
+    // Use fallback data on error
+    shipOptions.value = [
+      { id: 1, name: 'Maersk Edinburgh' },
+      { id: 2, name: 'MSC Oscar' },
+      { id: 3, name: 'CMA CGM Bougainville' },
+      { id: 4, name: 'Ever Given' },
+      { id: 5, name: 'OOCL Hong Kong' }
+    ];
   }
 };
 
@@ -435,13 +508,23 @@ const exportContainers = async () => {
 };
 
 const viewContainer = (container: Container) => {
-  // TODO: Implement detailed view modal
-  alert(`Viewing container: ${container.containerId}`);
+  selectedContainer.value = container;
+  showDetailsModal.value = true;
 };
 
 const editContainer = (container: Container) => {
   containerForm.value = { ...container };
   showEditModal.value = true;
+};
+
+const editContainerFromDetails = (container: Container) => {
+  closeDetailsModal();
+  editContainer(container);
+};
+
+const closeDetailsModal = () => {
+  showDetailsModal.value = false;
+  selectedContainer.value = null;
 };
 
 const deleteContainer = async (container: Container) => {

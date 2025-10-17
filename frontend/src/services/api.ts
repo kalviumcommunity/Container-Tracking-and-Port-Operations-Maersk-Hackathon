@@ -247,8 +247,12 @@ export const roleApplicationApi = {
       return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
       console.error('Get available roles error:', error);
-      // Return empty array instead of mock data
-      return [];
+      // Return mock roles for development
+      return [
+        { roleName: 'PortManager', description: 'Manage port operations', canApply: true },
+        { roleName: 'Operator', description: 'Container and ship operations', canApply: true },
+        { roleName: 'Viewer', description: 'Read-only access', canApply: true }
+      ];
     }
   },
 

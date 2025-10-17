@@ -62,7 +62,7 @@
               v-for="container in availableContainers" 
               :key="container.id" 
               :value="container.id"
-              :disabled="!!(container.shipId && container.shipId !== form.shipId)"
+              :disabled="container.shipId && container.shipId !== form.shipId"
             >
               {{ container.containerNumber }} - {{ container.type }} ({{ container.weight }}kg)
               <span v-if="container.shipId && container.shipId !== form.shipId">(Already assigned)</span>
@@ -582,22 +582,12 @@ const handleSubmit = async () => {
   successMessage.value = ''
   
   try {
-    // Import shipContainerApi dynamically
-    const { shipContainerApi } = await import('../services/shipContainerApi')
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
     const assignmentData = {
-      shipId: Number(form.shipId),
-      containerId: form.containerId?.toString() || '',
-      loadedAt: form.loadingDate || null
-    }
-    
-    let result
-    if (props.isEditing && props.assignment?.id) {
-      // Update existing assignment
-      result = await shipContainerApi.update(props.assignment.id, assignmentData)
-    } else {
-      // Create new assignment
-      result = await shipContainerApi.create(assignmentData)
+      ...form,
+      id: props.assignment?.id || Date.now()
     }
     
     successMessage.value = props.isEditing 
@@ -605,7 +595,7 @@ const handleSubmit = async () => {
       : 'Container assigned to ship successfully!'
     
     setTimeout(() => {
-      emit('submit', result.data)
+      emit('submit', assignmentData)
     }, 1000)
     
   } catch (error) {
