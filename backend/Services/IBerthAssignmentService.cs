@@ -12,6 +12,14 @@ namespace Backend.Services
     public interface IBerthAssignmentService : IService<BerthAssignment, BerthAssignmentDto, BerthAssignmentCreateUpdateDto>
     {
         /// <summary>
+        /// Creates a new berth assignment with user ID
+        /// </summary>
+        /// <param name="createDto">The berth assignment data</param>
+        /// <param name="userId">The ID of the user creating the assignment</param>
+        /// <returns>The created assignment</returns>
+        Task<BerthAssignmentDto> CreateAsync(BerthAssignmentCreateUpdateDto createDto, int userId);
+        
+        /// <summary>
         /// Gets assignments by container ID
         /// </summary>
         /// <param name="containerId">The container ID</param>

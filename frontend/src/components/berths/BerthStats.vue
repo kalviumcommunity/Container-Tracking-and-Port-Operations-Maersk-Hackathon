@@ -132,54 +132,37 @@
       </div>
     </div>
 
-    <!-- Port Distribution -->
+    <!-- Berth Type Distribution -->
     <div class="bg-white shadow rounded-lg p-6">
-      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Port Distribution</h3>
+      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Type Distribution</h3>
       <div class="space-y-3">
-        <div v-for="port in portDistribution" :key="port.name" class="flex items-center justify-between">
+        <div v-for="type in typeDistribution" :key="type.name" class="flex items-center justify-between">
           <div class="flex items-center">
-            <Building class="w-4 h-4 text-gray-400 mr-2" />
-            <span class="text-sm font-medium text-gray-900">{{ port.name }}</span>
+            <Package class="w-4 h-4 text-gray-400 mr-2" />
+            <span class="text-sm font-medium text-gray-900">{{ type.name }}</span>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="text-sm text-gray-500">{{ port.count }}</span>
-            <span class="text-xs text-gray-400">({{ port.percentage }}%)</span>
+            <span class="text-sm text-gray-500">{{ type.count }}</span>
+            <span class="text-xs text-gray-400">({{ type.percentage }}%)</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Utilization Chart -->
+  <!-- Port Distribution -->
   <div class="mt-6 bg-white shadow rounded-lg p-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Utilization Distribution</h3>
-    <div class="space-y-4">
-      <div v-for="range in utilizationRanges" :key="range.label" class="flex items-center">
-        <div class="w-24 text-sm text-gray-600">{{ range.label }}</div>
-        <div class="flex-1 mx-4">
-          <div class="bg-gray-200 rounded-full h-4">
-            <div 
-              class="h-4 rounded-full transition-all duration-300"
-              :class="range.color"
-              :style="{ width: `${(range.count / stats.totalBerths) * 100}%` }"
-            ></div>
-          </div>
+    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Port Distribution</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-for="port in portDistribution" :key="port.name" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div class="flex items-center">
+          <Building class="w-5 h-5 text-blue-600 mr-3" />
+          <span class="text-sm font-medium text-gray-900">{{ port.name }}</span>
         </div>
-        <div class="w-16 text-sm text-gray-500 text-right">
-          {{ range.count }} berths
+        <div class="text-right">
+          <div class="text-lg font-bold text-gray-900">{{ port.count }}</div>
+          <div class="text-xs text-gray-500">{{ port.percentage }}%</div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Feature Usage -->
-  <div class="mt-6 bg-white shadow rounded-lg p-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Feature Usage</h3>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-      <div v-for="feature in featureUsage" :key="feature.name" class="text-center">
-        <div class="text-2xl font-bold" :class="feature.color">{{ feature.count }}</div>
-        <div class="text-sm text-gray-500">{{ feature.name }}</div>
-        <div class="text-xs text-gray-400">{{ feature.percentage }}% of berths</div>
       </div>
     </div>
   </div>
@@ -202,9 +185,8 @@ interface BerthStats {
   totalCapacity: number;
   currentOccupancy: number;
   statusCounts: Record<string, number>;
+  typeCounts: Record<string, number>;
   portCounts: Record<string, number>;
-  utilizationRanges: Record<string, number>;
-  featureCounts: Record<string, number>;
 }
 
 interface Props {
@@ -232,9 +214,7 @@ const statusBreakdown = computed(() => {
     'Occupied': 'bg-yellow-500',
     'Under Maintenance': 'bg-red-500',
     'Reserved': 'bg-blue-500',
-    'Full': 'bg-purple-500',
-    'Partially Occupied': 'bg-orange-500',
-    'Inactive': 'bg-gray-500'
+    'Out of Service': 'bg-gray-500'
   };
 
   return Object.entries(props.stats.statusCounts).map(([name, count]) => ({
@@ -245,62 +225,20 @@ const statusBreakdown = computed(() => {
   }));
 });
 
-const portDistribution = computed(() => {
-  return Object.entries(props.stats.portCounts).map(([name, count]) => ({
+const typeDistribution = computed(() => {
+  return Object.entries(props.stats.typeCounts).map(([name, count]) => ({
     name,
     count,
     percentage: Math.round((count / props.stats.totalBerths) * 100)
   }));
 });
 
-const utilizationRanges = computed(() => {
-  return [
-    {
-      label: '0-25%',
-      count: props.stats.utilizationRanges['0-25'] || 0,
-      color: 'bg-green-500'
-    },
-    {
-      label: '26-50%',
-      count: props.stats.utilizationRanges['26-50'] || 0,
-      color: 'bg-blue-500'
-    },
-    {
-      label: '51-75%',
-      count: props.stats.utilizationRanges['51-75'] || 0,
-      color: 'bg-yellow-500'
-    },
-    {
-      label: '76-90%',
-      count: props.stats.utilizationRanges['76-90'] || 0,
-      color: 'bg-orange-500'
-    },
-    {
-      label: '91-100%',
-      count: props.stats.utilizationRanges['91-100'] || 0,
-      color: 'bg-red-500'
-    }
-  ];
-});
-
-const featureUsage = computed(() => {
-  const features = [
-    { key: 'refrigerated', name: 'Refrigerated', color: 'text-blue-600' },
-    { key: 'dangerous', name: 'Dangerous Goods', color: 'text-red-600' },
-    { key: 'oversized', name: 'Oversized', color: 'text-purple-600' },
-    { key: 'heavyLift', name: 'Heavy Lift', color: 'text-orange-600' },
-    { key: 'railConnection', name: 'Rail Connection', color: 'text-green-600' },
-    { key: 'roadAccess', name: 'Road Access', color: 'text-indigo-600' }
-  ];
-
-  return features.map(feature => {
-    const count = props.stats.featureCounts[feature.key] || 0;
-    return {
-      ...feature,
-      count,
-      percentage: Math.round((count / props.stats.totalBerths) * 100)
-    };
-  });
+const portDistribution = computed(() => {
+  return Object.entries(props.stats.portCounts).map(([name, count]) => ({
+    name,
+    count,
+    percentage: Math.round((count / props.stats.totalBerths) * 100)
+  }));
 });
 
 const getPercentageClass = (percentage: number): string => {

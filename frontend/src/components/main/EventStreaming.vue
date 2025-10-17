@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { 
   Activity,
   Plus,
@@ -132,11 +132,6 @@ import EventAnalytics from '../kafka/EventAnalytics.vue'
 import EventFeed from '../kafka/EventFeed.vue'
 import EventModal from '../kafka/EventModal.vue'
 
-// Import services
-import eventApi from '@/services/eventApi'
-import signalRService from '@/services/signalrService'
-import type { Event } from '@/types/event'
-
 // Import types
 import type { 
   EventDto, 
@@ -147,26 +142,26 @@ import type {
   SeverityStat, 
   QuickFilter 
 } from '../kafka/types'
+import { eventApi } from '../../services/eventApi'
+import type { EventCreate } from '../../types/event'
 
 // Reactive data
 const events = ref<EventDto[]>([])
 const viewMode = ref<'list' | 'grid'>('list')
 const autoRefresh = ref(true)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(50) // Increased from 10 to show more events
 const isScrollableMode = ref(true)
 const initialHeight = ref('600px')
 const showEventModal = ref(false)
 const selectedEvent = ref<EventDto | null>(null)
 const modalMode = ref<'create' | 'edit' | 'view'>('create')
-const isLoading = ref(false)
-const connectionStatus = ref<'connected' | 'disconnected' | 'reconnecting'>('disconnected')
 
 // Stream statistics
 const streamStats = ref<StreamStats>({
-  eventsPerSecond: 0,
-  avgLatency: 0,
-  isActive: false
+  eventsPerSecond: 12,
+  avgLatency: 45,
+  isActive: true
 })
 
 // Quick filters
@@ -177,122 +172,112 @@ const quickFilters = ref<QuickFilter[]>([
 ])
 
 // Event statistics for analytics
-const eventStats = computed<EventStat[]>(() => {
-  const totalEvents = events.value.length
-  const criticalEvents = events.value.filter(e => e.severity === 'Critical').length
-  const todayEvents = events.value.filter(e => {
-    const eventDate = new Date(e.eventTime)
-    const today = new Date()
-    return eventDate.toDateString() === today.toDateString()
-  }).length
+const eventStats = computed<EventStat[]>(() => [
+  {
+    label: 'Total Events',
+    value: events.value.length.toString(),
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    iconColor: 'text-blue-600',
+    icon: Bell,
+    severity: 'Low',
+    trend: 'up',
+    change: 12,
+    period: 'vs yesterday'
+  },
+  {
+    label: 'Critical Events',
+    value: events.value.filter(e => e.severity === 'Critical').length.toString(),
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    iconColor: 'text-red-600',
+    icon: AlertTriangle,
+    severity: 'Critical',
+    trend: 'down',
+    change: 5,
+    period: 'vs yesterday'
+  },
+  {
+    label: 'Active Streams',
+    value: '4',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    iconColor: 'text-green-600',
+    icon: Activity,
+    severity: 'Low',
+    trend: 'up',
+    change: 8,
+    period: 'vs yesterday'
+  },
+  {
+    label: 'Avg Response Time',
+    value: `${streamStats.value.avgLatency}ms`,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    iconColor: 'text-purple-600',
+    icon: TrendingUp,
+    severity: 'Medium',
+    trend: 'down',
+    change: 3,
+    period: 'vs yesterday'
+  }
+])
 
-  return [
-    {
-      label: 'Total Events',
-      value: totalEvents.toString(),
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      icon: Bell,
-      severity: 'Low',
-      trend: 'up',
-      change: 12,
-      period: 'vs yesterday'
-    },
-    {
-      label: 'Critical Events',
-      value: criticalEvents.toString(),
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      iconColor: 'text-red-600',
-      icon: AlertTriangle,
-      severity: 'Critical',
-      trend: criticalEvents > 5 ? 'up' : 'down',
-      change: 5,
-      period: 'vs yesterday'
-    },
-    {
-      label: 'Today Events',
-      value: todayEvents.toString(),
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600',
-      icon: Activity,
-      severity: 'Low',
-      trend: 'up',
-      change: 8,
-      period: 'vs yesterday'
-    },
-    {
-      label: 'Avg Response Time',
-      value: `${streamStats.value.avgLatency}ms`,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600',
-      icon: TrendingUp,
-      severity: 'Medium',
-      trend: 'down',
-      change: 3,
-      period: 'vs yesterday'
-    }
-  ]
-})
-
-// Event categories - computed from actual data
+// Event categories - computed from real events
 const eventCategories = computed<EventCategory[]>(() => {
-  const containerCount = events.value.filter(e => e.containerId).length
-  const shipCount = events.value.filter(e => e.shipId).length
-  const berthCount = events.value.filter(e => e.berthId).length
-  const systemCount = events.value.filter(e => e.eventType?.includes('System')).length
-  const total = events.value.length || 1
-
-  return [
-    {
-      type: 'Container Operations',
-      count: containerCount,
-      percentage: Math.round((containerCount / total) * 100),
-      color: 'text-blue-600',
-      barColor: 'bg-blue-500',
-      icon: ContainerIcon
-    },
-    {
-      type: 'Ship Activities',
-      count: shipCount,
-      percentage: Math.round((shipCount / total) * 100),
-      color: 'text-green-600',
-      barColor: 'bg-green-500',
-      icon: Ship
-    },
-    {
-      type: 'Berth Management',
-      count: berthCount,
-      percentage: Math.round((berthCount / total) * 100),
-      color: 'text-purple-600',
-      barColor: 'bg-purple-500',
-      icon: Anchor
-    },
-    {
-      type: 'System Alerts',
-      count: systemCount,
-      percentage: Math.round((systemCount / total) * 100),
-      color: 'text-red-600',
-      barColor: 'bg-red-500',
-      icon: AlertTriangle
+  const categories: Record<string, { count: number; icon: any }> = {
+    'Container Operations': { count: 0, icon: ContainerIcon },
+    'Ship Activities': { count: 0, icon: Ship },
+    'Berth Management': { count: 0, icon: Anchor },
+    'System Alerts': { count: 0, icon: AlertTriangle }
+  }
+  
+  // Count events by category based on eventType
+  events.value.forEach(event => {
+    const type = event.eventType?.toLowerCase() || ''
+    if (type.includes('container')) {
+      categories['Container Operations'].count++
+    } else if (type.includes('ship')) {
+      categories['Ship Activities'].count++
+    } else if (type.includes('berth')) {
+      categories['Berth Management'].count++
+    } else {
+      categories['System Alerts'].count++
     }
-  ]
+  })
+  
+  const total = events.value.length || 1
+  
+  return Object.entries(categories).map(([type, data], index) => ({
+    type,
+    count: data.count,
+    percentage: Math.round((data.count / total) * 100),
+    color: ['text-blue-600', 'text-green-600', 'text-purple-600', 'text-red-600'][index],
+    barColor: ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500'][index],
+    icon: data.icon
+  }))
 })
 
-// Severity statistics - computed from actual data
+// Severity statistics - computed from real events
 const severityStats = computed<SeverityStat[]>(() => {
-  const criticalCount = events.value.filter(e => e.severity === 'Critical').length
-  const highCount = events.value.filter(e => e.severity === 'High').length
-  const mediumCount = events.value.filter(e => e.severity === 'Medium').length
-  const lowCount = events.value.filter(e => e.severity === 'Low').length
-
+  const severityCounts: Record<string, number> = {
+    'Critical': 0,
+    'High': 0,
+    'Medium': 0,
+    'Low': 0
+  }
+  
+  events.value.forEach(event => {
+    const severity = event.severity || 'Low'
+    if (severityCounts[severity] !== undefined) {
+      severityCounts[severity]++
+    }
+  })
+  
   return [
     {
       level: 'Critical',
-      count: criticalCount,
+      count: severityCounts['Critical'],
       description: 'Immediate attention required',
       borderColor: 'border-red-200',
       dotColor: 'bg-red-500',
@@ -300,7 +285,7 @@ const severityStats = computed<SeverityStat[]>(() => {
     },
     {
       level: 'High',
-      count: highCount,
+      count: severityCounts['High'],
       description: 'Priority handling needed',
       borderColor: 'border-orange-200',
       dotColor: 'bg-orange-500',
@@ -308,7 +293,7 @@ const severityStats = computed<SeverityStat[]>(() => {
     },
     {
       level: 'Medium',
-      count: mediumCount,
+      count: severityCounts['Medium'],
       description: 'Standard processing',
       borderColor: 'border-yellow-200',
       dotColor: 'bg-yellow-500',
@@ -316,8 +301,8 @@ const severityStats = computed<SeverityStat[]>(() => {
     },
     {
       level: 'Low',
-      count: lowCount,
-      description: 'Informational only',
+      count: severityCounts['Low'],
+      description: 'Routine monitoring',
       borderColor: 'border-green-200',
       dotColor: 'bg-green-500',
       textColor: 'text-green-600'
@@ -334,7 +319,6 @@ const toggleQuickFilter = (filterId: string) => {
   const filter = quickFilters.value.find(f => f.id === filterId)
   if (filter) {
     filter.active = !filter.active
-    loadEvents() // Reload with new filter
   }
 }
 
@@ -355,27 +339,29 @@ const closeEventModal = () => {
 
 const handleEventSubmit = async (formData: EventFormData) => {
   try {
-    if (modalMode.value === 'create') {
-      // Create new event
-      await eventApi.create({
-        eventType: formData.eventType || '',
-        title: formData.title || '',
-        description: formData.description || '',
-        severity: formData.severity || 'Low',
-        priority: 'Low',
-        category: 'System',
-        containerId: formData.containerId,
-        shipId: formData.shipId,
-        berthId: formData.berthId,
-        portId: formData.portId,
-        requiresAction: false,
-        source: 'Event Dashboard'
-      })
+    // Map form data to backend EventCreate DTO
+    const eventPayload: EventCreate = {
+      eventType: formData.eventType,
+      title: formData.title,
+      description: formData.description || '',
+      severity: formData.severity,
+      source: formData.source || 'User',
+      containerId: formData.containerId || undefined,
+      shipId: formData.shipId || undefined,
+      berthId: formData.berthId || undefined,
+      portId: formData.portId || undefined,
+      eventTime: new Date().toISOString()
     }
-    // The event will be automatically pushed via SignalR
+
+    // Call real backend API
+    const createdEvent = await eventApi.create(eventPayload)
+    
+    // Refresh events list to show new event
+    await loadEvents()
+    
     closeEventModal()
   } catch (error) {
-    console.error('Failed to create event:', error)
+    console.error('Error creating event:', error)
     alert('Failed to create event. Please try again.')
   }
 }
@@ -383,208 +369,111 @@ const handleEventSubmit = async (formData: EventFormData) => {
 const deleteEvent = async (event: EventDto) => {
   if (confirm('Are you sure you want to delete this event?')) {
     try {
+      // Call real backend API
       await eventApi.delete(event.id)
-      // Remove from local array
+      
+      // Remove from local list
       const index = events.value.findIndex(e => e.id === event.id)
       if (index > -1) {
         events.value.splice(index, 1)
       }
+      
     } catch (error) {
-      console.error('Failed to delete event:', error)
+      console.error('Error deleting event:', error)
       alert('Failed to delete event. Please try again.')
     }
   }
 }
 
-const exportEvents = async () => {
-  try {
-    const blob = await eventApi.export({}, 'csv')
-    
-    // Create download link
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `events-export-${new Date().toISOString().split('T')[0]}.csv`
-    link.click()
-    window.URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Failed to export events:', error)
-    alert('Failed to export events. Please try again.')
-  }
+const exportEvents = () => {
+  // TODO: Implement event export functionality
 }
 
-const refreshEvents = () => {
-  loadEvents()
+const refreshEvents = async () => {
+  await loadEvents()
 }
 
 const loadEvents = async () => {
-  if (isLoading.value) return
-  
-  isLoading.value = true
   try {
-    // Build filter object based on quick filters
-    const filters: any = {
+    // Call real backend API with filters
+    const filter: any = {
       page: currentPage.value,
       pageSize: pageSize.value,
       sortBy: 'EventTimestamp',
       sortDescending: true
     }
-
+    
     // Apply quick filters
+    if (quickFilters.value.find(f => f.id === 'unread' && f.active)) {
+      filter.isRead = false
+    }
     if (quickFilters.value.find(f => f.id === 'critical' && f.active)) {
-      filters.severity = 'Critical'
+      filter.severity = 'Critical'
     }
     if (quickFilters.value.find(f => f.id === 'today' && f.active)) {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      filters.eventTimeFrom = today.toISOString()
-    }
-
-    const response = await eventApi.getAll(filters)
-    
-    // Convert API response to EventDto format (backend wraps in ApiResponse)
-    // Backend returns: { success: true, data: { data: [...], totalCount, page, pageSize } }
-    // Note: Backend uses "data" property instead of "items" for the array
-    if (!response.data || !response.data.data) {
-      console.error('Invalid response structure from API')
-      throw new Error('Invalid response structure from API')
+      const today = new Date().toISOString().split('T')[0]
+      filter.startDate = today
     }
     
-    events.value = response.data.data.map((event: Event) => convertToEventDto(event))
-  } catch (error) {
-    console.error('Failed to load events:', error)
-    // Don't show alert on initial load failure, keep UI working
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Convert API Event to EventDto format
-const convertToEventDto = (event: Event): EventDto => {
-  return {
-    id: event.eventId,
-    eventType: event.eventType,
-    title: event.title,
-    description: event.description,
-    eventTime: event.eventTimestamp,
-    severity: event.severity,
-    containerId: event.containerId ? String(event.containerId) : undefined,
-    shipId: event.shipId || undefined,
-    shipName: '', // Would need to join with ship data
-    berthId: event.berthId || undefined,
-    berthName: '', // Would need to join with berth data
-    portId: event.portId || undefined,
-    portName: '', // Would need to join with port data
-    source: event.source,
-    isRead: false, // This could be enhanced with user-specific read status
-    createdAt: event.createdAt
-  }
-}
-
-// SignalR event handlers
-const handleNewEvent = (event: Event) => {
-  // Convert and add to beginning of array
-  const eventDto = convertToEventDto(event)
-  events.value.unshift(eventDto)
-  
-  // Update stream stats
-  streamStats.value.eventsPerSecond = Math.min(streamStats.value.eventsPerSecond + 1, 100)
-  
-  // Keep only recent events to avoid memory issues
-  if (events.value.length > 100) {
-    events.value = events.value.slice(0, 100)
-  }
-}
-
-const handleConnectionStatusChange = (status: 'connected' | 'disconnected' | 'reconnecting') => {
-  connectionStatus.value = status
-  streamStats.value.isActive = status === 'connected'
-}
-
-// Setup SignalR connection
-const setupSignalR = async () => {
-  try {
-    // Connect to SignalR hub
-    await signalRService.connect()
-    handleConnectionStatusChange('connected')
-
-    // Subscribe to event messages
-    signalRService.on('event', handleNewEvent)
+    const response = await eventApi.getAll(filter)
     
-    // Subscribe to connection events
-    signalRService.on('reconnecting', () => handleConnectionStatusChange('reconnecting'))
-    signalRService.on('reconnected', () => handleConnectionStatusChange('connected'))
-    
-    // Subscribe to all categories and severities for maximum coverage
-    await signalRService.subscribeToCategories(['Container', 'Ship', 'Berth', 'Port', 'System'])
-    await signalRService.subscribeToSeverities(['Critical', 'High', 'Medium', 'Low'])
+    // Map response to EventDto format expected by components
+    events.value = (response.data.data || []).map((event: any) => ({
+      id: event.id || event.eventId,
+      eventType: event.eventType,
+      title: event.title,
+      description: event.description,
+      eventTime: event.eventTimestamp || event.eventTime,
+      severity: event.severity,
+      containerId: event.containerId,
+      shipId: event.shipId,
+      shipName: event.shipName,
+      berthId: event.berthId,
+      berthName: event.berthName,
+      portId: event.portId,
+      portName: event.portName,
+      userId: event.assignedToUserId,
+      userName: event.assignedToUserName,
+      source: event.source,
+      isRead: event.isRead,
+      createdAt: event.createdAt
+    }))
   } catch (error) {
-    console.error('Failed to setup SignalR:', error)
-    handleConnectionStatusChange('disconnected')
+    console.error('Error loading events:', error)
+    events.value = []
   }
 }
 
-// Auto-refresh interval for fallback
+// Auto-refresh interval
 let refreshInterval: number | null = null
-let latencyInterval: number | null = null
 
-onMounted(async () => {
-  // Initial load
-  await loadEvents()
-  
-  // Setup SignalR for real-time updates
-  await setupSignalR()
-  
-  // Set up auto-refresh as fallback (every 30 seconds)
-  if (autoRefresh.value) {
-    refreshInterval = setInterval(() => {
-      if (!signalRService.isConnected()) {
-        console.log('SignalR disconnected, using polling fallback')
-        loadEvents()
-      }
-    }, 30000) as unknown as number
-  }
-  
-  // Update latency metrics
-  latencyInterval = setInterval(() => {
-    if (signalRService.isConnected()) {
-      streamStats.value.avgLatency = Math.floor(Math.random() * 30) + 15 // 15-45ms
-      streamStats.value.eventsPerSecond = Math.max(0, streamStats.value.eventsPerSecond - 0.5)
-    } else {
-      streamStats.value.avgLatency = 0
-      streamStats.value.eventsPerSecond = 0
-    }
-  }, 2000) as unknown as number
-})
-
-onUnmounted(async () => {
-  // Cleanup intervals
+const startAutoRefresh = () => {
   if (refreshInterval) {
     clearInterval(refreshInterval)
   }
-  if (latencyInterval) {
-    clearInterval(latencyInterval)
+  if (autoRefresh.value) {
+    refreshInterval = setInterval(async () => {
+      await loadEvents()
+      // Update stream stats based on loaded events
+      streamStats.value.eventsPerSecond = events.value.length > 0 ? Math.min(events.value.length / 60, 50) : 0
+    }, 5000) // Refresh every 5 seconds
   }
-  
-  // Cleanup SignalR
-  signalRService.off('event', handleNewEvent)
-  await signalRService.disconnect()
-})
+}
 
-// Watch for auto-refresh changes
-watch(autoRefresh, (newValue) => {
+const stopAutoRefresh = () => {
   if (refreshInterval) {
     clearInterval(refreshInterval)
     refreshInterval = null
   }
-  
-  if (newValue) {
-    refreshInterval = setInterval(() => {
-      if (!signalRService.isConnected()) {
-        loadEvents()
-      }
-    }, 30000) as unknown as number
-  }
+}
+
+onMounted(async () => {
+  await loadEvents()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 

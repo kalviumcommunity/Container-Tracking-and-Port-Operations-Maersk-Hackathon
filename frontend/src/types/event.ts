@@ -19,7 +19,7 @@ export interface Event {
   eventTime: string
   
   // Foreign keys
-  containerId?: number
+  containerId?: string  // Container ID is a string
   shipId?: number
   berthId?: number
   portId?: number
@@ -59,7 +59,7 @@ export interface EventCreate {
   severity: string
   
   // Optional foreign keys
-  containerId?: number
+  containerId?: string  // Container ID is a string, not number
   shipId?: number
   berthId?: number
   portId?: number
@@ -100,7 +100,7 @@ export interface EventFilter {
   isRead?: boolean
   
   // Related entities
-  containerId?: number
+  containerId?: string  // Container ID is a string
   shipId?: number
   berthId?: number
   portId?: number

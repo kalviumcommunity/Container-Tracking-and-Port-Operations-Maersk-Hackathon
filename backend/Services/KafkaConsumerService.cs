@@ -237,11 +237,26 @@ namespace Backend.Services.Kafka
 
             using var scope = _serviceProvider.CreateScope();
             
-            // Example: You could update port statistics, trigger notifications, etc.
-            // For now, we just log it
-            
-            _logger.LogDebug("Port event processed: EventId={EventId}, PortId={PortId}", 
-                eventDto.EventId, eventDto.PortId);
+            // Send email notification for high-priority events
+            try
+            {
+                var emailService = scope.ServiceProvider.GetService<IEmailService>();
+                if (emailService != null)
+                {
+                    if (eventDto.Severity == "Critical")
+                    {
+                        await emailService.SendCriticalAlertAsync(eventDto);
+                    }
+                    else if (eventDto.Severity == "High")
+                    {
+                        await emailService.SendEventNotificationAsync(eventDto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email notification for port event {EventId}", eventDto.EventId);
+            }
         }
 
         /// <summary>
@@ -254,11 +269,26 @@ namespace Backend.Services.Kafka
 
             using var scope = _serviceProvider.CreateScope();
             
-            // Example: You could update container status, trigger workflows, etc.
-            // For now, we just log it
-            
-            _logger.LogDebug("Container event processed: EventId={EventId}, ContainerId={ContainerId}", 
-                eventDto.EventId, eventDto.ContainerId);
+            // Send email notification for high-priority events
+            try
+            {
+                var emailService = scope.ServiceProvider.GetService<IEmailService>();
+                if (emailService != null)
+                {
+                    if (eventDto.Severity == "Critical")
+                    {
+                        await emailService.SendCriticalAlertAsync(eventDto);
+                    }
+                    else if (eventDto.Severity == "High")
+                    {
+                        await emailService.SendEventNotificationAsync(eventDto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email notification for container event {EventId}", eventDto.EventId);
+            }
         }
 
         /// <summary>

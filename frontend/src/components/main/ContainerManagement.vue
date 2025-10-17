@@ -33,6 +33,36 @@
       @clear-selection="clearSelection"
     />
 
+    <!-- View Toggle -->
+    <div class="mb-6 flex justify-end">
+      <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1 shadow-sm">
+        <button
+          @click="viewMode = 'table'"
+          :class="[
+            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            viewMode === 'table' 
+              ? 'bg-blue-600 text-white shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          ]"
+        >
+          <ListIcon :size="16" />
+          Table View
+        </button>
+        <button
+          @click="viewMode = 'grid'"
+          :class="[
+            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            viewMode === 'grid' 
+              ? 'bg-blue-600 text-white shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          ]"
+        >
+          <LayoutGridIcon :size="16" />
+          Grid View
+        </button>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center items-center py-12">
       <Loader2Icon class="w-12 h-12 text-blue-600 animate-spin" />
@@ -45,7 +75,23 @@
       @retry="loadContainers" 
     />
 
-    <!-- Main Table Component -->
+    <!-- Grid View -->
+    <div
+      v-else-if="viewMode === 'grid'"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+    >
+      <ContainerCard
+        v-for="container in paginatedData.data"
+        :key="container.containerId"
+        :container="container"
+        :can-manage="canManageContainers"
+        @view="viewContainer"
+        @edit="editContainer"
+        @delete="deleteContainer"
+      />
+    </div>
+
+    <!-- Table View -->
     <ContainerTable
       v-else
       :containers="paginatedData.data"
@@ -65,7 +111,7 @@
       @previous-page="previousPage"
     />
 
-    <!-- Modal Component -->
+    <!-- Edit/Create Modal Component -->
     <ContainerModal
       v-if="showCreateModal || showEditModal"
       :is-editing="showEditModal"
@@ -79,20 +125,20 @@
       @cancel="closeModal"
     />
 
-    <!-- Container Details Modal -->
+    <!-- Details Modal Component -->
     <ContainerDetailsModal
-      v-if="selectedContainer"
       :is-open="showDetailsModal"
       :container="selectedContainer"
+      :can-manage="canManageContainers"
       @close="closeDetailsModal"
-      @edit="editContainerFromDetails"
+      @edit="editContainer"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { Loader2Icon } from 'lucide-vue-next';
+import { Loader2Icon, ListIcon, LayoutGridIcon } from 'lucide-vue-next';
 
 // Import child components from containers subfolder
 import ContainerHeader from '../containers/ContainerHeader.vue';
@@ -101,8 +147,9 @@ import ContainerFilters from '../containers/ContainerFilters.vue';
 import ContainerBulkActions from '../containers/ContainerBulkActions.vue';
 import ContainerError from '../containers/ContainerError.vue';
 import ContainerTable from '../containers/ContainerTable.vue';
+import ContainerCard from '../containers/ContainerCard.vue';
 import ContainerModal from '../containers/ContainerModal.vue';
-import ContainerDetailsModal from '../modals/ContainerDetailsModal.vue';
+import ContainerDetailsModal from '../containers/ContainerDetailsModal.vue';
 
 // Import services and types
 import { containerService } from '../../services/containerService';
@@ -174,6 +221,7 @@ const showDetailsModal = ref(false);
 const selectedContainers = ref<string[]>([]);
 const selectedContainer = ref<Container | null>(null);
 const containerForm = ref<Partial<Container & ContainerCreateRequest>>({});
+const viewMode = ref<'table' | 'grid'>('table');
 
 // Current sort state
 const currentSort = ref({ field: 'updatedAt', direction: 'desc' });
@@ -231,34 +279,13 @@ const loadContainers = async () => {
     if (containerService && typeof containerService.getContainers === 'function') {
       paginatedData.value = await containerService.getContainers(filters.value);
     } else {
-      // Fallback to mock data
+      // Show empty state instead of mock data
       paginatedData.value = {
-        data: [
-          {
-            containerId: 'MAEU1234567',
-            cargoType: 'Electronics',
-            type: 'Dry',
-            status: 'In Transit',
-            currentLocation: 'Port of Shanghai',
-            shipName: 'Maersk Edinburgh',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            containerId: 'MAEU2345678',
-            cargoType: 'Automotive Parts',
-            type: 'Refrigerated',
-            status: 'Loading',
-            currentLocation: 'Port of Rotterdam',
-            shipName: 'MSC Oscar',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ],
-        totalCount: 2,
+        data: [],
+        totalCount: 0,
         page: 1,
         pageSize: 25,
-        totalPages: 1,
+        totalPages: 0,
         hasNextPage: false,
         hasPreviousPage: false
       };
@@ -275,30 +302,17 @@ const loadStatistics = async () => {
     if (containerService && typeof containerService.getStatistics === 'function') {
       stats.value = await containerService.getStatistics();
     } else {
-      // Mock statistics
+      // Show zero state instead of mock statistics
       stats.value = {
-        totalContainers: 1250,
-        availableContainers: 345,
-        inTransitContainers: 623,
-        atPortContainers: 282,
-        loadingContainers: 89,
-        unloadingContainers: 67,
-        containersByType: {
-          'Dry': 850,
-          'Refrigerated': 200,
-          'Tank': 100,
-          'Open Top': 100
-        },
-        containersByStatus: {
-          'Available': 345,
-          'In Transit': 623,
-          'At Port': 282
-        },
-        containersByLocation: {
-          'Port of Shanghai': 200,
-          'Port of Rotterdam': 180,
-          'At Sea': 623
-        }
+        totalContainers: 0,
+        availableContainers: 0,
+        inTransitContainers: 0,
+        atPortContainers: 0,
+        loadingContainers: 0,
+        unloadingContainers: 0,
+        containersByType: {},
+        containersByStatus: {},
+        containersByLocation: {}
       };
     }
   } catch (err) {
@@ -316,28 +330,13 @@ const loadPorts = async () => {
         .filter((name): name is string => !!name)
         .sort();
     } else {
-      // Mock port data
-      locationOptions.value = [
-        'Port of Shanghai',
-        'Port of Rotterdam',
-        'Port of Los Angeles',
-        'Port of Singapore',
-        'Port of Hamburg',
-        'Port of Copenhagen',
-        'Port of Antwerp',
-        'Port of Bremen'
-      ];
+      // Show empty ports list until API data loads
+      locationOptions.value = [];
     }
   } catch (err) {
     console.error('Error loading ports:', err);
-    // Use fallback data
-    locationOptions.value = [
-      'Port of Shanghai',
-      'Port of Rotterdam',
-      'Port of Los Angeles',
-      'Port of Singapore',
-      'Port of Hamburg'
-    ];
+    // Show empty list instead of fallback mock data
+    locationOptions.value = [];
   }
 };
 
@@ -353,25 +352,13 @@ const loadShips = async () => {
         name: ship.name || `Ship ${ship.id}`
       })).sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      // Mock ship data as fallback
-      shipOptions.value = [
-        { id: 1, name: 'Maersk Edinburgh' },
-        { id: 2, name: 'MSC Oscar' },
-        { id: 3, name: 'CMA CGM Bougainville' },
-        { id: 4, name: 'Ever Given' },
-        { id: 5, name: 'OOCL Hong Kong' }
-      ];
+      // Show empty ships list until API data loads
+      shipOptions.value = [];
     }
   } catch (err) {
     console.error('Error loading ships:', err);
-    // Use fallback data on error
-    shipOptions.value = [
-      { id: 1, name: 'Maersk Edinburgh' },
-      { id: 2, name: 'MSC Oscar' },
-      { id: 3, name: 'CMA CGM Bougainville' },
-      { id: 4, name: 'Ever Given' },
-      { id: 5, name: 'OOCL Hong Kong' }
-    ];
+    // Show empty list instead of fallback mock data
+    shipOptions.value = [];
   }
 };
 
@@ -512,19 +499,16 @@ const viewContainer = (container: Container) => {
   showDetailsModal.value = true;
 };
 
-const editContainer = (container: Container) => {
-  containerForm.value = { ...container };
-  showEditModal.value = true;
-};
-
-const editContainerFromDetails = (container: Container) => {
-  closeDetailsModal();
-  editContainer(container);
-};
-
 const closeDetailsModal = () => {
   showDetailsModal.value = false;
   selectedContainer.value = null;
+};
+
+const editContainer = (container: Container) => {
+  containerForm.value = { ...container };
+  showEditModal.value = true;
+  // Close details modal if open
+  showDetailsModal.value = false;
 };
 
 const deleteContainer = async (container: Container) => {

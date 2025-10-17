@@ -1,4 +1,33 @@
 /**
+ * Pagination response interface
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+/**
+ * Berth filters interface
+ */
+export interface BerthFilters {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+  searchTerm?: string;
+  status?: string;
+  type?: string;
+  portId?: string;
+  minCapacity?: string;
+  maxCapacity?: string;
+}
+
+/**
  * Enhanced Berth interface matching the updated backend BerthDto
  * Includes all rich fields from the backend Model
  */
@@ -11,13 +40,13 @@ export interface Berth {
   // Berth specifications
   type?: string; // Container, Bulk, RoRo, Cruise, etc.
   capacity: number;
-  currentLoad: number;
+  currentLoad?: number;
   maxShipLength?: number; // in meters
   maxDraft?: number; // in meters
   
   // Operational status
   status: string; // Available, Occupied, Maintenance, etc.
-  priority?: string; // High, Medium, Low
+  priority?: number; // Priority level (1-9)
   
   // Services and equipment
   availableServices?: string; // Comma-separated services
@@ -52,7 +81,7 @@ export interface BerthCreateUpdate {
   availableServices?: string;
   craneCount?: number;
   hourlyRate?: number;
-  priority?: string;
+  priority?: number;
   notes?: string;
 }
 
@@ -115,14 +144,22 @@ export interface BerthUsageCharge {
 
 /**
  * Berth statistics for dashboard display
+ * Based on actual backend data from Berth model
  */
 export interface BerthStats {
+  // Core counts
   totalBerths: number;
+  activeBerths: number; // Berths not in maintenance or out of service
   availableBerths: number;
-  occupiedBerths: number;
-  maintenanceBerths: number;
-  averageOccupancyRate: number; // percentage
-  totalRevenue: number;
+  
+  // Capacity metrics
+  totalCapacity: number; // Sum of all berth capacities
+  currentOccupancy: number; // Sum of all currentLoad values
+  
+  // Breakdown by actual backend fields
+  statusCounts: Record<string, number>; // Available, Occupied, Under Maintenance, Reserved, Out of Service
+  typeCounts: Record<string, number>; // Container, Bulk, Tanker, RoRo, Multipurpose, General Cargo
+  portCounts: Record<string, number>; // Berths grouped by port name
 }
 
 /**
@@ -155,3 +192,7 @@ export interface BerthFormErrors {
   portId?: string;
   notes?: string;
 }
+
+// Type aliases for backward compatibility
+export type BerthCreateRequest = BerthCreateUpdate;
+export type BerthUpdateRequest = BerthCreateUpdate;

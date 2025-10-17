@@ -193,6 +193,9 @@ builder.Services.AddScoped<Backend.Services.Kafka.IKafkaProducer, Backend.Servic
 // Register Kafka consumer as a hosted background service
 builder.Services.AddHostedService<Backend.Services.Kafka.KafkaConsumerService>();
 
+// Register Email notification service
+builder.Services.AddScoped<Backend.Services.IEmailService, Backend.Services.EmailService>();
+
 // Add SignalR for real-time event streaming
 builder.Services.AddSignalR(options =>
 {
