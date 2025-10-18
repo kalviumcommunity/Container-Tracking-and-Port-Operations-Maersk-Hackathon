@@ -78,6 +78,15 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
+// Add SignalR for real-time communication
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+    options.MaximumReceiveMessageSize = 102400; // 100 KB
+});
+
 // Add DbContext - Connect directly to ContainerTrackingDB (no postgres dependency)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 

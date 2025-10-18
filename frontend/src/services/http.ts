@@ -1,9 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-api-domain.com/api' 
-  : 'http://localhost:5221/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5221/api';
 
 // Create axios instance
 export const httpClient: AxiosInstance = axios.create({

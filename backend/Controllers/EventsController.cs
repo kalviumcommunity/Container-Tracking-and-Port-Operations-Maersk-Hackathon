@@ -3,6 +3,7 @@ using Backend.Services;
 using Backend.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System;
 using System.Collections.Generic;
@@ -16,10 +17,12 @@ namespace Backend.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
+        private readonly ILogger<EventsController> _logger;
 
-        public EventsController(IEventService eventService)
+        public EventsController(IEventService eventService, ILogger<EventsController> logger)
         {
             _eventService = eventService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -143,11 +146,36 @@ namespace Backend.Controllers
             return Ok(ApiResponse<IEnumerable<EventDto>>.Ok(events));
         }
 
+        /// <summary>
+        /// Delete an event
+        /// </summary>
+        /// <param name="id">Event ID</param>
+        /// <returns>Success status</returns>
+        [HttpDelete("{id}")]
+        [RequirePermission("ManageContainers")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<IActionResult> DeleteEvent(int id)
+        {
+            try
+            {
+                var result = await _eventService.DeleteAsync(id);
+                if (!result)
+                {
+                    return NotFound(ApiResponse<object>.Fail($"Event with ID {id} not found"));
+                }
+                return Ok(ApiResponse<object>.OkWithMessage("Event deleted successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting event {EventId}", id);
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
 
     }
 
     public class EventResolutionDto
     {
-        public string Resolution { get; set; }
+        public required string Resolution { get; set; }
     }
 }

@@ -682,7 +682,7 @@ const userPermissions = computed(() => {
 const switchTab = (tabId: string) => {
   activeTab.value = tabId;
   // Add any tab-specific logic here
-  console.log('Switched to tab:', tabId);
+
 };
 
 const loadOperationData = async () => {
@@ -963,23 +963,23 @@ const updateBerthPage = (page: number) => {
 
 // Operations handlers
 const createOperation = (operationData: any) => {
-  console.log('Creating operation:', operationData);
+
   // Implement operation creation
 };
 
 const updateOperation = (operation: any) => {
-  console.log('Updating operation:', operation);
+
   // Implement operation update
 };
 
 const completeOperation = (operation: any) => {
-  console.log('Completing operation:', operation);
+
   // Implement operation completion
 };
 
 // Settings handlers
 const updateSettings = (settings: any) => {
-  console.log('Updating settings:', settings);
+
   // Implement settings update
 };
 
@@ -1013,7 +1013,7 @@ onMounted(() => {
 
 // Watch for tab changes to update URL or perform tab-specific actions
 watch(activeTab, (newTab) => {
-  console.log('Active tab changed to:', newTab);
+
   // You could update the URL here if using Vue Router
 });
 </script>

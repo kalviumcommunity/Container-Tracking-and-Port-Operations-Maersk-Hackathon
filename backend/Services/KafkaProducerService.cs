@@ -15,6 +15,8 @@ namespace Backend.Services.Kafka
         public string ConsumerGroupId { get; set; } = "container-tracking-group";
         public TopicsSettings Topics { get; set; } = new TopicsSettings();
         public bool EnableDlq { get; set; } = true;
+        public bool UseEventHubs { get; set; } = false;
+        public string EventHubsConnectionString { get; set; } = string.Empty;
     }
 
     public class TopicsSettings
@@ -42,6 +44,17 @@ namespace Backend.Services.Kafka
                 MessageSendMaxRetries = 3,
                 RetryBackoffMs = 200
             };
+
+            // Azure Event Hubs configuration
+            if (_settings.UseEventHubs && !string.IsNullOrEmpty(_settings.EventHubsConnectionString))
+            {
+                config.SecurityProtocol = SecurityProtocol.SaslSsl;
+                config.SaslMechanism = SaslMechanism.Plain;
+                config.SaslUsername = "$ConnectionString";
+                config.SaslPassword = _settings.EventHubsConnectionString;
+                
+                _logger.LogInformation("Kafka producer configured for Azure Event Hubs");
+            }
 
             _producer = new ProducerBuilder<string, string>(config).Build();
         }

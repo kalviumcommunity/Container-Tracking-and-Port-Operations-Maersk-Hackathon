@@ -861,7 +861,7 @@ const rejectRequest = async (applicationId) => {
 
 // Initialize component
 onMounted(async () => {
-  console.log('Admin User Management component mounted')
+
   await loadUsers()
   await loadSystemStats()
   await loadRoleRequests()

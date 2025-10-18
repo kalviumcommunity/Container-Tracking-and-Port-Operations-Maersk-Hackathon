@@ -59,8 +59,15 @@ namespace Backend.Controllers
                 var data = await _analyticsService.GetContainerThroughputAsync(period, days);
                 return Ok(ApiResponse<IEnumerable<ThroughputDataDto>>.Ok(data));
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "No throughput data available for period={Period}, days={Days}", period, days);
+                // Return empty data instead of error
+                return Ok(ApiResponse<IEnumerable<ThroughputDataDto>>.Ok(new List<ThroughputDataDto>()));
+            }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error fetching throughput data for period={Period}, days={Days}", period, days);
                 return BadRequest(ApiResponse<IEnumerable<ThroughputDataDto>>.Fail(ex.Message));
             }
         }

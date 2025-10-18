@@ -41,6 +41,17 @@ namespace Backend.Services.Kafka
                 AllowAutoCreateTopics = true
             };
 
+            // Azure Event Hubs configuration
+            if (_kafkaSettings.UseEventHubs && !string.IsNullOrEmpty(_kafkaSettings.EventHubsConnectionString))
+            {
+                config.SecurityProtocol = SecurityProtocol.SaslSsl;
+                config.SaslMechanism = SaslMechanism.Plain;
+                config.SaslUsername = "$ConnectionString";
+                config.SaslPassword = _kafkaSettings.EventHubsConnectionString;
+                
+                _logger.LogInformation("Kafka consumer configured for Azure Event Hubs");
+            }
+
             _consumer = new ConsumerBuilder<string, string>(config)
                 .SetErrorHandler((_, e) => _logger.LogError("Kafka consumer error: {Reason}", e.Reason))
                 .SetPartitionsAssignedHandler((c, partitions) =>

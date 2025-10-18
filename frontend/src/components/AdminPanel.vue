@@ -261,7 +261,7 @@ const loadData = async () => {
         }
       }
     } catch (error) {
-      console.log('Using mock stats due to API error:', error)
+
       // Fallback to mock data
       stats.value = {
         users: Math.floor(Math.random() * 50) + 10,

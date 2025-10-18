@@ -157,12 +157,13 @@ const isAdminUser = computed(() => {
 });
 
 // Filter containers based on selected port
+// NOTE: Container table doesn't have portId foreign key, only CurrentLocation string
+// For demo/showcase, show all containers regardless of port selection
 const filteredContainers = computed(() => {
   // Ensure containers.value is an array
   const containerList = Array.isArray(containers.value) ? containers.value : [];
-  if (!selectedPortId.value) return containerList;
-  const portId = parseInt(selectedPortId.value);
-  return containerList.filter(c => c.portId && c.portId === portId);
+  // Always return all containers since we can't reliably filter by port
+  return containerList;
 });
 
 // Filter berths based on selected port
@@ -181,26 +182,6 @@ const filteredShips = computed(() => {
   if (!selectedPortId.value) return shipList;
   const portId = parseInt(selectedPortId.value);
   return shipList.filter(s => s.currentPortId && s.currentPortId === portId);
-});
-
-// Watch filteredContainers for debugging
-watch(filteredContainers, (newContainers: any[]) => {
-  console.log('🔍 Dashboard: filteredContainers changed:', {
-    count: newContainers.length,
-    selectedPortId: selectedPortId.value,
-    isArray: Array.isArray(newContainers),
-    sample: newContainers.slice(0, 2)
-  });
-});
-
-// Watch raw containers data for debugging
-watch(containers, (newContainers: any[]) => {
-  console.log('📦 Dashboard: Raw containers data changed:', {
-    count: newContainers.length,
-    isArray: Array.isArray(newContainers),
-    sample: newContainers.slice(0, 3),
-    allContainers: newContainers
-  });
 });
 
 // Filter berth assignments based on selected port
@@ -326,8 +307,8 @@ const onPortChange = async () => {
   const previousPortId = selectedPortId.value;
   const newPortName = getSelectedPortName();
   
-  console.log('🔄 Port selection changed to:', selectedPortId.value);
-  console.log(`🚢 Switching from "${previousPortId ? `Port ${previousPortId}` : 'All Ports'}" to "${newPortName}"`);
+
+
   
   // Show loading state while switching ports
   loading.value = true;
@@ -346,7 +327,7 @@ const onPortChange = async () => {
     };
     
     // Refresh all port-specific data
-    console.log(`⏳ Fetching data for ${newPortName}...`);
+
     await refreshDashboardData();
     
     // Store the after state and calculate differences
@@ -356,27 +337,6 @@ const onPortChange = async () => {
       ships: filteredShips.value.length,
       assignments: filteredBerthAssignments.value.length
     };
-    
-    // Log comprehensive port change summary
-    console.log(`✅ Successfully switched to: ${newPortName}`);
-    console.log(`📊 Data Summary for ${newPortName}:`, afterState);
-    console.log(`📈 Data Changes:`, {
-      containers: `${beforeState.containers} → ${afterState.containers}`,
-      berths: `${beforeState.berths} → ${afterState.berths}`,
-      ships: `${beforeState.ships} → ${afterState.ships}`,
-      assignments: `${beforeState.assignments} → ${afterState.assignments}`
-    });
-    
-    // Log analytics data if available
-    if (dashboardStats.value?.data) {
-      console.log(`📈 Analytics Data for ${newPortName}:`, {
-        totalContainers: dashboardStats.value.data.totalContainers,
-        activeShips: dashboardStats.value.data.activeShips,
-        availableBerths: dashboardStats.value.data.availableBerths,
-        berthUtilizationRate: dashboardStats.value.data.berthUtilizationRate
-      });
-    }
-    
   } catch (error) {
     console.error('❌ Error switching ports:', error);
     metricsError.value = `Failed to load data for ${newPortName}. Please try again.`;
@@ -392,7 +352,7 @@ const refreshDashboardData = async () => {
     
     if (portIdNumber) {
       // Use comprehensive port-specific statistics for single port
-      console.log(`🔄 Fetching comprehensive data for port ${portIdNumber}...`);
+
       
       const portStatsResult = await analyticsService.getPortSpecificStats(portIdNumber);
       
@@ -402,15 +362,8 @@ const refreshDashboardData = async () => {
         containers.value = ensureArray(portStatsResult.data.containers);
         berths.value = portStatsResult.data.berths.data || [];
         realtimeMetrics.value = portStatsResult.data.realtime;
-        
-        console.log(`✅ Port ${portIdNumber} data loaded:`, {
-          dashboardStats: !!dashboardStats.value,
-          containers: containers.value.length,
-          berths: berths.value.length,
-          realtimeMetrics: !!realtimeMetrics.value
-        });
       } else {
-        console.warn('⚠️ Failed to fetch comprehensive port data, falling back to individual calls');
+
         
         // Fallback to individual API calls
         const [dashboardStatsResult, containersResult, berthsResult] = await Promise.allSettled([
@@ -425,7 +378,7 @@ const refreshDashboardData = async () => {
       }
     } else {
       // Fetch all ports overview data
-      console.log('🔄 Fetching overview data for all ports...');
+
       
       const [dashboardStatsResult, containersResult, berthsResult, realtimeResult] = await Promise.allSettled([
         analyticsService.getDashboardStats(),
@@ -439,10 +392,10 @@ const refreshDashboardData = async () => {
       berths.value = berthsResult.status === 'fulfilled' ? (berthsResult.value.data || []) : [];
       realtimeMetrics.value = realtimeResult.status === 'fulfilled' ? realtimeResult.value : null;
       
-      console.log('✅ Overview data loaded for all ports');
+
     }
 
-    console.log(`📊 Dashboard data refreshed for: ${selectedPortId.value ? `Port ${selectedPortId.value}` : 'All Ports'}`);
+
   } catch (error) {
     console.error('❌ Error refreshing dashboard data:', error);
     throw error; // Re-throw to be handled by the calling function
@@ -484,73 +437,11 @@ const loadDashboardData = async () => {
     berths.value = berthsResult.status === 'fulfilled' ? (berthsResult.value.data || []) : [];
     berthAssignments.value = berthAssignmentsResult.status === 'fulfilled' ? (berthAssignmentsResult.value.data || []) : [];
     
-    // Debug logging for containers loading
-    console.log('🚛 Dashboard loadDashboardData: Containers loaded:', {
-      containersResultStatus: containersResult.status,
-      containersRawData: containersResult.status === 'fulfilled' ? containersResult.value : null,
-      containersProcessed: containers.value,
-      containersCount: containers.value.length
-    });
-    
     // Analytics data
     dashboardStats.value = dashboardStatsResult.status === 'fulfilled' ? dashboardStatsResult.value : null;
     realtimeMetrics.value = realtimeMetricsResult.status === 'fulfilled' ? realtimeMetricsResult.value : null;
     berthUtilization.value = berthUtilizationResult.status === 'fulfilled' ? (berthUtilizationResult.value.data || []) : [];
     throughputData.value = throughputDataResult.status === 'fulfilled' ? (throughputDataResult.value.data || []) : [];
-
-    console.log('Dashboard data loaded:', {
-      ports: ports.value.length,
-      containers: containers.value.length,
-      ships: ships.value.length,
-      berths: berths.value.length,
-      assignments: berthAssignments.value.length,
-      analytics: !!dashboardStats.value,
-      realtime: !!realtimeMetrics.value
-    });
-    
-    // Debug container data structure and port assignments
-    if (containers.value.length > 0) {
-      console.log('Sample container:', containers.value[0]);
-      const containersWithPortId = containers.value.filter(c => c.portId);
-      const containersWithoutPortId = containers.value.filter(c => !c.portId);
-      console.log('Containers with portId:', containersWithPortId.length);
-      console.log('Containers without portId:', containersWithoutPortId.length);
-      
-      // Show unique port IDs in containers
-      const uniquePortIds = [...new Set(containers.value.map(c => c.portId).filter(Boolean))];
-      console.log('Unique port IDs in containers:', uniquePortIds);
-    }
-    
-    // Debug port data
-    if (ports.value.length > 0) {
-      console.log('Available ports:', ports.value.map(p => ({ id: p.portId, name: p.name })));
-    }
-
-    // Log analytics data for debugging
-    if (dashboardStats.value?.data) {
-      console.log('Analytics data:', dashboardStats.value.data);
-      console.log('Recent activities:', dashboardStats.value.data.recentActivities);
-      console.log('Alerts:', dashboardStats.value.data.alerts);
-    } else {
-      console.log('No analytics data received or using fallback data');
-    }
-
-    // Log sample data for each entity
-    if (containers.value.length > 0) {
-      console.log('Sample container:', containers.value[0]);
-    } else {
-      console.log('No containers loaded from API');
-    }
-    if (ships.value.length > 0) {
-      console.log('Sample ship:', ships.value[0]);
-    } else {
-      console.log('No ships loaded from API');
-    }
-    if (berths.value.length > 0) {
-      console.log('Sample berth:', berths.value[0]);
-    } else {
-      console.log('No berths loaded from API');
-    }
 
   } catch (err) {
     console.error('Error loading dashboard data:', err);
@@ -579,9 +470,9 @@ const refreshRealtimeData = async () => {
       dashboardStats.value = dashboardResult.value;
     }
 
-    console.log(`⏱️ Real-time data refreshed for ${portContext} at:`, new Date().toLocaleTimeString());
+
   } catch (err) {
-    console.warn('⚠️ Failed to refresh real-time data:', err);
+
   }
 };
 
@@ -632,32 +523,20 @@ const refreshChartData = async () => {
       }
     }
 
-    console.log(`📊 Chart data refreshed for ${portContext} at:`, new Date().toLocaleTimeString());
+
   } catch (err) {
-    console.warn('⚠️ Failed to refresh chart data:', err);
+
   }
 };
 
 // Port change handler
 const onPortChanged = (portId: string | null) => {
-  console.log('🔄 Port change requested:', portId);
+
   selectedPortId.value = portId;
   
   const portName = portId ? 
     ports.value.find(p => p.portId.toString() === portId)?.name || `Port ${portId}` : 
     'All Ports';
-  
-  console.log('✅ Port changed to:', portName);
-  console.log('📊 Filtered data:', {
-    containers: filteredContainers.value.length,
-    berths: filteredBerths.value.length,
-    ships: filteredShips.value.length
-  });
-  
-  // Log sample of filtered data for debugging
-  if (portId && filteredContainers.value.length > 0) {
-    console.log('Sample filtered container:', filteredContainers.value[0]);
-  }
   
   // Trigger immediate data refresh for the new port
   refreshDashboardData();
@@ -675,19 +554,19 @@ onMounted(async () => {
 
   // Set up periodic refresh for real-time data (every 30 seconds)
   dataRefreshInterval = setInterval(() => {
-    console.log('🔄 Auto-refreshing real-time data...');
+
     refreshRealtimeData();
   }, 30000);
 
   // Set up periodic refresh for chart data (every 2 minutes)
   chartRefreshInterval = setInterval(() => {
-    console.log('📊 Auto-refreshing chart data...');
+
     refreshChartData();
   }, 120000);
   
-  console.log('✅ Dashboard mounted successfully with periodic refresh intervals');
-  console.log('📅 Real-time refresh: every 30 seconds');
-  console.log('📊 Chart refresh: every 2 minutes');
+
+
+
 });
 
 onUnmounted(() => {

@@ -8,9 +8,7 @@ import { shipService } from './shipService';
 import { userManagementApi } from './userManagementApi';
 
 // API Configuration
-const API_BASE_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5221/api' 
-  : 'https://your-api-domain.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5221/api';
 
 // Create axios instance (shared by all services)
 export const api: AxiosInstance = axios.create({
@@ -264,7 +262,7 @@ export const roleApplicationApi = {
 
   async getAllApplications() {
     try {
-      const response = await api.get('/role-applications');
+      const response = await api.get('/role-applications/pending');
       return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
       console.error('Get all applications error:', error);

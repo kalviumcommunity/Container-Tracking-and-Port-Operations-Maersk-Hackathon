@@ -326,25 +326,25 @@ const statusChartData = computed(() => {
   // Use only real data from backend
   const containersToProcess = props.containers || [];
   
-  // Enhanced logging for debugging port changes
-  console.log('📦 ContainerActivity2: Processing containers for chart:', {
-    containerCount: containersToProcess.length,
-    isRealData: props.containers.length > 0,
-    analyticsData: !!props.analyticsData,
-    firstContainer: containersToProcess[0],
-    containers: containersToProcess
-  });
-  
   containersToProcess.forEach(container => {
     const status = container.status || 'Other';
     statusCounts[status] = (statusCounts[status] || 0) + 1;
   });
 
-  const maxCount = Math.max(...Object.values(statusCounts), 1);
+  // Limit to top 5 statuses, group rest as "Other"
+  const sortedEntries = Object.entries(statusCounts).sort((a, b) => b[1] - a[1]);
+  const topEntries = sortedEntries.slice(0, 5);
+  const otherCount = sortedEntries.slice(5).reduce((sum, [, count]) => sum + count, 0);
+  
+  if (otherCount > 0) {
+    topEntries.push(['Other', otherCount]);
+  }
+
+  const maxCount = Math.max(...topEntries.map(([, count]) => count), 1);
   const minHeight = 20;
   const maxHeight = 120;
 
-  return Object.entries(statusCounts).map(([status, count]) => ({
+  return topEntries.map(([status, count]) => ({
     label: status,
     count,
     height: Math.max((count / maxCount) * maxHeight, minHeight),
@@ -388,11 +388,20 @@ const cargoChartData = computed(() => {
     cargoCounts[cargo] = (cargoCounts[cargo] || 0) + 1;
   });
 
-  const maxCount = Math.max(...Object.values(cargoCounts), 1);
+  // Limit to top 5 cargo types, group rest as "Other"
+  const sortedEntries = Object.entries(cargoCounts).sort((a, b) => b[1] - a[1]);
+  const topEntries = sortedEntries.slice(0, 5);
+  const otherCount = sortedEntries.slice(5).reduce((sum, [, count]) => sum + count, 0);
+  
+  if (otherCount > 0) {
+    topEntries.push(['Other', otherCount]);
+  }
+
+  const maxCount = Math.max(...topEntries.map(([, count]) => count), 1);
   const minHeight = 20;
   const maxHeight = 120;
 
-  return Object.entries(cargoCounts).map(([cargo, count]) => ({
+  return topEntries.map(([cargo, count]) => ({
     label: cargo,
     count,
     height: Math.max((count / maxCount) * maxHeight, minHeight),
@@ -439,7 +448,7 @@ watch(() => props.containers, (newContainers, oldContainers) => {
 
 // Watch the reactive key to trigger chart updates
 watch(reactiveKey, (newKey) => {
-  console.log('🔥 ContainerActivity2: Reactive key changed:', newKey);
+
 });
 const uniqueLocations = computed(() => locationChartData.value.length);
 
