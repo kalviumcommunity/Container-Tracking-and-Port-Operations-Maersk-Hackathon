@@ -1,4 +1,25 @@
 <template>
+  <!-- Port Selection -->
+  <div class="mb-6 bg-white shadow rounded-lg p-4">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-medium text-gray-900">Berth Statistics</h3>
+      <div class="flex items-center space-x-2">
+        <label for="port-select" class="text-sm font-medium text-gray-700">Port:</label>
+        <select
+          id="port-select"
+          v-model="selectedPort"
+          @change="onPortChange"
+          class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="all">All Ports</option>
+          <option v-for="port in ports" :key="port.id" :value="port.id">
+            {{ port.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
     <!-- Total Berths -->
     <div class="bg-white overflow-hidden shadow rounded-lg">
@@ -169,7 +190,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { 
   MapPin, 
   CheckCircle, 
@@ -177,6 +198,11 @@ import {
   TrendingUp,
   Building
 } from 'lucide-vue-next';
+
+interface Port {
+  id: string;
+  name: string;
+}
 
 interface BerthStats {
   totalBerths: number;
@@ -197,6 +223,14 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false
 });
+
+const emit = defineEmits<{
+  (e: 'port-changed', portId: string): void;
+}>();
+
+// Reactive data
+const selectedPort = ref<string>('all');
+const ports = ref<Port[]>([]);
 
 const availabilityPercentage = computed(() => {
   if (props.stats.totalBerths === 0) return 0;
@@ -266,4 +300,25 @@ const formatNumber = (num: number): string => {
   if (!num) return '0';
   return new Intl.NumberFormat('en-US').format(num);
 };
+
+// Methods
+const onPortChange = () => {
+  emit('port-changed', selectedPort.value);
+};
+
+const fetchPorts = async () => {
+  try {
+    const response = await fetch('/api/ports');
+    if (response.ok) {
+      ports.value = await response.json();
+    }
+  } catch (error) {
+    console.error('Failed to fetch ports:', error);
+  }
+};
+
+// Lifecycle
+onMounted(() => {
+  fetchPorts();
+});
 </script>

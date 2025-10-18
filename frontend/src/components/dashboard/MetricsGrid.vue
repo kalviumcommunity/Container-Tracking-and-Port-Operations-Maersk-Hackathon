@@ -1,8 +1,30 @@
 <template>
   <section class="mb-12">
-    <div class="mb-8">
+    <div class="mb-8 flex justify-between items-center">
+      <div>
         <h2 class="text-2xl font-bold text-slate-900 mb-2">Port Activity at a Glance</h2>
         <p class="text-slate-600">Live overview of cargo operations and port capacity • Updated every 5 minutes</p>
+      </div>
+      
+      <!-- Port Selector Dropdown -->
+      <div class="min-w-64">
+        <label for="port-select" class="block text-sm font-medium text-slate-700 mb-2">Select Port</label>
+        <select 
+          id="port-select"
+          :value="selectedPort?.portId?.toString() || ''"
+          @change="handlePortChange"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        >
+          <option value="">All Ports</option>
+          <option 
+            v-for="port in ports" 
+            :key="port.portId" 
+            :value="port.portId.toString()"
+          >
+            {{ port.name }}
+          </option>
+        </select>
+      </div>
     </div>
     
     <!-- Loading State -->
@@ -64,6 +86,10 @@
             <TrendingUp :size="14" class="text-emerald-600" />
             <span class="text-sm font-medium text-slate-600">{{ stat.change }}</span>
           </div>
+          <!-- Additional trend information if available -->
+          <div v-if="stat.trend" class="flex items-center gap-1 mt-1">
+            <span class="text-xs text-slate-500">{{ stat.trend }}</span>
+          </div>
         </div>
         <div class="w-full bg-slate-100 rounded-full h-2">
           <div 
@@ -78,7 +104,17 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingUp, AlertCircle } from 'lucide-vue-next';
+import { ref, onMounted, watch } from 'vue'
+import { TrendingUp, AlertCircle } from 'lucide-vue-next'
+import { portApi } from '../../services/api'
+
+interface Port {
+  portId: number;
+  name: string;
+  country?: string;
+  location?: string;
+  totalContainerCapacity?: number;
+}
 
 interface MetricStat {
   title: string;
@@ -86,23 +122,95 @@ interface MetricStat {
   value: string;
   icon: any;
   change: string;
+  trend?: string;
   bgColor: string;
   iconColor: string;
   progressColor: string;
   progress: string;
 }
 
+
+
+interface Container {
+  containerId: string;
+  portId?: number;
+}
+
+interface Ship {
+  shipId: number;
+  currentPortId?: number;
+}
+
+interface Berth {
+  berthId: number;
+  portId?: number;
+}
+
 interface Props {
   stats: MetricStat[];
   loading?: boolean;
   error?: string | null;
+  containers?: Container[];
+  ships?: Ship[];
+  berths?: Berth[];
+  selectedPortId?: string | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
-defineEmits<{
-  retry: [];
+const emit = defineEmits<{
+  retry: []
+  portChanged: [portId: string | null]
 }>();
+
+// Port filtering state
+const ports = ref<Port[]>([])
+const selectedPort = ref<Port | null>(null)
+
+// Fetch available ports
+const fetchPorts = async () => {
+  try {
+    const response = await portApi.getAll()
+    ports.value = response.data || []
+  } catch (error) {
+    console.error('Failed to fetch ports:', error)
+    // Fallback to mock data
+    ports.value = [
+      { portId: 1, name: 'Port of Singapore', country: 'Singapore' },
+      { portId: 2, name: 'Port of Rotterdam', country: 'Netherlands' },
+      { portId: 3, name: 'Port of Shanghai', country: 'China' }
+    ]
+  }
+}
+
+// Handle port selection
+const handlePortChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const portIdStr = target.value
+  
+  if (portIdStr) {
+    const portId = parseInt(portIdStr)
+    selectedPort.value = ports.value.find(port => port.portId === portId) || null
+    emit('portChanged', portIdStr)
+  } else {
+    selectedPort.value = null
+    emit('portChanged', null)
+  }
+}
+
+// Sync with parent's selected port
+watch(() => props.selectedPortId, (newPortId) => {
+  if (newPortId) {
+    const portId = parseInt(newPortId)
+    selectedPort.value = ports.value.find(port => port.portId === portId) || null
+  } else {
+    selectedPort.value = null
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  fetchPorts()
+})
 </script>
 
 <style scoped>

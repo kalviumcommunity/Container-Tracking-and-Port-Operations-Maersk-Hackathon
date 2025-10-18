@@ -3,25 +3,27 @@ import { api } from './api';
 // Analytics API service for dashboard and reporting functionality
 export const analyticsService = {
   // Get dashboard statistics
-  async getDashboardStats() {
+  async getDashboardStats(portId?: number) {
     try {
-      const response = await api.get('/analytics/dashboard-stats');
+      const queryParam = portId ? `?portId=${portId}` : '';
+      const response = await api.get(`/analytics/dashboard-stats${queryParam}`);
+      console.log('Dashboard stats API response:', response.data);
       return response.data;
     } catch (error) {
-      console.warn('Dashboard stats API not available, using fallback data');
+      console.warn('Dashboard stats API not available, using fallback data:', error);
       // Return fallback data with structure matching DashboardStatsDto
       return {
         data: {
-          totalContainers: 12547,
-          activeShips: 23,
-          availableBerths: 7,
-          totalPorts: 1,
-          todayArrivals: 8,
-          todayDepartures: 5,
-          containersInTransit: 2847,
-          containersAtPort: 9700,
+          totalContainers: portId ? 4235 : 12547,
+          activeShips: portId ? 8 : 23,
+          availableBerths: portId ? 3 : 7,
+          totalPorts: portId ? 1 : 3,
+          todayArrivals: portId ? 3 : 8,
+          todayDepartures: portId ? 2 : 5,
+          containersInTransit: portId ? 950 : 2847,
+          containersAtPort: portId ? 3285 : 9700,
           averageTurnaroundTime: 18.5,
-          berthUtilizationRate: 78.5,
+          berthUtilizationRate: portId ? 85.5 : 78.5,
           recentActivities: [
             {
               activity: 'Container Loading',
@@ -38,6 +40,22 @@ export const analyticsService = {
               type: 'arrival',
               entityId: '4',
               entityName: 'Ever Given'
+            },
+            {
+              activity: 'Container Unloading',
+              description: 'CMA CGM Antoine de Saint Exupery - 200 containers unloaded',
+              timestamp: new Date(Date.now() - 3 * 60 * 60000).toISOString(),
+              type: 'unloading',
+              entityId: '3',
+              entityName: 'CMA CGM Antoine de Saint Exupery'
+            },
+            {
+              activity: 'Ship Departure',
+              description: 'OOCL Hong Kong departed from Berth 1',
+              timestamp: new Date(Date.now() - 4 * 60 * 60000).toISOString(),
+              type: 'departure',
+              entityId: '1',
+              entityName: 'OOCL Hong Kong'
             }
           ],
           alerts: [
@@ -48,10 +66,79 @@ export const analyticsService = {
               severity: 'Warning',
               createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
               isRead: false
+            },
+            {
+              id: 2,
+              title: 'Weather Advisory',
+              message: 'Strong winds expected in 2 hours - secure all cargo operations',
+              severity: 'Info',
+              createdAt: new Date(Date.now() - 60 * 60000).toISOString(),
+              isRead: false
+            },
+            {
+              id: 3,
+              title: 'Delayed Arrival',
+              message: 'MSC Gulsun delayed by 3 hours due to port congestion',
+              severity: 'Warning',
+              createdAt: new Date(Date.now() - 90 * 60000).toISOString(),
+              isRead: true
             }
           ]
         }
       };
+    }
+  },
+
+  // Get containers by port
+  async getContainersByPort(portId?: number) {
+    try {
+      const queryParam = portId ? `?portId=${portId}` : '';
+      const response = await api.get(`/analytics/containers-by-port${queryParam}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Containers API not available, using fallback data');
+      // Return demo containers data based on port
+      const baseContainers = [
+        { containerId: 'MSCU1234567', type: 'Dry', status: 'At Port', cargoType: 'Electronics', weight: 24500, currentLocation: 'Port A', size: '40ft' },
+        { containerId: 'MSCU1234568', type: 'Refrigerated', status: 'In Transit', cargoType: 'Food', weight: 22000, currentLocation: 'Port A', size: '20ft' },
+        { containerId: 'MSCU1234569', type: 'Tank', status: 'Loading', cargoType: 'Chemicals', weight: 26000, currentLocation: 'Port B', size: '40ft' },
+        { containerId: 'MSCU1234570', type: 'Dry', status: 'Available', cargoType: 'Machinery', weight: 21000, currentLocation: 'Port B', size: '20ft' },
+        { containerId: 'MSCU1234571', type: 'Dry', status: 'At Port', cargoType: 'Automotive', weight: 23500, currentLocation: 'Port C', size: '40ft' }
+      ];
+      
+      if (portId) {
+        const portName = `Port ${String.fromCharCode(64 + portId)}`; // Port A, Port B, Port C
+        const filteredContainers = baseContainers.filter(c => c.currentLocation === portName);
+        return { data: filteredContainers };
+      }
+      
+      return { data: baseContainers };
+    }
+  },
+
+  // Get berths by port
+  async getBerthsByPort(portId?: number) {
+    try {
+      const queryParam = portId ? `?portId=${portId}` : '';
+      const response = await api.get(`/analytics/berths-by-port${queryParam}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Berths API not available, using fallback data');
+      // Return demo berths data based on port
+      const allBerths = [
+        { berthId: 1, name: 'Berth A1', status: 'Available', type: 'Container', capacity: 150, currentLoad: 0, portId: 1, portName: 'Port A' },
+        { berthId: 2, name: 'Berth A2', status: 'Occupied', type: 'Container', capacity: 200, currentLoad: 180, portId: 1, portName: 'Port A' },
+        { berthId: 3, name: 'Berth B1', status: 'Under Maintenance', type: 'Bulk', capacity: 100, currentLoad: 0, portId: 2, portName: 'Port B' },
+        { berthId: 4, name: 'Berth B2', status: 'Available', type: 'General', capacity: 175, currentLoad: 45, portId: 2, portName: 'Port B' },
+        { berthId: 5, name: 'Berth C1', status: 'Occupied', type: 'Oil', capacity: 120, currentLoad: 95, portId: 3, portName: 'Port C' }
+      ];
+      
+      if (portId) {
+        const filteredBerths = allBerths.filter(b => b.portId === portId);
+        return { data: filteredBerths };
+      }
+      
+      return { data: allBerths };
     }
   },
 
@@ -81,13 +168,52 @@ export const analyticsService = {
   },
 
   // Get real-time metrics
-  async getRealtimeMetrics() {
+  async getRealtimeMetrics(portId?: number) {
     try {
-      const response = await api.get('/analytics/realtime-metrics');
+      const queryParam = portId ? `?portId=${portId}` : '';
+      const response = await api.get(`/analytics/realtime-metrics${queryParam}`);
       return response.data;
     } catch (error) {
       console.warn('Real-time metrics API not available');
-      return { data: null };
+      return { 
+        data: {
+          shipsInPort: portId ? 3 : 8,
+          containersProcessingToday: portId ? 245 : 687,
+          berthsOccupied: portId ? 4 : 12,
+          averageWaitTime: 2.5,
+          throughputRate: portId ? 85 : 92,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    }
+  },
+
+  // Get port-specific comprehensive statistics
+  async getPortSpecificStats(portId: number) {
+    try {
+      // Try to get comprehensive port data in one call
+      const [dashboardStats, containers, berths, realtimeMetrics] = await Promise.allSettled([
+        this.getDashboardStats(portId),
+        this.getContainersByPort(portId),
+        this.getBerthsByPort(portId),
+        this.getRealtimeMetrics(portId)
+      ]);
+
+      return {
+        success: true,
+        data: {
+          dashboard: dashboardStats.status === 'fulfilled' ? dashboardStats.value : null,
+          containers: containers.status === 'fulfilled' ? containers.value : { data: [] },
+          berths: berths.status === 'fulfilled' ? berths.value : { data: [] },
+          realtime: realtimeMetrics.status === 'fulfilled' ? realtimeMetrics.value : { data: null }
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching comprehensive port statistics:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch port statistics'
+      };
     }
   },
 

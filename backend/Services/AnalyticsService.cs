@@ -25,45 +25,72 @@ namespace Backend.Services
         /// <summary>
         /// Get dashboard statistics
         /// </summary>
-        public async Task<DashboardStatsDto> GetDashboardStatsAsync()
+        public async Task<DashboardStatsDto> GetDashboardStatsAsync(int? portId = null)
         {
             var now = DateTime.UtcNow;
             var today = now.Date;
 
+            // Base queries - filter by port if specified
+            var containerQuery = _context.Containers.AsQueryable();
+            var shipQuery = _context.Ships.AsQueryable();
+            var berthQuery = _context.Berths.AsQueryable();
+            var berthAssignmentQuery = _context.BerthAssignments.AsQueryable();
+
+            if (portId.HasValue)
+            {
+                // Filter by specific port
+                var portName = await _context.Ports.Where(p => p.PortId == portId.Value).Select(p => p.Name).FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(portName))
+                {
+                    containerQuery = containerQuery.Where(c => c.CurrentLocation == portName);
+                    shipQuery = shipQuery.Where(s => s.CurrentPortId == portId.Value || s.NextPort == portName);
+                    berthQuery = berthQuery.Where(b => b.PortId == portId.Value);
+                    berthAssignmentQuery = berthAssignmentQuery.Where(ba => ba.Berth.PortId == portId.Value);
+                }
+            }
+
             // Get basic counts
-            var totalContainers = await _context.Containers.CountAsync();
-            var activeShips = await _context.Ships.CountAsync(s => s.Status == "In Port" || s.Status == "Approaching");
-            var availableBerths = await _context.Berths.CountAsync(b => b.Status == "Available");
-            var totalPorts = await _context.Ports.CountAsync();
+            var totalContainers = await containerQuery.CountAsync();
+            var activeShips = await shipQuery.CountAsync(s => s.Status == "In Port" || s.Status == "Approaching");
+            var availableBerths = await berthQuery.CountAsync(b => b.Status == "Available");
+            var totalPorts = portId.HasValue ? 1 : await _context.Ports.CountAsync();
 
             // Get today's arrivals and departures
-            var todayArrivals = await _context.BerthAssignments
+            var todayArrivals = await berthAssignmentQuery
                 .CountAsync(ba => ba.ActualArrival.HasValue && ba.ActualArrival.Value.Date == today);
-            var todayDepartures = await _context.BerthAssignments
+            var todayDepartures = await berthAssignmentQuery
                 .CountAsync(ba => ba.ActualDeparture.HasValue && ba.ActualDeparture.Value.Date == today);
 
             // Container statistics
-            var containersInTransit = await _context.Containers.CountAsync(c => c.Status == "In Transit");
-            var containersAtPort = await _context.Containers.CountAsync(c => c.Status == "At Port");
+            var containersInTransit = await containerQuery.CountAsync(c => c.Status == "In Transit");
+            var containersAtPort = await containerQuery.CountAsync(c => c.Status == "At Port");
 
             // Calculate average turnaround time (in hours)
-            var avgTurnaround = await _context.BerthAssignments
+            var avgTurnaround = await berthAssignmentQuery
                 .Where(ba => ba.ActualArrival.HasValue && ba.ActualDeparture.HasValue)
                 .AverageAsync(ba => ba.ActualDeparture.HasValue && ba.ActualArrival.HasValue 
                     ? (decimal)((ba.ActualDeparture.Value - ba.ActualArrival.Value).TotalHours) 
                     : 0);
 
             // Calculate berth utilization rate
-            var totalBerthCapacity = await _context.Berths.SumAsync(b => b.Capacity);
-            var currentBerthLoad = await _context.Berths.SumAsync(b => b.CurrentLoad);
+            var totalBerthCapacity = await berthQuery.SumAsync(b => b.Capacity);
+            var currentBerthLoad = await berthQuery.SumAsync(b => b.CurrentLoad);
             var berthUtilization = totalBerthCapacity > 0 ? (decimal)currentBerthLoad / totalBerthCapacity * 100 : 0;
 
             // Get recent activities
             var recentActivities = await GetRecentActivitiesAsync(10);
 
             // Get alerts (from events with high priority)
-            var alerts = await _context.Events
-                .Where(e => (e.Priority == "Critical" || e.Priority == "High") && !e.IsResolved)
+            var alertsQuery = _context.Events
+                .Where(e => (e.Priority == "Critical" || e.Priority == "High") && !e.IsResolved);
+            
+            if (portId.HasValue)
+            {
+                // Filter events by port if available in the event data
+                alertsQuery = alertsQuery.Where(e => e.PortId == portId.Value || e.PortId == null);
+            }
+
+            var alerts = await alertsQuery
                 .OrderByDescending(e => e.EventTimestamp)
                 .Take(5)
                 .Select(e => new AlertDto
@@ -530,6 +557,68 @@ namespace Backend.Services
             }
 
             return System.Text.Encoding.UTF8.GetBytes(string.Join("\n", csv));
+        }
+
+        /// <summary>
+        /// Get containers by port
+        /// </summary>
+        public async Task<IEnumerable<ContainerDto>> GetContainersByPortAsync(int? portId)
+        {
+            var query = _context.Containers.AsQueryable();
+
+            if (portId.HasValue)
+            {
+                var portName = await _context.Ports.Where(p => p.PortId == portId.Value).Select(p => p.Name).FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(portName))
+                {
+                    query = query.Where(c => c.CurrentLocation == portName);
+                }
+            }
+
+            var containers = await query.ToListAsync();
+
+            return containers.Select(c => new ContainerDto
+            {
+                ContainerId = c.ContainerId,
+                Type = c.Type,
+                Status = c.Status,
+                CargoType = c.CargoType,
+                Weight = c.Weight,
+                CurrentLocation = c.CurrentLocation,
+                Destination = c.Destination,
+                Size = c.Size,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                ShipId = c.ShipId
+            });
+        }
+
+        /// <summary>
+        /// Get berths by port
+        /// </summary>
+        public async Task<IEnumerable<BerthDto>> GetBerthsByPortAsync(int? portId)
+        {
+            var query = _context.Berths.Include(b => b.Port).AsQueryable();
+
+            if (portId.HasValue)
+            {
+                query = query.Where(b => b.PortId == portId.Value);
+            }
+
+            var berths = await query.ToListAsync();
+
+            return berths.Select(b => new BerthDto
+            {
+                BerthId = b.BerthId,
+                Name = b.Name,
+                PortId = b.PortId,
+                PortName = b.Port.Name,
+                Status = b.Status,
+                Type = b.Type,
+                Capacity = b.Capacity,
+                CurrentLoad = b.CurrentLoad,
+                ActiveAssignmentCount = _context.BerthAssignments.Count(ba => ba.BerthId == b.BerthId && ba.Status == "Active")
+            });
         }
 
         // Helper methods
