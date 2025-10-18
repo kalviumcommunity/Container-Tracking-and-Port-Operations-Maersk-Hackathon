@@ -20,15 +20,18 @@ namespace Backend.Services
         private readonly IContainerRepository _containerRepository;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ContainerService> _logger;
+        private readonly IEventService _eventService;
 
         public ContainerService(
             IContainerRepository containerRepository, 
             ApplicationDbContext context,
-            ILogger<ContainerService> logger)
+            ILogger<ContainerService> logger,
+            IEventService eventService)
         {
             _containerRepository = containerRepository;
             _context = context;
             _logger = logger;
+            _eventService = eventService;
         }
 
         /// <summary>
@@ -238,7 +241,30 @@ namespace Backend.Services
             };
             
             var createdContainer = await _containerRepository.CreateAsync(container);
-            return MapToDto(createdContainer);
+            var containerDto = MapToDto(createdContainer);
+
+            // Auto-create event for container creation
+            try
+            {
+                await _eventService.CreateAsync(new EventCreateDto
+                {
+                    EventType = "ContainerCreated",
+                    Title = $"New Container: {container.ContainerId}",
+                    Description = $"Container {container.ContainerId} ({container.Type}) has been created with cargo type: {container.CargoType}",
+                    Severity = "Low",
+                    ContainerId = container.ContainerId,
+                    ShipId = container.ShipId,
+                    Source = "System"
+                });
+                _logger.LogInformation("Auto-created event for container {ContainerId}", container.ContainerId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to create event for container {ContainerId}", container.ContainerId);
+                // Don't fail the container creation if event creation fails
+            }
+
+            return containerDto;
         }
 
         /// <summary>

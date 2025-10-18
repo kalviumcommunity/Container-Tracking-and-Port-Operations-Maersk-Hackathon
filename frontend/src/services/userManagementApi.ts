@@ -121,7 +121,7 @@ export class UserManagementApiService {
   async updateUserRoles(userId: number, roles: UpdateUserRolesDto): Promise<ApiResponse<string>> {
     try {
       const response: AxiosResponse<ApiResponse<string>> = await apiClient.put(
-        `/usermanagement/${userId}/roles`, 
+        `/user-management/users/${userId}/roles`, 
         roles
       )
       return response.data

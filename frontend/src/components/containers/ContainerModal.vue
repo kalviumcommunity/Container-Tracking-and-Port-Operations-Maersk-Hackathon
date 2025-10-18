@@ -270,7 +270,7 @@ const form = ref({
 // Watch for container prop changes
 watch(() => props.container, (newContainer) => {
   if (import.meta.env.DEV) {
-    console.log('Development: Container prop changed');
+
   }
   
   if (newContainer) {
@@ -294,7 +294,7 @@ watch(() => props.container, (newContainer) => {
     });
     
     if (import.meta.env.DEV) {
-      console.log('Development: Form populated successfully');
+
     }
   }
 }, { immediate: true });
@@ -322,7 +322,7 @@ const handleSubmit = () => {
   }
   
   if (import.meta.env.DEV) {
-    console.log('Development: Submitting form data');
+
   }
   emit('submit', submissionData);
 };

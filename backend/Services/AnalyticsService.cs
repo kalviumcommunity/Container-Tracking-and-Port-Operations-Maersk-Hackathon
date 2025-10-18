@@ -133,6 +133,12 @@ namespace Backend.Services
                 .Where(cm => cm.MovementTimestamp >= startDate && cm.MovementTimestamp <= endDate)
                 .ToListAsync();
 
+            // Handle no data case - return empty data points
+            if (!movements.Any())
+            {
+                return GenerateEmptyThroughputData(period, days, startDate);
+            }
+
             var periodLower = period.ToLower();
             var groupedData = movements.GroupBy(cm =>
             {
@@ -154,9 +160,11 @@ namespace Backend.Services
 
                 var loaded = group.Count(cm => cm.MovementType == "Loading");
                 var unloaded = group.Count(cm => cm.MovementType == "Unloading");
-                var avgProcessingTime = group.Any() ? 
-                    (decimal)group.Where(cm => cm.ActualCompletion.HasValue)
-                        .Average(cm => (cm.ActualCompletion!.Value - cm.MovementTimestamp).TotalMinutes) : 0;
+                
+                // Fix: Handle empty sequences properly
+                var completedMovements = group.Where(cm => cm.ActualCompletion.HasValue).ToList();
+                var avgProcessingTime = completedMovements.Any() ? 
+                    (decimal)completedMovements.Average(cm => (cm.ActualCompletion!.Value - cm.MovementTimestamp).TotalMinutes) : 0;
 
                 result.Add(new ThroughputDataDto
                 {
@@ -170,6 +178,38 @@ namespace Backend.Services
             }
 
             return result.OrderBy(r => r.Date);
+        }
+
+        /// <summary>
+        /// Generate empty throughput data when no movements exist
+        /// </summary>
+        private IEnumerable<ThroughputDataDto> GenerateEmptyThroughputData(string period, int days, DateTime startDate)
+        {
+            var result = new List<ThroughputDataDto>();
+            var periodLower = period.ToLower();
+
+            for (int i = 0; i < days; i++)
+            {
+                var date = periodLower switch
+                {
+                    "hourly" => startDate.AddHours(i),
+                    "weekly" => startDate.AddDays(i * 7),
+                    "monthly" => startDate.AddMonths(i),
+                    _ => startDate.AddDays(i)
+                };
+
+                result.Add(new ThroughputDataDto
+                {
+                    Date = date,
+                    ContainersProcessed = 0,
+                    ContainersLoaded = 0,
+                    ContainersUnloaded = 0,
+                    AvgProcessingTime = 0,
+                    Period = period
+                });
+            }
+
+            return result;
         }
 
         /// <summary>

@@ -264,7 +264,7 @@ export const roleApplicationApi = {
 
   async getAllApplications() {
     try {
-      const response = await api.get('/role-applications');
+      const response = await api.get('/role-applications/pending');
       return response.data.data || response.data; // Handle ApiResponse wrapper
     } catch (error) {
       console.error('Get all applications error:', error);

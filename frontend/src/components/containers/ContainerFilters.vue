@@ -233,6 +233,6 @@ const updateFilter = (key: string, value: any) => {
 
 // Development-only debug logging
 if (import.meta.env.DEV) {
-  console.log('ContainerFilters - Development mode: Ship options available:', props.shipOptions?.length || 0);
+
 }
 </script>

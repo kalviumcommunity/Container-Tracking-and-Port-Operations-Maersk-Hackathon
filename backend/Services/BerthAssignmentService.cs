@@ -15,10 +15,17 @@ namespace Backend.Services
     public class BerthAssignmentService : IBerthAssignmentService
     {
         private readonly IBerthAssignmentRepository _berthAssignmentRepository;
+        private readonly IEventService _eventService;
+        private readonly ILogger<BerthAssignmentService> _logger;
 
-        public BerthAssignmentService(IBerthAssignmentRepository berthAssignmentRepository)
+        public BerthAssignmentService(
+            IBerthAssignmentRepository berthAssignmentRepository,
+            IEventService eventService,
+            ILogger<BerthAssignmentService> logger)
         {
             _berthAssignmentRepository = berthAssignmentRepository;
+            _eventService = eventService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -151,7 +158,40 @@ namespace Backend.Services
             };
             
             var createdAssignment = await _berthAssignmentRepository.CreateAsync(assignment);
-            return MapToDto(createdAssignment);
+            var assignmentDto = MapToDto(createdAssignment);
+
+            // Auto-create event for berth assignment
+            try
+            {
+                string severity = priorityString switch
+                {
+                    "High" => "High",
+                    "Low" => "Low",
+                    _ => "Medium"
+                };
+
+                await _eventService.CreateAsync(new EventCreateDto
+                {
+                    EventType = "BerthAssigned",
+                    Title = $"Berth Assignment: Berth #{assignment.BerthId}",
+                    Description = $"Ship #{assignment.ShipId} has been assigned to Berth #{assignment.BerthId}" +
+                                  (assignment.ContainerId != null ? $" for container {assignment.ContainerId}" : ""),
+                    Severity = severity,
+                    BerthId = assignment.BerthId,
+                    ShipId = assignment.ShipId,
+                    ContainerId = assignment.ContainerId,
+                    Source = "System",
+                    UserId = userId > 0 ? userId : null
+                });
+                _logger.LogInformation("Auto-created event for berth assignment {AssignmentId}", createdAssignment.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to create event for berth assignment {AssignmentId}", createdAssignment.Id);
+                // Don't fail the assignment creation if event creation fails
+            }
+
+            return assignmentDto;
         }
 
         /// <summary>

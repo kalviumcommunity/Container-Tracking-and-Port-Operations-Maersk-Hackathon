@@ -24,7 +24,7 @@
       </div>
 
       <!-- Status and Port Filter -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
           <select
@@ -39,7 +39,8 @@
           </select>
         </div>
 
-        <div>
+        <!-- Port Filter Removed - Not needed for single-port demo -->
+        <!-- <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Port</label>
           <select
             v-model="localFilters.portId"
@@ -51,7 +52,7 @@
               {{ port.name }}
             </option>
           </select>
-        </div>
+        </div> -->
       </div>
 
       <!-- Berth Type and Min Capacity -->

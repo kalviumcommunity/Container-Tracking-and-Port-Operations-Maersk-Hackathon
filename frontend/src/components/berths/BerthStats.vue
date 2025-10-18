@@ -198,6 +198,7 @@ import {
   TrendingUp,
   Building
 } from 'lucide-vue-next';
+import { portService } from '@/services/portService';
 
 interface Port {
   id: string;
@@ -308,12 +309,11 @@ const onPortChange = () => {
 
 const fetchPorts = async () => {
   try {
-    const response = await fetch('/api/ports');
-    if (response.ok) {
-      ports.value = await response.json();
-    }
+    const result = await portService.getAll();
+    ports.value = result;
   } catch (error) {
     console.error('Failed to fetch ports:', error);
+    ports.value = [];
   }
 };
 
