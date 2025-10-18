@@ -35,7 +35,7 @@ export interface Ship {
   currentPortId?: number; // Current port if docked
   
   // Container information
-  containerCount: number; // Current number of containers
+  containerCount?: number; // Current number of containers
   
   // Legacy compatibility fields
   currentLocation?: string; // Maps to coordinates or current port

@@ -33,11 +33,11 @@ namespace Backend.Controllers
         [HttpGet("dashboard-stats")]
         [RequirePermission(Backend.Constants.Permissions.ViewPortReports)]
         [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), 200)]
-        public async Task<IActionResult> GetDashboardStats()
+        public async Task<IActionResult> GetDashboardStats([FromQuery] int? portId = null)
         {
             try
             {
-                var stats = await _analyticsService.GetDashboardStatsAsync();
+                var stats = await _analyticsService.GetDashboardStatsAsync(portId);
                 return Ok(ApiResponse<DashboardStatsDto>.Ok(stats));
             }
             catch (Exception ex)
@@ -52,7 +52,7 @@ namespace Backend.Controllers
         [HttpGet("throughput")]
         [RequirePermission(Backend.Constants.Permissions.ViewPortReports)]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ThroughputDataDto>>), 200)]
-        public async Task<IActionResult> GetThroughputData([FromQuery] string period = "daily", [FromQuery] int days = 30)
+        public async Task<IActionResult> GetThroughputData([FromQuery] string period = "daily", [FromQuery] int days = 30, [FromQuery] int? portId = null)
         {
             try
             {
@@ -62,6 +62,44 @@ namespace Backend.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ApiResponse<IEnumerable<ThroughputDataDto>>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Get port-specific containers data
+        /// </summary>
+        [HttpGet("containers-by-port")]
+        [RequirePermission(Backend.Constants.Permissions.ViewPortReports)]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContainerDto>>), 200)]
+        public async Task<IActionResult> GetContainersByPort([FromQuery] int? portId = null)
+        {
+            try
+            {
+                var containers = await _analyticsService.GetContainersByPortAsync(portId);
+                return Ok(ApiResponse<IEnumerable<ContainerDto>>.Ok(containers));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<IEnumerable<ContainerDto>>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Get port-specific berths data
+        /// </summary>
+        [HttpGet("berths-by-port")]
+        [RequirePermission(Backend.Constants.Permissions.ViewPortReports)]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BerthDto>>), 200)]
+        public async Task<IActionResult> GetBerthsByPort([FromQuery] int? portId = null)
+        {
+            try
+            {
+                var berths = await _analyticsService.GetBerthsByPortAsync(portId);
+                return Ok(ApiResponse<IEnumerable<BerthDto>>.Ok(berths));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<IEnumerable<BerthDto>>.Fail(ex.Message));
             }
         }
 

@@ -105,6 +105,7 @@ export interface BerthWithAnalytics extends Berth {
  */
 export interface BerthAssignment {
   id: number;
+  assignmentId?: number; // For compatibility with components
   berthId: number;
   berthName?: string;
   shipId?: number;
@@ -123,6 +124,7 @@ export interface BerthAssignment {
   actualProcessingTime?: number;
   cost?: number;
   notes?: string;
+  expectedDeparture?: string; // For compatibility with components
 }
 
 /**

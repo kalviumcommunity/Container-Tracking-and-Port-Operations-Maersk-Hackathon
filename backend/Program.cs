@@ -209,7 +209,7 @@ builder.Services.AddSingleton<Backend.Hubs.IEventHubService, Backend.Hubs.EventH
 
 // Add CORS policy with secure configuration for production
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') 
-    ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5173", "http://localhost:5174" };
+    ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175" };
 
 var isProduction = builder.Environment.IsProduction();
 

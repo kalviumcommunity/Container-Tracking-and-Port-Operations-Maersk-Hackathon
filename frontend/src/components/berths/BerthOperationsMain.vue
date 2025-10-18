@@ -242,18 +242,6 @@
         </div>
       </div>
     </section>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold">{{ stats.totalShips }}</div>
-            <div class="text-xs text-slate-300 uppercase tracking-wider">Total Ships</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-purple-400">{{ operations.filter(op => op.status === 'Active').length }}</div>
-            <div class="text-xs text-slate-300 uppercase tracking-wider">Active Ops</div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Main Content Area with Tab Panels -->
     <main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -714,7 +702,7 @@ const loadOperationData = async () => {
     berths.value = berthsResponse.data || [];
     ships.value = (shipsResponse.data || []).map(ship => ({
       ...ship,
-      shipId: ship.shipId || ship.id || 0,
+      shipId: ship.shipId || (ship as any).id || 0,
       containerCount: 0,
       status: ship.status || 'Unknown'
     }));
@@ -789,8 +777,8 @@ const loadMockData = () => {
   ];
 
   berthAssignments.value = [
-    { id: 1, berthId: 2, berthName: 'Berth A2', shipId: 1, status: 'Active', assignedAt: new Date().toISOString() },
-    { id: 2, berthId: 6, berthName: 'Berth C1', shipId: 2, status: 'Active', assignedAt: new Date().toISOString() }
+    { id: 1, berthId: 2, berthName: 'Berth A2', shipId: 1, status: 'Active', assignedAt: new Date().toISOString(), assignmentType: 'Ship' },
+    { id: 2, berthId: 6, berthName: 'Berth C1', shipId: 2, status: 'Active', assignedAt: new Date().toISOString(), assignmentType: 'Ship' }
   ];
 
   updateOperations();
@@ -811,7 +799,7 @@ const updateOperations = () => {
       type: operationTypes[index % operationTypes.length],
       vessel: ship ? ship.name : `Ship ${assignment.shipId}`,
       berth: berth ? berth.name : `Berth ${assignment.berthId}`,
-      progress: Math.floor(Math.random() * 40) + 60,
+      progress: 0, // Show 0 instead of random data when backend not connected
       eta: etas[index % etas.length],
       priority: priorities[index % priorities.length],
       status: 'Active'
@@ -842,26 +830,27 @@ const openCreateBerthModal = () => {
   showBerthModal.value = true;
 };
 
-const editBerth = (berth: Berth) => {
-  selectedBerth.value = berth;
+const editBerth = (berth: any) => {
+  selectedBerth.value = berth as Berth;
   isEditingBerth.value = true;
   showBerthModal.value = true;
 };
 
-const viewBerth = (berth: Berth) => {
-  selectedBerth.value = berth;
+const viewBerth = (berth: any) => {
+  selectedBerth.value = berth as Berth;
   isEditingBerth.value = false;
   showBerthModal.value = true;
 };
 
-const deleteBerth = async (berth: Berth) => {
-  if (confirm(`Are you sure you want to delete berth "${berth.name}"?`)) {
+const deleteBerth = async (berth: any) => {
+  const berthObj = berth as Berth;
+  if (confirm(`Are you sure you want to delete berth "${berthObj.name}"?`)) {
     try {
-      await berthApi.delete(berth.berthId);
+      await berthApi.delete(berthObj.berthId || (berthObj as any).id);
       await loadOperationData();
       addNotification({
         type: 'success',
-        message: `Berth ${berth.name} has been deleted successfully`
+        message: `Berth ${berthObj.name} has been deleted successfully`
       });
     } catch (error) {
       console.error('Error deleting berth:', error);
@@ -873,7 +862,7 @@ const deleteBerth = async (berth: Berth) => {
   }
 };
 
-const manageBerthAssignments = (berth: Berth) => {
+const manageBerthAssignments = (berth: any) => {
   selectedBerth.value = berth;
   showAssignmentModal.value = true;
 };

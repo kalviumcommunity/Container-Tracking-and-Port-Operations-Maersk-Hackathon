@@ -13,7 +13,7 @@ namespace Backend.Services
         /// <summary>
         /// Get dashboard statistics
         /// </summary>
-        Task<DashboardStatsDto> GetDashboardStatsAsync();
+        Task<DashboardStatsDto> GetDashboardStatsAsync(int? portId = null);
 
         /// <summary>
         /// Get container throughput data
@@ -49,5 +49,15 @@ namespace Backend.Services
         /// Export analytics data
         /// </summary>
         Task<byte[]> ExportAnalyticsAsync(string reportType, DateTime fromDate, DateTime toDate);
+
+        /// <summary>
+        /// Get containers by port
+        /// </summary>
+        Task<IEnumerable<ContainerDto>> GetContainersByPortAsync(int? portId);
+
+        /// <summary>
+        /// Get berths by port
+        /// </summary>
+        Task<IEnumerable<BerthDto>> GetBerthsByPortAsync(int? portId);
     }
 }
