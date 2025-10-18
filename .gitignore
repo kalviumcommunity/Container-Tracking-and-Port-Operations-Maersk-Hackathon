@@ -9,6 +9,7 @@ obj/
 
 # Environment variables
 .env
+.env.production
 
 # OS generated files
 .DS_Store
