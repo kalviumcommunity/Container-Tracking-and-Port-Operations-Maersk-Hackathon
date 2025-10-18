@@ -10,80 +10,22 @@ export const analyticsService = {
       console.log('Dashboard stats API response:', response.data);
       return response.data;
     } catch (error) {
-      console.warn('Dashboard stats API not available, using fallback data:', error);
-      // Return fallback data with structure matching DashboardStatsDto
+      console.error('Failed to fetch dashboard stats:', error);
+      // Return empty structure instead of mock data
       return {
         data: {
-          totalContainers: portId ? 4235 : 12547,
-          activeShips: portId ? 8 : 23,
-          availableBerths: portId ? 3 : 7,
-          totalPorts: portId ? 1 : 3,
-          todayArrivals: portId ? 3 : 8,
-          todayDepartures: portId ? 2 : 5,
-          containersInTransit: portId ? 950 : 2847,
-          containersAtPort: portId ? 3285 : 9700,
-          averageTurnaroundTime: 18.5,
-          berthUtilizationRate: portId ? 85.5 : 78.5,
-          recentActivities: [
-            {
-              activity: 'Container Loading',
-              description: 'MSC Oscar - 150 containers loaded',
-              timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
-              type: 'loading',
-              entityId: '2',
-              entityName: 'MSC Oscar'
-            },
-            {
-              activity: 'Ship Arrival',
-              description: 'Ever Given arrived at Berth 3',
-              timestamp: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
-              type: 'arrival',
-              entityId: '4',
-              entityName: 'Ever Given'
-            },
-            {
-              activity: 'Container Unloading',
-              description: 'CMA CGM Antoine de Saint Exupery - 200 containers unloaded',
-              timestamp: new Date(Date.now() - 3 * 60 * 60000).toISOString(),
-              type: 'unloading',
-              entityId: '3',
-              entityName: 'CMA CGM Antoine de Saint Exupery'
-            },
-            {
-              activity: 'Ship Departure',
-              description: 'OOCL Hong Kong departed from Berth 1',
-              timestamp: new Date(Date.now() - 4 * 60 * 60000).toISOString(),
-              type: 'departure',
-              entityId: '1',
-              entityName: 'OOCL Hong Kong'
-            }
-          ],
-          alerts: [
-            {
-              id: 1,
-              title: 'High Berth Utilization',
-              message: 'Port approaching capacity - 15 of 18 berths occupied',
-              severity: 'Warning',
-              createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-              isRead: false
-            },
-            {
-              id: 2,
-              title: 'Weather Advisory',
-              message: 'Strong winds expected in 2 hours - secure all cargo operations',
-              severity: 'Info',
-              createdAt: new Date(Date.now() - 60 * 60000).toISOString(),
-              isRead: false
-            },
-            {
-              id: 3,
-              title: 'Delayed Arrival',
-              message: 'MSC Gulsun delayed by 3 hours due to port congestion',
-              severity: 'Warning',
-              createdAt: new Date(Date.now() - 90 * 60000).toISOString(),
-              isRead: true
-            }
-          ]
+          totalContainers: 0,
+          activeShips: 0,
+          availableBerths: 0,
+          totalPorts: 0,
+          todayArrivals: 0,
+          todayDepartures: 0,
+          containersInTransit: 0,
+          containersAtPort: 0,
+          averageTurnaroundTime: 0,
+          berthUtilizationRate: 0,
+          recentActivities: [],
+          alerts: []
         }
       };
     }
@@ -96,23 +38,9 @@ export const analyticsService = {
       const response = await api.get(`/analytics/containers-by-port${queryParam}`);
       return response.data;
     } catch (error) {
-      console.warn('Containers API not available, using fallback data');
-      // Return demo containers data based on port
-      const baseContainers = [
-        { containerId: 'MSCU1234567', type: 'Dry', status: 'At Port', cargoType: 'Electronics', weight: 24500, currentLocation: 'Port A', size: '40ft' },
-        { containerId: 'MSCU1234568', type: 'Refrigerated', status: 'In Transit', cargoType: 'Food', weight: 22000, currentLocation: 'Port A', size: '20ft' },
-        { containerId: 'MSCU1234569', type: 'Tank', status: 'Loading', cargoType: 'Chemicals', weight: 26000, currentLocation: 'Port B', size: '40ft' },
-        { containerId: 'MSCU1234570', type: 'Dry', status: 'Available', cargoType: 'Machinery', weight: 21000, currentLocation: 'Port B', size: '20ft' },
-        { containerId: 'MSCU1234571', type: 'Dry', status: 'At Port', cargoType: 'Automotive', weight: 23500, currentLocation: 'Port C', size: '40ft' }
-      ];
-      
-      if (portId) {
-        const portName = `Port ${String.fromCharCode(64 + portId)}`; // Port A, Port B, Port C
-        const filteredContainers = baseContainers.filter(c => c.currentLocation === portName);
-        return { data: filteredContainers };
-      }
-      
-      return { data: baseContainers };
+      console.error('Failed to fetch containers by port:', error);
+      // Return empty array instead of mock data
+      return { data: [] };
     }
   },
 
@@ -123,22 +51,9 @@ export const analyticsService = {
       const response = await api.get(`/analytics/berths-by-port${queryParam}`);
       return response.data;
     } catch (error) {
-      console.warn('Berths API not available, using fallback data');
-      // Return demo berths data based on port
-      const allBerths = [
-        { berthId: 1, name: 'Berth A1', status: 'Available', type: 'Container', capacity: 150, currentLoad: 0, portId: 1, portName: 'Port A' },
-        { berthId: 2, name: 'Berth A2', status: 'Occupied', type: 'Container', capacity: 200, currentLoad: 180, portId: 1, portName: 'Port A' },
-        { berthId: 3, name: 'Berth B1', status: 'Under Maintenance', type: 'Bulk', capacity: 100, currentLoad: 0, portId: 2, portName: 'Port B' },
-        { berthId: 4, name: 'Berth B2', status: 'Available', type: 'General', capacity: 175, currentLoad: 45, portId: 2, portName: 'Port B' },
-        { berthId: 5, name: 'Berth C1', status: 'Occupied', type: 'Oil', capacity: 120, currentLoad: 95, portId: 3, portName: 'Port C' }
-      ];
-      
-      if (portId) {
-        const filteredBerths = allBerths.filter(b => b.portId === portId);
-        return { data: filteredBerths };
-      }
-      
-      return { data: allBerths };
+      console.error('Failed to fetch berths by port:', error);
+      // Return empty array instead of mock data
+      return { data: [] };
     }
   },
 

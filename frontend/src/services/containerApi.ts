@@ -47,7 +47,7 @@ export const containerApi = {
    */
   async getAll(): Promise<{ data: Container[] }> {
     try {
-      const response = await apiClient.get<ApiResponse<Container[]>>('/containers')
+      const response = await apiClient.get<ApiResponse<Container[]>>('/containers/all')
       return { data: response.data.data || [] }
     } catch (error) {
       console.error('Error fetching containers:', error)

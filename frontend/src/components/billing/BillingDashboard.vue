@@ -399,7 +399,7 @@ const refreshData = () => {
 
 const viewDetails = (type: string, item: any) => {
   // TODO: Open details modal
-  console.log('View details:', type, item)
+
 }
 
 const markAsPaid = async (type: 'berth' | 'storage', id: number) => {
@@ -429,7 +429,7 @@ const markAsPaid = async (type: 'berth' | 'storage', id: number) => {
 
 const exportData = () => {
   // TODO: Implement export functionality
-  console.log('Export data')
+
 }
 
 const formatDate = (date: string) => {

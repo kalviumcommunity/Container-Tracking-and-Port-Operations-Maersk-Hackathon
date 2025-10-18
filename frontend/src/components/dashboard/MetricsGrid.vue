@@ -6,8 +6,8 @@
         <p class="text-slate-600">Live overview of cargo operations and port capacity • Updated every 5 minutes</p>
       </div>
       
-      <!-- Port Selector Dropdown -->
-      <div class="min-w-64">
+      <!-- Port Selector Dropdown - HIDDEN for demo/showcase (container filtering not working) -->
+      <!-- <div class="min-w-64">
         <label for="port-select" class="block text-sm font-medium text-slate-700 mb-2">Select Port</label>
         <select 
           id="port-select"
@@ -24,7 +24,7 @@
             {{ port.name }}
           </option>
         </select>
-      </div>
+      </div> -->
     </div>
     
     <!-- Loading State -->
